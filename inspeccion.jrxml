@@ -314,7 +314,7 @@ AND mvalus.id=$P{mvalu}]]>
 		</band>
 	</columnFooter>
 	<pageFooter>
-		<band height="70" splitType="Stretch">
+		<band height="94" splitType="Stretch">
 			<rectangle>
 				<reportElement uuid="da854c7a-a7dd-4a29-8344-775796be1055" x="288" y="0" width="285" height="50"/>
 			</rectangle>

@@ -1316,8 +1316,8 @@ private void jTextField8MouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST
        
         reporteinspeccion rep = new reporteinspeccion(null, true, conex, pres, mvalu,vervalu());  
         int x=  this.getX() + (this.getWidth() - 400) / 2;
-        int y = this.getY() + (this.getHeight() - 300) / 2;
-        rep.setBounds(x, y, 400, 300);
+        int y = this.getY() + (this.getHeight() - 350) / 2;
+        rep.setBounds(x, y, 400, 350);
         this.setModal(false);
         rep.setVisible(true);
         

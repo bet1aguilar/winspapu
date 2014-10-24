@@ -2,7 +2,7 @@
 <jasperReport xmlns="http://jasperreports.sourceforge.net/jasperreports" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports http://jasperreports.sourceforge.net/xsd/jasperreport.xsd" name="liquidacion1" language="groovy" pageWidth="612" pageHeight="792" columnWidth="555" leftMargin="20" rightMargin="20" topMargin="20" bottomMargin="20" uuid="dc69826d-a550-4663-bf1e-76e2ef90d00a">
 	<property name="ireport.zoom" value="1.2100000000000062"/>
 	<property name="ireport.x" value="0"/>
-	<property name="ireport.y" value="0"/>
+	<property name="ireport.y" value="361"/>
 	<parameter name="mpres" class="java.lang.String">
 		<defaultValueExpression><![CDATA[]]></defaultValueExpression>
 	</parameter>
@@ -206,6 +206,7 @@ WHERE
 			</image>
 			<image hAlign="Right">
 				<reportElement uuid="dfc9b4a5-5a55-48ee-a487-d264a17d0542" x="431" y="0" width="141" height="58"/>
+				<imageExpression><![CDATA[JRImageRenderer.getInstance((byte []) $F{mprops_logo})]]></imageExpression>
 			</image>
 		</band>
 	</pageHeader>
@@ -2106,7 +2107,7 @@ WHERE
 		</band>
 	</detail>
 	<pageFooter>
-		<band height="73" splitType="Stretch">
+		<band height="115" splitType="Stretch">
 			<staticText>
 				<reportElement uuid="9c81d074-a219-4d43-8ce3-d3230b9846e4" x="2" y="52" width="570" height="11"/>
 				<textElement textAlignment="Center" verticalAlignment="Middle">
