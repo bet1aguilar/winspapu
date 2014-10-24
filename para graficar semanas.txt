@@ -1,0 +1,23 @@
+ String[] letradias={"S1","S2","S3","S4"};
+     TableColumnModel cm = tabla.getColumnModel();
+     int recor=0;
+     int semana1 = 2;
+     ColumnGroup [] cg = new ColumnGroup[semana1];
+     ColumnGroup [] cg1 = new ColumnGroup[7];
+     for(int i=0;i<semana1;i++){    
+         cg[i]=new ColumnGroup(semanas[i]);
+         for(int k=0;k<4;k++){
+             cg1[k]=new ColumnGroup(letradias[k]);
+            
+         for (int j=0; j<7;j++){
+           
+             cg1[k].add(cm.getColumn(recor));
+             recor++;
+         }
+          cg[i].add(cg1[k]);
+         }
+     }
+    GroupableTableHeader header = (GroupableTableHeader)tabla.getTableHeader();
+        for(int i=0;i<semana1;i++){
+            header.addColumnGroup(cg[i]);
+        }

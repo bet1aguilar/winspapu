@@ -1,0 +1,51 @@
+Borrar Presupuestos:
+	-Borrar materiales, equipo, mano de obra    x
+	-Borrar presupuesto de partidas no previstas    x
+	-Borrar Partidas y detalles de partidas     x
+	-Borrar Valuación y Detalle de Valuación	x
+	-Borrar Presupuesto de Aumento y Disminución	x
+	-Borrar Capitulos y subcapitulos del presupuesto	x
+
+Al modificar NP en pantalla principal, no guarda Mpres_id, ni un presupuesto nuevo 	x
+Revisar Calcular APU de Partida 	
+Acomode Aumentos y Disminuciones 	x
+Escribir montos en formato moneda  	x
+	- Escribirlo formato moneda en valuaciones	x
+	- Aumentos y disminuciones 	x	
+	- Reconsideraciones 
+	- Cronograma de actividades
+	- En tabuladores
+Revisar el borrar presupuesto, no borra presupuesto 	x
+Verificar codigo repetido para contratista. 	x
+Verificar APU al guardar Partida 	x 
+Al crear nuevo presupuesto vaciar a 0 los campos de totales del presupuesto 	x
+Copiar Presupuesto  x
+Merge a dos proyectos  
+Recalcular Listado de Precios Referenciales
+Insertar Partidas nuevas de presupuesto en un tab de prueba
+Buscar proyecto en tabpresupuesto
+Verificar Aumentos y Disminuciones para las valuaciones y las partidas
+Revisar Calcular Presupuesto 	
+Revisar Rangos del Cronograma
+Revisar Tab Pres
+
+1 Reconsideraciones de Precios:		
+* Verificar APU		
+* Calcular precio unitario que va a sumarse al total del presupuesto
+* Variar por tabulador los costos de:
+	- Materiales
+	- Equipos
+	- Mano de Obra.
+Esto se haría por reconsideración.
+* Variar linealmente los montos de:
+	- Materiales
+	- Equipos
+	- Mano de Obra
+Esto se haría por reconsideración.
+
+2 Capitulos del Presupuesto
+3 Recalcular Tabuladores
+4 Recalcular Presupuestos
+5 Mostrar Matriz de Materiales, equipo y mano de obra del Presupuesto
+6 Manejar Usuarios
+7 Manejar Inicio de Sesión

@@ -1,0 +1,12 @@
+* El .class puede ser decodificado y hay multiples maneras en internet, pero con programas como proguard puede ser ofuscado para que no sea legible.
+http://proguard.sourceforge.net/#downloads.html
+http://www.iec.csic.es/criptonomicon/java/ofuscacion.html
+Manual 
+http://proguard.sourceforge.net/index.html#manual/usage.html
+Mocha Source Obfuscator 1.0
+* Debo colocar la clave de la bd en un archivo binario
+
+* Pendiente programacion en android
+http://www.androidcurso.com/index.php/curso-android-avanzado/48-unidad-9-ingenieria-inversa-en-android/354-primera-contramedida-ofuscar-el-codigo
+
+Ingenieria Inversa Java.

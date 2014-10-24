@@ -1,0 +1,3 @@
+En importar Presupuesto:
+
+- No guarda los contratistas ni propietarios.

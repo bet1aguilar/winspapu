@@ -1,0 +1,125 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<jasperReport xmlns="http://jasperreports.sourceforge.net/jasperreports" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports http://jasperreports.sourceforge.net/xsd/jasperreport.xsd" name="memoria" language="groovy" pageWidth="612" pageHeight="792" columnWidth="555" leftMargin="20" rightMargin="20" topMargin="20" bottomMargin="20" uuid="1258a85a-f58d-46c4-bdea-9227a4a1a41a">
+	<property name="ireport.zoom" value="1.0"/>
+	<property name="ireport.x" value="0"/>
+	<property name="ireport.y" value="0"/>
+	<parameter name="fecha" class="java.lang.String"/>
+	<parameter name="mpres" class="java.lang.String">
+		<defaultValueExpression><![CDATA[]]></defaultValueExpression>
+	</parameter>
+	<queryString>
+		<![CDATA[SELECT
+     mpres.`nombre` AS mpres_nombre,
+     mpres.`ubicac` AS mpres_ubicac,
+     mpres.`nrocon` AS mpres_nrocon,
+     mpres.`memo` AS mpres_memo,
+     mpres.`timemo` AS mpres_timemo,
+     mpres.`fecmemo` AS mpres_fecmemo,
+
+     IFNULL(mprops.`logo`,"") AS mprops_logo,
+     mconts.`nombre` AS mconts_nombre,
+     IFNULL(mconts.`logo`,"") AS mconts_logo,
+     mconts.`encabe` AS mconts_encabe
+FROM
+     `mconts` mconts INNER JOIN `mpres` mpres ON mconts.`id` = mpres.`codcon`
+     INNER JOIN `mprops` mprops ON mpres.`codpro` = mprops.`id` Where mpres.mpres_id IS NULL
+AND mpres.id = $P{mpres}]]>
+	</queryString>
+	<field name="mpres_nombre" class="java.lang.String"/>
+	<field name="mpres_ubicac" class="java.lang.String"/>
+	<field name="mpres_nrocon" class="java.lang.String"/>
+	<field name="mpres_memo" class="java.lang.String"/>
+	<field name="mpres_timemo" class="java.lang.String"/>
+	<field name="mpres_fecmemo" class="java.lang.String"/>
+	<field name="mprops_logo" class="java.lang.Object"/>
+	<field name="mconts_nombre" class="java.lang.String"/>
+	<field name="mconts_logo" class="java.lang.Object"/>
+	<field name="mconts_encabe" class="java.lang.String"/>
+	<background>
+		<band splitType="Stretch"/>
+	</background>
+	<pageHeader>
+		<band height="104" splitType="Stretch">
+			<textField>
+				<reportElement uuid="d661f88e-a38e-42bc-b6b7-0fd269f942ce" x="158" y="0" width="255" height="55"/>
+				<textElement textAlignment="Center">
+					<font size="8" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{mconts_encabe}]]></textFieldExpression>
+			</textField>
+			<textField isBlankWhenNull="true">
+				<reportElement uuid="3686e2c9-d52e-4fd7-a81d-552aa331f79e" x="472" y="0" width="100" height="20"/>
+				<textElement textAlignment="Right" verticalAlignment="Middle">
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$P{fecha}]]></textFieldExpression>
+			</textField>
+			<image onErrorType="Blank">
+				<reportElement uuid="6df0e88a-8aef-4873-8ed7-74573173a585" x="0" y="23" width="54" height="50"/>
+				<imageExpression><![CDATA[JRImageRenderer.getInstance((byte []) $F{mconts_logo})]]></imageExpression>
+			</image>
+			<image onErrorType="Blank">
+				<reportElement uuid="95b032e6-1500-4b23-bdb3-9da79cb38aa2" x="519" y="24" width="54" height="50"/>
+				<imageExpression><![CDATA[JRImageRenderer.getInstance((byte []) $F{mprops_logo})]]></imageExpression>
+			</image>
+			<textField isStretchWithOverflow="true" isBlankWhenNull="true">
+				<reportElement uuid="2b56df62-ef29-4e38-85ad-e55697b13377" x="54" y="55" width="465" height="20"/>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font size="8" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{mpres_timemo}]]></textFieldExpression>
+			</textField>
+			<textField isStretchWithOverflow="true" isBlankWhenNull="true">
+				<reportElement uuid="ce13f82e-94b9-47ea-8033-d30d05e75631" x="54" y="75" width="519" height="20"/>
+				<box leftPadding="5" rightPadding="3"/>
+				<textElement verticalAlignment="Middle">
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{mpres_nombre}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement uuid="e872d5a6-a66e-43d6-a90f-a5bd965a03fe" x="0" y="75" width="54" height="20"/>
+				<textElement textAlignment="Right" verticalAlignment="Middle">
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[Obra:]]></text>
+			</staticText>
+			<line>
+				<reportElement uuid="bdf8fbd8-2dae-428b-90e0-cca6095a6583" x="2" y="103" width="570" height="1"/>
+			</line>
+		</band>
+	</pageHeader>
+	<detail>
+		<band height="125" splitType="Stretch">
+			<textField>
+				<reportElement uuid="bb77550d-4600-473c-bc45-d53376fdeac5" x="54" y="0" width="482" height="125"/>
+				<box topPadding="10" leftPadding="3" bottomPadding="3" rightPadding="3"/>
+				<textElement textAlignment="Justified">
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{mpres_memo}]]></textFieldExpression>
+			</textField>
+		</band>
+	</detail>
+	<pageFooter>
+		<band height="24" splitType="Stretch">
+			<staticText>
+				<reportElement uuid="dacf593c-b4a6-467a-8311-d261249bf4f0" x="3" y="2" width="570" height="11"/>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font size="6" isBold="true"/>
+				</textElement>
+				<text><![CDATA[SPAPU (Sistemas R.H. C.A.)  San Cristóbal Edo. Táchira, Barrio Obrero Carrera 18 Entre calles 8 y 9 Edf. Marcol's No. 8-23 ]]></text>
+			</staticText>
+			<textField>
+				<reportElement uuid="f6831569-60df-4d05-a01f-02859c8946af" x="2" y="12" width="570" height="11"/>
+				<textElement textAlignment="Center" verticalAlignment="Middle" markup="none">
+					<font size="6" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA["0276-3567564 / 0276-3553158 / 0276-3560071 / 0276-3579562 www.spapu.com.ve / Facebook: Rhspapu / Twitter: @Spapu"]]></textFieldExpression>
+			</textField>
+			<line>
+				<reportElement uuid="fb4e568d-2226-4e88-9b89-19c67ddc910a" x="1" y="1" width="571" height="1"/>
+			</line>
+		</band>
+	</pageFooter>
+</jasperReport>

@@ -1,0 +1,65 @@
+Falta:
+
+1- Gestión de Precios Referenciales
+*Recalcular Tabuladores
+*Trabajar Con Capitulos
+2- Gestión de Presupuesto
+*Matriz de costos
+	-Actualizar Matriz de Costo ??
+	-Materiales
+	-Equipos
+	-Mano de Obra
+	-Imprimir Matriz
+*Trabajar Con Capitulos
+*Cronograma de Trabajo
+*Memoria descriptiva
+*Recalcular Presupuesto
+
+3- Reportes
+*Tabuladores
+	-Imprimir Matriz
+	-APU 
+*Presupuestos
+	-Imprimir Matriz de Costos
+	-General de APU
+	-Prorroga
+	-Ver Cuadro en Variación de Precio
+	-Ver Presupuesto en Variación de Precio
+	-Ver Presupuesto de Aumentos y Disminuciones
+	-Vista Previa de Presupuesto
+	-Ver Liquidacion en Valuación
+	-Ver Valuación
+	-Ver Inspección en Valuación
+	-Ver Memoria Descriptiva
+	-Cronograma de Actividades
+	-Actas
+		+Acta de Inicio
+		+Acta de Terminación
+	-Informe de Presupuesto
+	-Montos por Capitulos
+	-Computos Métricos
+	-Resumenes
+		+Materiales
+		+Equipo
+		+Mano de Obra
+	-Resumenes Detallados
+		+Materiales
+		+Equipo
+		+Mano de Obra
+	-Resumen General
+	-Resumen de Pago
+	-Cuadro de Cierre
+	-General de Presupuestos
+	-General de Partidas
+	-General de APU
+4.Herramientas
+*Tabuladores:
+	-Recuperar Tabuladores
+	-Respaldar Tabuladores
+	-Importar Tabuladores de Excel
+*Presupuestos:
+	-Respaldar
+	-Recuperar
+*Usuarios
+
+

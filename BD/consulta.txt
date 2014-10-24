@@ -1,0 +1,20 @@
+SELECT dv.mvalu_id, m.nrocon, m.nombre, DATE_FORMAT(mv.desde,'%d/%m/%Y') as desde,
+DATE_FORMAT(mv.hasta,'%d/%m/%Y') as hasta,DATE_FORMAT(m.feccon,'%d/%m/%Y') as feccon,
+pr.logo as logop, mc.logo as logoc, mc.encabe, mc.nombre,mc.ingres, m.porimp, CONCAT(m.porimp,'%') as conporc,
+mc.cedres,mc.civres,mc.ingins,mc.cedins,mc.civins,  CONCAT(dv.mppre_id,'\n',mp.descri) as codigo, mp.numegrup, dv.numepart, 
+IFNULL((SELECT SUM(cantidad) as cantidades
+FROM dvalus WHERE numepart=mp.numero AND (mpre_id=$P{mpres} OR mpre_id IN (SELECT id FROM mpres WHERE mpres_id=$P{mpres})) AND 
+mvalu_id<=$P{mvalu}),0) as cantidad,
+IFNULL((SELECT SUM(cantidad) as cantidades
+FROM dvalus WHERE numepart=mp.numero AND (mpre_id=$P{mpres} OR mpre_id IN (SELECT id FROM mpres WHERE mpres_id=$P{mpres})) AND 
+mvalu_id<$P{mvalu}),0) as acum, IF(mp.precasu=0,mp.precunit,mp.precasu) as precio,
+mp.unidad, ROUND(IFNULL((SELECT SUM(cantidad) as cantidad
+FROM dvalus WHERE numepart=mp.numero AND mpre_id=$P{mpres} AND 
+mvalu_id<=$P{mvalu})*IF(mp.precasu=0,mp.precunit,mp.precasu),0),2) as total
+FROM dvalus as dv, mppres as mp, mpres as m,mvalus as mv, mconts as mc, mprops as pr
+ WHERE mp.numero = dv.numepart AND m.id=mp.mpre_id AND dv.mpre_id=mp.mpre_id AND
+dv.mvalu_id<=mv.id AND mv.id=$P{mvalu} AND m.codcon = mc.id AND m.codpro = pr.id AND (dv.mpre_id=$P{mpres}
+OR dv.mpre_id IN (SELECT id FROM mpres WHERE mpres_id=$P{mpres}))
+ AND (mp.mpre_id=$P{mpres}
+OR mp.mpre_id IN (SELECT id FROM mpres WHERE mpres_id=$P{mpres}))
+GROUP BY dv.numepart ORDER BY mp.numegrup
