@@ -11,6 +11,7 @@
 package winspapus;
 
 import com.mysql.jdbc.Connection;
+import config.endesencripta;
 import java.awt.event.ActionEvent;
 import java.awt.event.KeyEvent;
 import javax.swing.AbstractAction;
@@ -228,7 +229,8 @@ public class confirmarmatriz extends javax.swing.JDialog {
 
     private void jPasswordField1FocusLost(java.awt.event.FocusEvent evt) {//GEN-FIRST:event_jPasswordField1FocusLost
        String pass = String.valueOf(jPasswordField1.getPassword());
-       if(pass.equals("19502246")){
+       endesencripta desen = new endesencripta(conex);
+       if(pass.equals(desen.getClaveMatriz())){
            okButton.setEnabled(true);
        }
         // TODO add your handling code here:

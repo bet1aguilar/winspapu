@@ -10,14 +10,16 @@
  */
 package valuaciones;
 
-import com.mysql.jdbc.Connection;
 import java.awt.event.ActionEvent;
 import java.awt.event.KeyEvent;
+import java.sql.Connection;
 import javax.swing.AbstractAction;
 import javax.swing.ActionMap;
 import javax.swing.InputMap;
 import javax.swing.JComponent;
 import javax.swing.KeyStroke;
+import presupuestos.Presupuesto;
+import valuaciones.liquidaciones.corpointa;
 import valuaciones.liquidaciones.ivt;
 
 /**
@@ -30,13 +32,17 @@ public class liquidacion extends javax.swing.JDialog {
     public static final int RET_CANCEL = 0;
     /** A return status code - returned if OK button has been pressed */
     public static final int RET_OK = 1;
-    Connection conex;
+    private Connection conex;
     String mpres, mvalus;
+    private valuacion valu;
+    private Presupuesto pres;
     /** Creates new form liquidacion */
-    public liquidacion(java.awt.Frame parent, boolean modal, Connection conex, String mpres, String mvalus) {
+    public liquidacion(java.awt.Frame parent, boolean modal, Connection conex, String mpres, String mvalus, Presupuesto pres, valuacion val) {
         super(parent, modal);
         initComponents();
         this.mpres=mpres;
+        this.valu = val;
+        this.pres = pres;
         this.mvalus=mvalus;
         this.conex = conex;
         // Close the dialog when Esc is pressed
@@ -106,8 +112,7 @@ public class liquidacion extends javax.swing.JDialog {
         jLabel1.setText("Seleccione Formato de Hoja de Liquidación");
         jLabel1.setOpaque(true);
 
-        jComboBox1.setModel(new javax.swing.DefaultComboBoxModel(new String[] { "Corpointa", "IVT" }));
-        jComboBox1.setSelectedIndex(-1);
+        jComboBox1.setModel(new javax.swing.DefaultComboBoxModel(new String[] { "Formato 1", "Formato 2" }));
         jComboBox1.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
                 jComboBox1ActionPerformed(evt);
@@ -185,11 +190,16 @@ public class liquidacion extends javax.swing.JDialog {
     private void okButtonMouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_okButtonMouseClicked
         int selec = jComboBox1.getSelectedIndex();
         if(selec==0){
-            //corpointa
+            //CORPOINTA
+            corpointa iv=new corpointa(null, true, conex,mpres,mvalus, pres, valu);
+            int x=  this.getX() + (this.getWidth() - 850) / 2;
+            int y = this.getY() + (this.getHeight() -700) / 2;
+            iv.setBounds(x, y, 850, 700);
+            iv.setVisible(true);
         }
         if(selec==1){
              //IVT
-            ivt iv=new ivt(null, false, conex,mpres,mvalus);
+            ivt iv=new ivt(null, true, conex,mpres,mvalus);
             int x=  this.getX() + (this.getWidth() - 800) / 2;
         int y = this.getY() + (this.getHeight() -500) / 2;
         iv.setBounds(x, y, 800, 600);

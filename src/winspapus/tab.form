@@ -63,7 +63,13 @@
                           </Group>
                           <EmptySpace type="unrelated" max="-2" attributes="0"/>
                           <Group type="103" groupAlignment="0" attributes="0">
-                              <Component id="jTextField6" alignment="0" min="-2" pref="142" max="-2" attributes="0"/>
+                              <Group type="102" alignment="0" attributes="0">
+                                  <Component id="jTextField6" min="-2" pref="142" max="-2" attributes="0"/>
+                                  <EmptySpace type="separate" max="-2" attributes="0"/>
+                                  <Component id="jCheckBox1" min="-2" max="-2" attributes="0"/>
+                                  <EmptySpace max="-2" attributes="0"/>
+                                  <Component id="jCheckBox2" min="-2" max="-2" attributes="0"/>
+                              </Group>
                               <Group type="102" alignment="0" attributes="0">
                                   <Component id="jTextField1" min="-2" pref="142" max="-2" attributes="0"/>
                                   <EmptySpace max="-2" attributes="0"/>
@@ -88,16 +94,16 @@
                                   </Group>
                                   <EmptySpace max="-2" attributes="0"/>
                                   <Group type="103" groupAlignment="0" attributes="0">
-                                      <Component id="jComboBox2" alignment="0" pref="141" max="32767" attributes="0"/>
-                                      <Component id="jComboBox1" alignment="0" pref="141" max="32767" attributes="1"/>
-                                      <Component id="jTextField7" alignment="0" pref="141" max="32767" attributes="1"/>
+                                      <Component id="jComboBox2" alignment="0" pref="242" max="32767" attributes="0"/>
+                                      <Component id="jComboBox1" alignment="0" pref="242" max="32767" attributes="1"/>
+                                      <Component id="jTextField7" alignment="0" min="-2" pref="242" max="-2" attributes="1"/>
                                   </Group>
-                                  <EmptySpace max="-2" attributes="0"/>
-                                  <Component id="jLabel11" min="-2" max="-2" attributes="0"/>
+                                  <EmptySpace min="-2" max="-2" attributes="0"/>
                               </Group>
                               <Group type="102" alignment="1" attributes="0">
-                                  <Component id="jTextField2" pref="371" max="32767" attributes="1"/>
-                                  <EmptySpace min="103" pref="103" max="103" attributes="0"/>
+                                  <Component id="jTextField2" pref="359" max="32767" attributes="1"/>
+                                  <EmptySpace type="separate" max="-2" attributes="0"/>
+                                  <Component id="jLabel11" min="-2" max="-2" attributes="0"/>
                               </Group>
                           </Group>
                       </Group>
@@ -118,9 +124,9 @@
                   </Group>
                   <EmptySpace type="unrelated" max="-2" attributes="0"/>
                   <Group type="103" groupAlignment="2" attributes="0">
-                      <Component id="jLabel11" alignment="2" min="-2" max="-2" attributes="0"/>
                       <Component id="jTextField2" alignment="2" min="-2" max="-2" attributes="0"/>
                       <Component id="jLabel3" alignment="2" min="-2" max="-2" attributes="0"/>
+                      <Component id="jLabel11" alignment="2" min="-2" max="-2" attributes="0"/>
                   </Group>
                   <EmptySpace min="-2" pref="16" max="-2" attributes="0"/>
                   <Group type="103" groupAlignment="2" attributes="0">
@@ -153,6 +159,8 @@
                   <Group type="103" groupAlignment="2" attributes="0">
                       <Component id="jTextField6" alignment="2" min="-2" max="-2" attributes="0"/>
                       <Component id="jLabel8" alignment="2" min="-2" max="-2" attributes="0"/>
+                      <Component id="jCheckBox1" alignment="2" min="-2" max="-2" attributes="0"/>
+                      <Component id="jCheckBox2" alignment="2" min="-2" max="-2" attributes="0"/>
                   </Group>
                   <EmptySpace max="-2" attributes="0"/>
                   <Component id="jPanel3" min="-2" max="-2" attributes="0"/>
@@ -247,8 +255,17 @@
         </Component>
         <Component class="javax.swing.JTextField" name="jTextField3">
           <Properties>
+            <Property name="text" type="java.lang.String" value="0.00"/>
             <Property name="toolTipText" type="java.lang.String" value="Ingrese C&#xf3;digo del Tabulador"/>
+            <Property name="nextFocusableComponent" type="java.awt.Component" editor="org.netbeans.modules.form.ComponentChooserEditor">
+              <ComponentRef name="jTextField4"/>
+            </Property>
           </Properties>
+          <Events>
+            <EventHandler event="focusLost" listener="java.awt.event.FocusListener" parameters="java.awt.event.FocusEvent" handler="jTextField3FocusLost"/>
+            <EventHandler event="focusGained" listener="java.awt.event.FocusListener" parameters="java.awt.event.FocusEvent" handler="jTextField3FocusGained"/>
+            <EventHandler event="keyTyped" listener="java.awt.event.KeyListener" parameters="java.awt.event.KeyEvent" handler="jTextField3KeyTyped"/>
+          </Events>
         </Component>
         <Component class="javax.swing.JLabel" name="jLabel6">
           <Properties>
@@ -260,13 +277,33 @@
         </Component>
         <Component class="javax.swing.JTextField" name="jTextField4">
           <Properties>
+            <Property name="text" type="java.lang.String" value="0.00"/>
             <Property name="toolTipText" type="java.lang.String" value="Ingrese C&#xf3;digo del Tabulador"/>
+            <Property name="nextFocusableComponent" type="java.awt.Component" editor="org.netbeans.modules.form.ComponentChooserEditor">
+              <ComponentRef name="jTextField5"/>
+            </Property>
           </Properties>
+          <Events>
+            <EventHandler event="actionPerformed" listener="java.awt.event.ActionListener" parameters="java.awt.event.ActionEvent" handler="jTextField4ActionPerformed"/>
+            <EventHandler event="focusGained" listener="java.awt.event.FocusListener" parameters="java.awt.event.FocusEvent" handler="jTextField4FocusGained"/>
+            <EventHandler event="focusLost" listener="java.awt.event.FocusListener" parameters="java.awt.event.FocusEvent" handler="jTextField4FocusLost"/>
+            <EventHandler event="keyTyped" listener="java.awt.event.KeyListener" parameters="java.awt.event.KeyEvent" handler="jTextField4KeyTyped"/>
+          </Events>
         </Component>
         <Component class="javax.swing.JTextField" name="jTextField5">
           <Properties>
+            <Property name="text" type="java.lang.String" value="0.00"/>
             <Property name="toolTipText" type="java.lang.String" value="Ingrese C&#xf3;digo del Tabulador"/>
+            <Property name="nextFocusableComponent" type="java.awt.Component" editor="org.netbeans.modules.form.ComponentChooserEditor">
+              <ComponentRef name="jTextField6"/>
+            </Property>
           </Properties>
+          <Events>
+            <EventHandler event="actionPerformed" listener="java.awt.event.ActionListener" parameters="java.awt.event.ActionEvent" handler="jTextField5ActionPerformed"/>
+            <EventHandler event="focusGained" listener="java.awt.event.FocusListener" parameters="java.awt.event.FocusEvent" handler="jTextField5FocusGained"/>
+            <EventHandler event="focusLost" listener="java.awt.event.FocusListener" parameters="java.awt.event.FocusEvent" handler="jTextField5FocusLost"/>
+            <EventHandler event="keyTyped" listener="java.awt.event.KeyListener" parameters="java.awt.event.KeyEvent" handler="jTextField5KeyTyped"/>
+          </Events>
         </Component>
         <Component class="javax.swing.JLabel" name="jLabel7">
           <Properties>
@@ -286,8 +323,17 @@
         </Component>
         <Component class="javax.swing.JTextField" name="jTextField6">
           <Properties>
+            <Property name="text" type="java.lang.String" value="0.00"/>
             <Property name="toolTipText" type="java.lang.String" value="Ingrese C&#xf3;digo del Tabulador"/>
+            <Property name="nextFocusableComponent" type="java.awt.Component" editor="org.netbeans.modules.form.ComponentChooserEditor">
+              <ComponentRef name="jTextField7"/>
+            </Property>
           </Properties>
+          <Events>
+            <EventHandler event="focusGained" listener="java.awt.event.FocusListener" parameters="java.awt.event.FocusEvent" handler="jTextField6FocusGained"/>
+            <EventHandler event="focusLost" listener="java.awt.event.FocusListener" parameters="java.awt.event.FocusEvent" handler="jTextField6FocusLost"/>
+            <EventHandler event="keyTyped" listener="java.awt.event.KeyListener" parameters="java.awt.event.KeyEvent" handler="jTextField6KeyTyped"/>
+          </Events>
         </Component>
         <Component class="javax.swing.JLabel" name="jLabel9">
           <Properties>
@@ -323,8 +369,17 @@
         </Component>
         <Component class="javax.swing.JTextField" name="jTextField7">
           <Properties>
+            <Property name="text" type="java.lang.String" value="0.00"/>
             <Property name="toolTipText" type="java.lang.String" value="Ingrese C&#xf3;digo del Tabulador"/>
+            <Property name="nextFocusableComponent" type="java.awt.Component" editor="org.netbeans.modules.form.ComponentChooserEditor">
+              <ComponentRef name="jComboBox1"/>
+            </Property>
           </Properties>
+          <Events>
+            <EventHandler event="focusLost" listener="java.awt.event.FocusListener" parameters="java.awt.event.FocusEvent" handler="jTextField7FocusLost"/>
+            <EventHandler event="focusGained" listener="java.awt.event.FocusListener" parameters="java.awt.event.FocusEvent" handler="jTextField7FocusGained"/>
+            <EventHandler event="keyTyped" listener="java.awt.event.KeyListener" parameters="java.awt.event.KeyEvent" handler="jTextField7KeyTyped"/>
+          </Events>
         </Component>
         <Component class="com.toedter.calendar.JDateChooser" name="jDateChooser1">
         </Component>
@@ -349,12 +404,18 @@
             <Property name="model" type="javax.swing.ComboBoxModel" editor="org.netbeans.modules.form.editors2.ComboBoxModelEditor">
               <StringArray count="0"/>
             </Property>
+            <Property name="nextFocusableComponent" type="java.awt.Component" editor="org.netbeans.modules.form.ComponentChooserEditor">
+              <ComponentRef name="jComboBox2"/>
+            </Property>
           </Properties>
         </Component>
         <Component class="javax.swing.JComboBox" name="jComboBox2">
           <Properties>
             <Property name="model" type="javax.swing.ComboBoxModel" editor="org.netbeans.modules.form.editors2.ComboBoxModelEditor">
               <StringArray count="0"/>
+            </Property>
+            <Property name="nextFocusableComponent" type="java.awt.Component" editor="org.netbeans.modules.form.ComponentChooserEditor">
+              <ComponentRef name="jCheckBox1"/>
             </Property>
           </Properties>
         </Component>
@@ -398,6 +459,7 @@
                 <Property name="icon" type="javax.swing.Icon" editor="org.netbeans.modules.form.editors2.IconEditor">
                   <Image iconType="3" name="/winspapus/imagenes/guardar.png"/>
                 </Property>
+                <Property name="toolTipText" type="java.lang.String" value="Guardar"/>
               </Properties>
               <Events>
                 <EventHandler event="mouseClicked" listener="java.awt.event.MouseListener" parameters="java.awt.event.MouseEvent" handler="okButtonMouseClicked"/>
@@ -419,6 +481,27 @@
             </Component>
           </SubComponents>
         </Container>
+        <Component class="javax.swing.JCheckBox" name="jCheckBox1">
+          <Properties>
+            <Property name="text" type="java.lang.String" value="Oficial"/>
+            <Property name="toolTipText" type="java.lang.String" value="Seleccione si es Tabulador Oficial"/>
+            <Property name="nextFocusableComponent" type="java.awt.Component" editor="org.netbeans.modules.form.ComponentChooserEditor">
+              <ComponentRef name="jCheckBox2"/>
+            </Property>
+          </Properties>
+          <Events>
+            <EventHandler event="actionPerformed" listener="java.awt.event.ActionListener" parameters="java.awt.event.ActionEvent" handler="jCheckBox1ActionPerformed"/>
+          </Events>
+        </Component>
+        <Component class="javax.swing.JCheckBox" name="jCheckBox2">
+          <Properties>
+            <Property name="text" type="java.lang.String" value="Bloqueado"/>
+            <Property name="toolTipText" type="java.lang.String" value="Seleccione si estar&#xe1; bloqueado al p&#xfa;blico"/>
+          </Properties>
+          <Events>
+            <EventHandler event="actionPerformed" listener="java.awt.event.ActionListener" parameters="java.awt.event.ActionEvent" handler="jCheckBox2ActionPerformed"/>
+          </Events>
+        </Component>
       </SubComponents>
     </Container>
   </SubComponents>

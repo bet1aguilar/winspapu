@@ -10,7 +10,7 @@
  */
 package presupuestos.manoobra;
 
-import com.mysql.jdbc.Connection;
+import java.sql.Connection;
 import com.mysql.jdbc.ResultSetMetaData;
 import com.mysql.jdbc.Statement;
 import java.awt.Dimension;
@@ -43,7 +43,7 @@ public class matrizmanopres extends javax.swing.JDialog {
     public static final int RET_CANCEL = 0;
     /** A return status code - returned if OK button has been pressed */
     public static final int RET_OK = 1;
-    Connection conex;
+    private Connection conex;
     String pres;
     String mano ="";
     String busqueda="";

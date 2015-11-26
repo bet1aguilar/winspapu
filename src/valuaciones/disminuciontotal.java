@@ -9,10 +9,10 @@
  * Created on 11/09/2013, 10:12:15 PM
  */
 package valuaciones;
-
-import com.mysql.jdbc.Connection;
+import java.sql.Connection;
 import com.mysql.jdbc.ResultSetMetaData;
 import com.mysql.jdbc.Statement;
+import java.awt.Dimension;
 import java.awt.event.ActionEvent;
 import java.awt.event.KeyEvent;
 import java.sql.ResultSet;
@@ -50,11 +50,6 @@ public class disminuciontotal extends javax.swing.JDialog {
     private int auxcont;
     private int contsel;
     private String[] partidas;
-    private String nuevonum;
-    private int nuevo;
-    private int nuevonumegrup;
-    private int insertar;
-    private String rendimi;
     /** Creates new form disminuciontotal */
     public disminuciontotal(Principal parent, boolean modal, Connection conex, String pres, String numpread) {
         super(parent, modal);
@@ -64,6 +59,12 @@ public class disminuciontotal extends javax.swing.JDialog {
         this.numaumydis=numpread;
         cargapartidas();
         this.setTitle("Partidas que no están en ninguna Valuación");
+        jTable1.setOpaque(true);
+    jTable1.setShowHorizontalLines(true);
+    jTable1.setShowVerticalLines(false);
+    jTable1.getTableHeader().setSize(new Dimension(25,40));
+    jTable1.getTableHeader().setPreferredSize(new Dimension(30,40));
+    jTable1.setRowHeight(25);
         // Close the dialog when Esc is pressed
         String cancelName = "cancel";
         InputMap inputMap = getRootPane().getInputMap(JComponent.WHEN_ANCESTOR_OF_FOCUSED_COMPONENT);
@@ -105,12 +106,17 @@ public class disminuciontotal extends javax.swing.JDialog {
                jTable1.setModel(mat);
        
         try {
-            Statement s = (Statement) conex.createStatement();
-            ResultSet rs = s.executeQuery("SELECT id, descri, numero, numegrup, precunit, precasu FROM mppres "
+            String sql = "SELECT id, descri, numero, numegrup, precunit, cantidad, tipo FROM mppres "
                     + "WHERE numero NOT "
-                    + "IN(SELECT numepart FROM dvalus WHERE (mpre_id='"+pres+"' OR mpre_id "
-                    + "IN (SELECT id FROM mpres WHERE mpres_id='"+pres+"'))) AND (mpre_id='"+pres+"' OR mpre_id IN "
-                    + "(SELECT id FROM mpres WHERE mpres_id='"+pres+"')) ORDER BY numegrup");
+                    + "IN (SELECT numepart FROM dvalus WHERE mvalu_id!=0 AND (mpre_id='"+pres+"' OR mpre_id "
+                    + "IN (SELECT id FROM mpres WHERE mpres_id='"+pres+"'))) "
+                    + "AND (mpre_id='"+pres+"' OR mpre_id IN "
+                    + "(SELECT id FROM mpres WHERE mpres_id='"+pres+"')) "
+                    + "AND numero NOT IN (SELECT numepart FROM admppres WHERE payd_id="+numaumydis+" AND (mpre_id='"+pres+"' "
+                    + "OR mpre_id IN (SELECT id FROM mpres WHERE mpres_id='"+pres+"')))"
+                    + " ORDER BY numegrup";
+            Statement s = (Statement) conex.createStatement();
+            ResultSet rs = s.executeQuery(sql);
             
             ResultSetMetaData rsMd = (ResultSetMetaData) rs.getMetaData();
             int cantidadColumnas = rsMd.getColumnCount()+1;
@@ -532,7 +538,6 @@ public void verificarcheck() {
         doClose(RET_CANCEL);
     }//GEN-LAST:event_cancelButtonActionPerformed
 
-    /** Closes the dialog */
     private void closeDialog(java.awt.event.WindowEvent evt) {//GEN-FIRST:event_closeDialog
         doClose(RET_CANCEL);
     }//GEN-LAST:event_closeDialog
@@ -546,10 +551,10 @@ public void verificarcheck() {
                 if (obj instanceof Boolean) {
                     bol = (Boolean) obj;
                     if (bol.booleanValue()) {
-                       // System.out.println("Selecciono este material");
                         auxpart[auxcont] = part;
                         auxcont++;
-                    }else
+                    }
+                    else
                     {
                         for(int i=0; i<auxcont;i++){
                             if(auxpart[i].equals(part)){

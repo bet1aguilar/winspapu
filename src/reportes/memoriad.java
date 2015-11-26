@@ -6,7 +6,6 @@ package reportes;
 import com.itextpdf.text.*;
 import com.itextpdf.text.pdf.*;
 import com.mysql.jdbc.Connection;
-import com.toedter.calendar.JDateChooser;
 import java.io.FileNotFoundException;
 import java.util.logging.Level;
 import java.util.logging.Logger;

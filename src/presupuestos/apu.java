@@ -10,12 +10,16 @@
  */
 package presupuestos;
 
-import com.mysql.jdbc.Connection;
 import com.mysql.jdbc.ResultSetMetaData;
 import com.mysql.jdbc.Statement;
+import config.Redondeo;
+import herramienta.Validacion;
 import java.awt.Dimension;
 import java.awt.event.ActionEvent;
 import java.awt.event.KeyEvent;
+import java.math.BigDecimal;
+import java.math.RoundingMode;
+import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.text.NumberFormat;
@@ -45,34 +49,36 @@ public class apu extends javax.swing.JDialog {
     /** A return status code - returned if OK button has been pressed */
     public static final int RET_OK = 1;
     String partida, pres, numero;
+    Redondeo redondear = new Redondeo();
+    Validacion val;
     Connection conex;
-    private float contmat=0;
+    private BigDecimal contmat=new BigDecimal("0.00");
     int insertare=0;
-    private float contequip=0;
-    private float contmano=0;
-    float cantidad=0, precio=0, desperdi=0;
+    private BigDecimal contequip=new BigDecimal("0.00");
+    private BigDecimal contmano=new BigDecimal("0.00");
+    BigDecimal cantidad=new BigDecimal("0.00"), precio=new BigDecimal("0.00"), desperdi=new BigDecimal("0.00");
     String descri;
     String prest="0", util="0", fina="0", adm="0", imp="0", impart="0";
-    float rendimiento=0;
+    BigDecimal rendimiento=new BigDecimal("0.00");
     int filamat;
-    float cantmano=0;
+    BigDecimal cantmano=new BigDecimal("0.00");
     Principal prin;
-    private float contototal;
+    private BigDecimal contototal;
     Partida part;
     private int filaequip;
     
     private int filamano;
     public apu(java.awt.Frame parent, boolean modal, Connection conex, String pres, String partida, String numero, Principal p, String rendimi, Partida part) {
-        super(parent, false);
+        super(parent, true);
         initComponents();
         this.conex = conex;
         this.pres = pres;
         this.numero = numero; //Es numegrup
-        
+        val = new Validacion(conex);
         this.partida = partida;
         this.part = part;
         this.prin = p;
-        this.rendimiento= Float.valueOf(rendimi);
+        this.rendimiento= new BigDecimal(rendimi);
         cargartabus();
         buscapres();
         buscamat();
@@ -187,25 +193,16 @@ public class apu extends javax.swing.JDialog {
         }
     }
     public final void buscamat(){
-        float valor=0;
-        contmat =0;
-        float aux=0;
+        BigDecimal valor=new BigDecimal("0.00");
+        contmat =new BigDecimal("0.00");
+        BigDecimal aux=new BigDecimal("0.00");
         System.out.println("cadena"+pres+" num"+numero);
-        Statement part1=null;
-        try {
-            part1 = (Statement) conex.createStatement();
-        } catch (SQLException ex) {
-            Logger.getLogger(apu.class.getName()).log(Level.SEVERE, null, ex);
-        }
+        
         DefaultTableModel mmtabs = new DefaultTableModel(){@Override
      public boolean isCellEditable (int row, int column) {
        
          return false;
      }
-        
-        
-       
-       
  };
         String sql = "SELECT mm.id, mm.descri, mm.precio, dm.cantidad, mm.unidad, "
                 + "mm.desperdi, ((mm.precio+(mm.precio*(mm.desperdi/100)))*dm.cantidad) as total FROM "
@@ -230,25 +227,26 @@ public class apu extends javax.swing.JDialog {
                  Object[] fila = new Object[cantidadColumnas];
                 for (int i = 0; i < cantidadColumnas; i++) {
                     if(i==6){
-                       
-                            
-                            valor = (float) (Math.rint(Float.valueOf(rs1.getObject(i+1).toString())*100)/100);
-                            fila[i]=Float.toString(valor);
-                    
-                       contmat += valor; 
+                       valor = redondear.redondearDosDecimales(rs1.getBigDecimal(i+1));
+                       fila[i]=valor.toString();
+                       contmat = contmat.add(valor); 
                     }else
                        fila[i]=rs1.getObject(i+1);
-                    
-                    
                 }
                 mmtabs.addRow(fila);
                 
-            }
-             aux = (float) (Math.rint((contmat+0.000001)*100)/100);
-        contmat=aux;
-               String esnan = String.valueOf(aux);
-               System.out.println("contmat "+esnan);
-                jTextField2.setText(String.valueOf(aux));
+            } String consulta = "SELECT IFNULL(SUM(((mm.precio+(mm.precio*(mm.desperdi/100)))*dm.cantidad)),0) as total FROM "
+                        + "dmpres as dm, mmpres as mm "
+                        + " WHERE dm.mmpre_id=mm.id AND dm.mpre_id=mm.mpre_id AND (mm.mpre_id='"+pres+"' OR"
+                    + " mm.mpre_id IN (SELECT id FROM mpres WHERE mpres_id='"+pres+"'))"
+                    + " AND "
+                        + "dm.numepart="+numero;
+                Statement mates = (Statement) conex.createStatement();
+                ResultSet rmates = mates.executeQuery(consulta);
+                while(rmates.next()){
+                    contmat = redondear.redondearDosDecimales(rmates.getBigDecimal(1));
+                }
+                jTextField2.setText(String.valueOf(contmat));
         } catch (SQLException ex) {
             System.out.println("Noooo");
             Logger.getLogger(apu.class.getName()).log(Level.SEVERE, null, ex);
@@ -288,9 +286,9 @@ public class apu extends javax.swing.JDialog {
        
        
         public final void buscaequip(){
-        float valor=0;
-         float aux =0;
-        contequip=0;
+        BigDecimal valor=new BigDecimal("0.00");
+         BigDecimal aux =new BigDecimal("0.00");
+        contequip=new BigDecimal("0.00");
         System.out.println("cadena"+pres+" num"+numero);
         Statement parti=null;
         try {
@@ -330,39 +328,45 @@ public class apu extends javax.swing.JDialog {
                  Object[] fila = new Object[cantidadColumnas];
                 for (int i = 0; i < cantidadColumnas; i++) {
                     if(i==5){
-                        if(Float.valueOf(rs1.getObject(5).toString())==0.00){
-                            valor = (float) (Math.rint(Float.valueOf(rs1.getObject(3).toString())*Float.valueOf(rs1.getObject(4).toString())*100)/100);
-                            fila[i]= Float.toString(valor);
+                        if(rs1.getBigDecimal(5) ==new BigDecimal("0.00")){
+                            valor = redondear.redondearDosDecimales(rs1.getBigDecimal(3).multiply(rs1.getBigDecimal(4)));
+                            fila[i]= valor.toString();
                         }else{
                             
-                            valor = (float) (Math.rint(Float.valueOf(rs1.getObject(i+1).toString())*100)/100);
-                            fila[i]=Float.toString(valor);
+                            valor = redondear.redondearDosDecimales(rs1.getBigDecimal(i+1));
+                            fila[i]=valor.toString();
                         }
-                       contequip += valor; 
+                       contequip = contequip.add(valor); 
                     }else
                        fila[i]=rs1.getObject(i+1);
                     
                     
                 }
-                contequip = (float) (Math.rint((contequip+0.000001)*100)/100);
+            
                 
                 
                 mmtabs.addRow(fila);
                         
                 
             }
-             if(rendimiento==0)
-                 rendimiento=1;
-             contequip = contequip/rendimiento;
-            aux = (float) (Math.rint((contequip+0.000001)*100)/100);
-            contequip=aux;
-            System.out.println("conteq "+aux);
+            String consultaeq = "SELECT IFNULL(SUM(IF(me.deprecia=0, de.cantidad*me.precio,"
+                        + " de.cantidad*me.deprecia*me.precio)),0) as total FROM "
+                        + "deppres as de, mepres as me WHERE me.id=de.mepre_id AND me.mpre_id=de.mpre_id"
+                        + " AND (de.mpre_id='"+pres+"' OR de.mpre_id IN (SELECT id FROM mpres WHERE mpres_id='"+pres+"')) AND de.numero="+numero+"";
+                Statement steq = (Statement) conex.createStatement();
+                ResultSet rsteq = steq.executeQuery(consultaeq);
+                while(rsteq.next()){
+                    contequip = redondear.redondearDosDecimales(rsteq.getBigDecimal(1));
+                }
+                if(rendimiento.doubleValue()>0){
+                contequip = redondear.redondearDosDecimales(contequip.divide(rendimiento,2, BigDecimal.ROUND_HALF_UP));
+                }
         } catch (SQLException ex) {
             System.out.println("Noooo");
             Logger.getLogger(apu.class.getName()).log(Level.SEVERE, null, ex);
         }
                 jTextField3.setText(String.valueOf(rendimiento));
-               jTextField4.setText(String.valueOf(aux)); 
+               jTextField4.setText(String.valueOf(contequip)); 
         cambiacabeceraequip();
     }
      
@@ -395,9 +399,9 @@ public class apu extends javax.swing.JDialog {
        
         
         public final void buscamano(){
-         float bono = 0, subsid = 0, presta;
-        float valor=0;
-        contmano =0;
+         BigDecimal bono = new BigDecimal("0.00"), subsid = new BigDecimal("0.00"), presta;
+        BigDecimal valor=new BigDecimal("0.00");
+        contmano =new BigDecimal("0.00");
         System.out.println("cadena"+pres+" num"+numero);
         Statement parti=null;
         try {
@@ -420,7 +424,7 @@ public class apu extends javax.swing.JDialog {
             Statement s1 = (Statement) conex.createStatement();
            String sql= "SELECT mm.id, mm.descri, dm.cantidad, mm.bono,"
                    + " mm.subsid, mm.salario,"
-                    + " (dm.cantidad*mm.salario) as total "
+                    + " ROUND(dm.cantidad*mm.salario,2) as total "
                    + "FROM mmopres as mm, dmoppres as dm "
                     + " WHERE (dm.mpre_id='"+pres+"' OR dm.mpre_id IN "
                    + "(SELECT id FROM mpres WHERE mpres_id='"+pres+"')) "
@@ -439,19 +443,19 @@ public class apu extends javax.swing.JDialog {
                  Object[] fila = new Object[cantidadColumnas];
                 for (int i = 0; i < cantidadColumnas; i++) {
                     if(i==3&& rs1.getObject(4)!=null)
-                        bono = Float.valueOf(rs1.getObject(4).toString());
+                        bono = rs1.getBigDecimal(4);
                     if(i==4&& rs1.getObject(5)!=null)
-                        subsid = Float.valueOf(rs1.getObject(5).toString());
+                        subsid = rs1.getBigDecimal(5);
                     
                     
                     if(i==6){
                         
-                            valor+= rs1.getFloat(7);
-                            fila[i] =Math.rint(rs1.getFloat(7)*100)/100;
+                            valor = valor.add(rs1.getBigDecimal(7));
+                            fila[i] =rs1.getBigDecimal(7);
                            
                     }
                         if(i==2){
-                            cantmano += rs1.getFloat(3);
+                            cantmano = contmano.add(rs1.getBigDecimal(3));
                            
                         }
                        
@@ -466,39 +470,37 @@ public class apu extends javax.swing.JDialog {
               
                 
             }
-             
+             String consultaman = "SELECT IFNULL(SUM(do.cantidad),0) as cantidad, IFNULL(mo.bono,0) as bono, IFNULL(mo.subsid,0) as subsid, IFNULL(SUM(mo.salario*do.cantidad),0) as total"
+                        + " FROM mmopres as mo, dmoppres as do WHERE do.mmopre_id = mo.id AND do.mpre_id= mo.mpre_id"
+                        + " AND (do.mpre_id='"+pres+"' OR do.mpre_id IN (SELECT id FROM mpres WHERE mpres_id='"+pres+"')) AND do.numero = "+numero+"";
+                Statement stman = (Statement) conex.createStatement();
+                ResultSet rstman = stman.executeQuery(consultaman);
+                while(rstman.next()){
+                    contmano = redondear.redondearDosDecimales(rstman.getBigDecimal("total"));
+                    cantmano= rstman.getBigDecimal("cantidad");
+                    bono = rstman.getBigDecimal("bono");
+                    subsid=rstman.getBigDecimal("subsid");                    
+                }
+                presta = redondear.redondearDosDecimales(contmano.multiply(new BigDecimal(prest).divide(new BigDecimal("100"))));
+                bono = redondear.redondearDosDecimales(cantmano.multiply(bono));
+                subsid = redondear.redondearDosDecimales(cantmano.multiply(subsid));
+                BigDecimal auxmonto = contmano.add(presta).add( bono).add( subsid);
+                if(rendimiento==new BigDecimal("0.00")){
+                        rendimiento=new BigDecimal("1.00");
+                }
+                contmano = auxmonto.divide(rendimiento,2, BigDecimal.ROUND_HALF_UP);
         } catch (SQLException ex) {
             System.out.println("Noooo");
             Logger.getLogger(apu.class.getName()).log(Level.SEVERE, null, ex);
         }
          
            
-          contmano = (float) Math.rint(valor*100)/100; 
-          System.out.println("contmano en apu "+contmano);
-        presta = contmano* (Float.valueOf(prest)/100);
-        presta = (float) (Math.rint(Float.valueOf(presta)*100)/100);
-         System.out.println("Presta "+presta);
-          System.out.println("Bono antes de multiplicar "+bono);
-        bono = cantmano * bono;
-        bono = (float) (Math.rint(Float.valueOf(bono)*100)/100);
-         System.out.println("cantmano "+cantmano);
-         System.out.println("Bono "+bono);
-         System.out.println("Subsid antes de multiplicar "+subsid);
-        subsid = cantmano * subsid;
-       
-         subsid= (float) (Math.rint(Float.valueOf(subsid)*100)/100);
-         System.out.println("subsidio "+subsid);
-        contmano = contmano + presta +bono +subsid;
+         
          System.out.println("contmano "+contmano);
-         if(rendimiento==0)
-                 rendimiento=1;
-        contmano = contmano / rendimiento;
         
-        float aux= (float) (Math.rint((contmano+0.000001)*100)/100);
-        contmano=aux;
-        System.out.println("total mano/rendimi "+aux);
+        System.out.println("total mano/rendimi "+contmano);
         jTextField5.setText(String.valueOf(rendimiento));
-        jTextField6.setText(String.valueOf(aux));
+        jTextField6.setText(String.valueOf(contmano));
         cambiacabeceramano();
     }
      
@@ -646,7 +648,7 @@ public class apu extends javax.swing.JDialog {
         jPanel2.setBackground(new java.awt.Color(100, 100, 100));
 
         jLabel1.setBackground(new java.awt.Color(91, 91, 95));
-        jLabel1.setFont(new java.awt.Font("Tahoma", 1, 11)); // NOI18N
+        jLabel1.setFont(new java.awt.Font("Tahoma", 1, 11));
         jLabel1.setForeground(new java.awt.Color(255, 255, 255));
         jLabel1.setHorizontalAlignment(javax.swing.SwingConstants.CENTER);
         jLabel1.setText("Análisis de Partidas del Presupuesto");
@@ -1239,9 +1241,9 @@ public class apu extends javax.swing.JDialog {
             jPanel4Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(jPanel4Layout.createSequentialGroup()
                 .addContainerGap()
-                .addComponent(jPanel7, javax.swing.GroupLayout.DEFAULT_SIZE, 119, Short.MAX_VALUE)
+                .addComponent(jPanel7, javax.swing.GroupLayout.DEFAULT_SIZE, 121, Short.MAX_VALUE)
                 .addGap(0, 0, 0)
-                .addComponent(jScrollPane2, javax.swing.GroupLayout.DEFAULT_SIZE, 192, Short.MAX_VALUE)
+                .addComponent(jScrollPane2, javax.swing.GroupLayout.DEFAULT_SIZE, 193, Short.MAX_VALUE)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addComponent(jPanel15, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
         );
@@ -1565,7 +1567,7 @@ public class apu extends javax.swing.JDialog {
                 .addContainerGap()
                 .addComponent(jPanel8, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                 .addGap(0, 0, 0)
-                .addComponent(jScrollPane3, javax.swing.GroupLayout.DEFAULT_SIZE, 177, Short.MAX_VALUE)
+                .addComponent(jScrollPane3, javax.swing.GroupLayout.DEFAULT_SIZE, 180, Short.MAX_VALUE)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addComponent(jPanel12, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
         );
@@ -1595,8 +1597,13 @@ public class apu extends javax.swing.JDialog {
             }
         });
 
-        jButton4.setIcon(new javax.swing.ImageIcon(getClass().getResource("/winspapus/imagenes/imprimir.png"))); // NOI18N
+        jButton4.setIcon(new javax.swing.ImageIcon(getClass().getResource("/winspapus/imagenes/reporte.png"))); // NOI18N
         jButton4.setToolTipText("Imprimir APU");
+        jButton4.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jButton4ActionPerformed(evt);
+            }
+        });
 
         javax.swing.GroupLayout jPanel14Layout = new javax.swing.GroupLayout(jPanel14);
         jPanel14.setLayout(jPanel14Layout);
@@ -1678,14 +1685,14 @@ public class apu extends javax.swing.JDialog {
     }//GEN-LAST:event_okButtonActionPerformed
     
     private void cancelButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_cancelButtonActionPerformed
-        part.settotal(String.valueOf(contototal));
         
         doClose(RET_CANCEL);
     }//GEN-LAST:event_cancelButtonActionPerformed
 
     /** Closes the dialog */
     private void closeDialog(java.awt.event.WindowEvent evt) {//GEN-FIRST:event_closeDialog
-        part.settotal(String.valueOf(contototal));
+
+        
         doClose(RET_CANCEL);
     }//GEN-LAST:event_closeDialog
 
@@ -1798,7 +1805,7 @@ public class apu extends javax.swing.JDialog {
                 }
                 
             }
-            contmano=contequip=contmano=cantmano=0;
+            contmano=contequip=contmano=cantmano=new BigDecimal("0.00");
             buscamat();
             buscaequip();
             buscamano();
@@ -1906,7 +1913,7 @@ public class apu extends javax.swing.JDialog {
                 }
                 
             }
-            contmano=contequip=contmano=cantmano=0;
+            contmano=contequip=contmano=cantmano=new BigDecimal("0.00");
             buscamat();
             buscaequip();
             buscamano();
@@ -1968,7 +1975,7 @@ public class apu extends javax.swing.JDialog {
                 
             }
             JOptionPane.showMessageDialog(null, "Se ha insertado la mano de obra");
-            contmano=contequip=contmano=cantmano=0;
+            contmano=contequip=contmano=cantmano=new BigDecimal("0.00");
             buscamat();
             buscaequip();
             buscamano();
@@ -2041,37 +2048,39 @@ insertare=1;
         
     }//GEN-LAST:event_jTextField24FocusLost
     private void calculapartida() {
-          float auxcontotal = 0;
-        float admini=Float.valueOf(adm);
-        float utili=Float.valueOf(util);
-        float financiero= Float.valueOf(fina);
-        float impuesto = Float.valueOf(impart);
-        float redondeado = 0;
-        contototal=0;
-        contototal = contmat+contequip+contmano;
+         BigDecimal auxcontotal = new BigDecimal("0.00");
+        BigDecimal admini=new BigDecimal(adm);
+        BigDecimal utili=new BigDecimal(util);
+        BigDecimal financiero= new BigDecimal(fina);
+        BigDecimal impuesto = new BigDecimal(impart);
+        contototal=new BigDecimal("0.00");
+        contototal = contmat.add(contequip).add(contmano);
         
         auxcontotal = contototal;
-        auxcontotal = (float) Math.rint(auxcontotal*100)/100;
+        
         System.out.println("auxcontotal "+auxcontotal);
-        admini = auxcontotal * admini/100;
-        admini = (float) Math.rint(admini*100)/100;
+        admini = redondear.redondearDosDecimales(auxcontotal.multiply(admini.divide(new BigDecimal("100"))));
+   
         System.out.println("admin "+admini);
-        utili = (auxcontotal+admini) * utili/100;
-        utili = (float) Math.rint(utili*100)/100;
+        utili = redondear.redondearDosDecimales((auxcontotal.add(admini)).multiply(utili.divide(new BigDecimal("100"))));
+ 
         System.out.println("util "+utili);
-        auxcontotal = auxcontotal + admini + utili;
+        auxcontotal = auxcontotal.add(admini).add(utili);
         System.out.println("sumado "+auxcontotal);
-        financiero = auxcontotal * financiero/100;
-        financiero = (float) Math.rint(financiero*100)/100;
-        impuesto = auxcontotal * impuesto/100;
-        impuesto = (float) Math.rint(impuesto*100)/100;
+        financiero = redondear.redondearDosDecimales(auxcontotal.multiply(financiero.divide(new BigDecimal("100"))));
+
+        impuesto = redondear.redondearDosDecimales(auxcontotal.multiply(impuesto.divide(new BigDecimal("100"))));
+
         System.out.println("financiero "+financiero);
         System.out.println("impuesto "+impuesto);
-        contototal = auxcontotal + impuesto + financiero;
+        contototal = auxcontotal.add(impuesto).add(financiero);
         System.out.println("contotal impu fin "+contototal);
-        auxcontotal = (float) (Math.rint((contototal+0.00001)*100)/100);
-        System.out.println("auxcontotalredondeado: "+auxcontotal);
-        redondeado = (float) Math.rint(contototal+0.000001);
+        auxcontotal =  contototal;
+        RoundingMode RM = RoundingMode.HALF_EVEN;
+        BigDecimal big = new BigDecimal(String.valueOf(auxcontotal));
+      big = big.setScale(3,RM);
+      auxcontotal=big;
+        System.out.println("auxcontotalredondeado: "+big);
         
         NumberFormat formatoNumero = NumberFormat.getNumberInstance();
             formatoNumero.setMaximumFractionDigits(2);
@@ -2082,7 +2091,7 @@ insertare=1;
         
         contototal = auxcontotal;
      
-        String consulta = "UPDATE mppres SET precunit="+contototal+", precasu="+redondeado+" WHERE numero='"+numero+"' AND (mpre_id='"+pres+"' OR mpre_id IN (SELECT id FROM mpres WHERE mpres_id='"+pres+"'))";
+        String consulta = "UPDATE mppres SET precunit="+contototal+" WHERE numero='"+numero+"' AND (mpre_id='"+pres+"' OR mpre_id IN (SELECT id FROM mpres WHERE mpres_id='"+pres+"'))";
         System.out.println(consulta);
         try {
             Statement stmt = (Statement) conex.createStatement();
@@ -2094,7 +2103,7 @@ insertare=1;
     }
     private void jButton3ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton3ActionPerformed
         int x = (prin.getWidth()/2)-350, y= (prin.getHeight()/2)-175;
-        contequip=contmano=contmat=cantmano=0;
+        contequip=contmano=contmat=cantmano=new BigDecimal("0.00");
         materiales mat = new materiales(null, true, pres, conex, jComboBox1.getSelectedItem().toString(), numero, partida);
         mat.setBounds(x, y, 800, 450);
         mat.setVisible(true);
@@ -2106,7 +2115,7 @@ insertare=1;
 
     private void jButton9ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton9ActionPerformed
         int x = (prin.getWidth()/2)-350, y= (prin.getHeight()/2)-175;
-        contequip=contmano=contmat=cantmano=0;
+        contequip=contmano=contmat=cantmano=new BigDecimal("0.00");
         mano mano = new mano(null, true, pres, conex, jComboBox1.getSelectedItem().toString(), numero, partida);
         mano.setBounds(x, y, 800, 450);
         mano.setVisible(true);
@@ -2151,7 +2160,7 @@ insertare=1;
     }//GEN-LAST:event_jTextField11ActionPerformed
 
     private void jButton7ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton7ActionPerformed
-        contmat=contequip=contmano=contototal=0;
+        contmat=contequip=contmano=contototal=new BigDecimal("0.00");
         String mat = jTextField24.getText().toString();
         String cant = jTextField9.getText().toString();
         String precios = jTextField10.getText().toString();
@@ -2228,7 +2237,7 @@ insertare=1;
 
     private void jButton5ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton5ActionPerformed
         int x = (prin.getWidth()/2)-350, y= (prin.getHeight()/2)-175;
-        contequip=contmano=contmat=cantmano=0;
+        contequip=contmano=contmat=cantmano=new BigDecimal("0.00");
         equipos eq = new equipos(null, true, pres, conex, jComboBox1.getSelectedItem().toString(), numero, partida);
         eq.setBounds(x, y, 800, 450);
         eq.setVisible(true);
@@ -2286,7 +2295,7 @@ insertare=1;
     }//GEN-LAST:event_jTextField26FocusLost
 
     private void jButton13ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton13ActionPerformed
-        contmat=contequip=contmano=contototal=0;
+        contmat=contequip=contmano=contototal=new BigDecimal("0.00");
         String man = jTextField26.getText().toString();
         String cant = jTextField17.getText().toString();
         String bono = jTextField18.getText().toString();
@@ -2342,7 +2351,7 @@ insertare=1;
     }//GEN-LAST:event_jTable3MouseClicked
 
     private void jButton11ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton11ActionPerformed
-        contmat=contequip=contmano=contototal=0;
+        contmat=contequip=contmano=contototal=new BigDecimal("0.00");
         
         String eq = jTextField25.getText().toString();
         String cant = jTextField13.getText().toString();
@@ -2430,7 +2439,7 @@ private void jTextField21FocusLost(java.awt.event.FocusEvent evt) {//GEN-FIRST:e
     
     private void jButton10ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton10ActionPerformed
         int x = (prin.getWidth()/2)-350, y= (prin.getHeight()/2)-175;
-        contequip=contmano=contmat=cantmano=0;
+        contequip=contmano=contmat=cantmano=new BigDecimal("0.00");
         equipospres eq = new equipospres(null, true, pres, conex, jComboBox1.getSelectedItem().toString(), numero, partida);
         eq.setBounds(x, y, 800, 450);
         eq.setVisible(true);
@@ -2443,7 +2452,7 @@ private void jTextField21FocusLost(java.awt.event.FocusEvent evt) {//GEN-FIRST:e
 
     private void jButton18ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton18ActionPerformed
         int x = (prin.getWidth()/2)-350, y= (prin.getHeight()/2)-175;
-        contequip=contmano=contmat=cantmano=0;
+        contequip=contmano=contmat=cantmano=new BigDecimal("0.00");
         manopres mano = new manopres(null, true, pres, conex, jComboBox1.getSelectedItem().toString(), numero, partida);
         mano.setBounds(x, y, 800, 450);
         mano.setVisible(true);
@@ -2456,7 +2465,7 @@ private void jTextField21FocusLost(java.awt.event.FocusEvent evt) {//GEN-FIRST:e
 
     private void jButton2ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton2ActionPerformed
         int x = (prin.getWidth()/2)-350, y= (prin.getHeight()/2)-175;
-        contequip=contmano=contmat=cantmano=0;
+        contequip=contmano=contmat=cantmano=new BigDecimal("0.00");
         materialespres mat = new materialespres(null, true, pres, conex, jComboBox1.getSelectedItem().toString(), numero, partida);
         mat.setBounds(x, y, 800, 450);
         mat.setVisible(true);
@@ -2507,7 +2516,7 @@ validafloat(evt, jTextField21.getText().toString());        // TODO add your han
     }//GEN-LAST:event_jTextField21KeyTyped
 
 private void okButtonMouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_okButtonMouseClicked
-        part.settotal(String.valueOf(contototal));
+        
         
         
         doClose(RET_OK);// TODO add your handling code here:
@@ -2715,10 +2724,8 @@ private void jTextField24KeyTyped(java.awt.event.KeyEvent evt) {//GEN-FIRST:even
                 if(Character.isLetter(c)) {
                     evt.setKeyChar(Character.toUpperCase(c));
                 }
-    if (jTextField24.getText().length()>7) {            
-            evt.consume();
-        }// TODO add your handling code here:
     
+    val.sizeField("id", util, evt, prest);
     // TODO add your handling code here:
 }//GEN-LAST:event_jTextField24KeyTyped
 
@@ -2758,7 +2765,36 @@ private void jTextField16KeyTyped(java.awt.event.KeyEvent evt) {//GEN-FIRST:even
                 }// TODO add your handling code here:
 }//GEN-LAST:event_jTextField16KeyTyped
 
+public String getnumegrup(){
+    String numegrup="";
+    String sql = "SELECT numegrup FROM mppres WHERE (mpre_id='"+pres+"' OR mpre_id IN (SELECT id FROM mpres WHERE "
+            + "mpres_id='"+pres+"')) AND numero="+numero+"";
+        try {
+            ResultSet rst = conex.createStatement().executeQuery(sql);
+            rst.next();
+            numegrup = rst.getString(1);
+        } catch (SQLException ex) {
+            Logger.getLogger(apu.class.getName()).log(Level.SEVERE, null, ex);
+        }
+    return numegrup;
+}
+private void jButton4ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton4ActionPerformed
+    
+        
+        reporteapu apu = new reporteapu((java.awt.Frame) prin, false, conex, pres, getnumegrup(),part);
+        int xy = (prin.getWidth()/2)-450/2;
+        int yy = (prin.getHeight()/2)-300/2;
+        apu.setBounds(xy,yy, 450,300);
+        part.setModal(false);
+        part.doClose(RET_OK);
+        apu.setVisible(true);
+        doClose(RET_OK);
+     
+    // TODO add your handling code here:
+}//GEN-LAST:event_jButton4ActionPerformed
+
     private void doClose(int retStatus) {
+        part.settotal(redondear.redondearDosDecimales(contototal).toString());
         returnStatus = retStatus;
         setVisible(false);
         dispose();

@@ -10,10 +10,12 @@
  */
 package valuaciones;
 
-import com.mysql.jdbc.Connection;
+import java.sql.Connection;
 import com.mysql.jdbc.Statement;
+import config.Redondeo;
 import java.awt.event.ActionEvent;
 import java.awt.event.KeyEvent;
+import java.math.BigDecimal;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.logging.Level;
@@ -35,7 +37,8 @@ public class infopartida extends javax.swing.JDialog {
     /** A return status code - returned if OK button has been pressed */
     public static final int RET_OK = 1;
     String partida ="", pres="", numpartida="";
-    Connection conex;
+    private Connection conex;
+    Redondeo redon = new Redondeo();
     /** Creates new form infopartida */
     public infopartida(java.awt.Frame parent, boolean modal, Connection conex, String partida, String pres) {
         super(parent, modal);
@@ -66,13 +69,13 @@ public class infopartida extends javax.swing.JDialog {
             while(rst.next()){
                 numpartida= rst.getString(1);
             }
-            float cantcont=0, cantvalu=0, cantaum=0, cantdismi=0;
+            BigDecimal cantcont=new BigDecimal("0.00"), cantvalu=new BigDecimal("0.00"), cantaum=new BigDecimal("0.00"), cantdismi=new BigDecimal("0.00");
             String selectcantidad = "SELECT cantidad FROM mppres WHERE numero = "+numpartida+" AND (mpre_id ='"+pres+"' OR"
                     + " mpre_id IN(SELECT id FROM mpres WHERE mpres_id='"+pres+"'))";
             Statement consult = (Statement) conex.createStatement();
             ResultSet rconsult = consult.executeQuery(selectcantidad);
             while(rconsult.next()){
-                cantcont = rconsult.getFloat(1);
+                cantcont = rconsult.getBigDecimal(1);
             }
             jLabel5.setText(String.valueOf(cantcont));
             String scantvalu = "SELECT SUM(cantidad) FROM dvalus WHERE numepart="+numpartida+" AND "
@@ -80,21 +83,21 @@ public class infopartida extends javax.swing.JDialog {
             Statement stvalu = (Statement) conex.createStatement();
             ResultSet rstvalu = stvalu.executeQuery(scantvalu);
             while(rstvalu.next()){
-                cantvalu=rstvalu.getFloat(1);
+                cantvalu=rstvalu.getBigDecimal(1);
             }
             jLabel3.setText(String.valueOf(cantvalu));
-            float diferencia = 0;
-            diferencia = cantvalu-cantcont;
+            BigDecimal diferencia =new BigDecimal("0.00");
+            diferencia = cantvalu.subtract(cantcont);
             
             
-            if(diferencia >0){
+            if(diferencia.floatValue() >0){
                 jLabel20.setText("AUMENTO");
-                jLabel7.setText(String.valueOf(Math.rint(diferencia*100)/100));
+                jLabel7.setText(redon.redondearDosDecimales(diferencia).toString());
             }
             else{
-                if(diferencia<0){
+                if(diferencia.floatValue()<0){
                 jLabel20.setText("DISMINUCIÓN");
-                jLabel7.setText(String.valueOf(Math.rint(diferencia*(-1)*100)/100));
+                jLabel7.setText(redon.redondearDosDecimales(diferencia.multiply(new BigDecimal("-1"))).toString());
                 }
             }
           
@@ -104,53 +107,51 @@ public class infopartida extends javax.swing.JDialog {
            ResultSet rstdismi = stdismi.executeQuery(dismi);
            while(rstdismi.next())
            {
-               cantdismi = rstdismi.getFloat(1);
+               cantdismi = rstdismi.getBigDecimal(1);
            }
            jLabel15.setText(String.valueOf(cantdismi));
-           String aum ="SELECT SUM(aumento) FROM admppres WHERE numepart="+numpartida+" AND ("
+           String aum ="SELECT IFNULL(SUM(ROUND(aumento,2)),0) FROM admppres WHERE numepart="+numpartida+" AND ("
                    + "mpre_id = '"+pres+"' OR mpre_id IN (SELECT id FROM mpres WHERE mpres_id='"+pres+"'))"; 
            Statement staum = (Statement) conex.createStatement();
            ResultSet rstaum = staum.executeQuery(aum);
            while(rstaum.next()){
-               cantaum=rstaum.getFloat(1);
+               cantaum=rstaum.getBigDecimal(1);
            }
            jLabel17.setText(String.valueOf(cantaum));
-           float diferencia2;
+           BigDecimal diferencia2;
            String mensaje="";
-            if(diferencia>0){
-                diferencia2 = cantaum-diferencia;
-                diferencia2 = (float) Math.rint((diferencia2*100))/100;
-                if(diferencia2<0){
-                    mensaje="TIENE DISPONIBLE "+(diferencia2*(-1))+" UNIDADES PARA AUMENTAR";
+            if(diferencia.floatValue()>0){
+                diferencia2 = cantaum.subtract(diferencia);
+                if(diferencia2.floatValue()<0){
+                    mensaje="TIENE DISPONIBLE "+(diferencia2.multiply(new BigDecimal("-1")))+" UNIDADES PARA AUMENTAR";
                    
                     jLabel18.setText(mensaje);
-                }if(diferencia2==0){
+                }if(diferencia2.floatValue()==0){
                      mensaje="NO TIENE UNIDADES DISPONIBLES PARA AUMENTAR";
                    
                     jLabel18.setText(mensaje);
                     
                 }
-                if(diferencia2>0){
+                if(diferencia2.floatValue()>0){
                     mensaje="SE EXCEDIO EN "+(diferencia2)+" UNIDADES AL AUMENTAR";
                     
                     jLabel18.setText(mensaje);
                 }
                 
             }
-            if(diferencia<0){
-                diferencia2 = cantdismi+diferencia;
-                   diferencia2 = (float) Math.rint((diferencia2*100))/100;
-                if(diferencia2<0){
-                    mensaje = "TIENE DISPONIBLE "+(diferencia2*(-1))+" UNIDADES PARA DISMINUIR";
+            if(diferencia.floatValue()<0){
+                diferencia2 = cantdismi.add(diferencia);
+                if(diferencia2.floatValue()<0){
+                    mensaje = "TIENE DISPONIBLE "+(diferencia2.multiply(new BigDecimal("-1")))+" UNIDADES PARA DISMINUIR";
                     jLabel18.setText(mensaje);
                 }
-                if(diferencia2==0){
+                if(diferencia2.floatValue()==0){
                      mensaje="NO TIENE UNIDADES DISPONIBLES PARA DISMINUIR";
                     
                     jLabel18.setText(mensaje);
                     
                 }
-                if(diferencia2>0){
+                if(diferencia2.floatValue()>0){
                      mensaje="SE EXCEDIÓ EN LA CANTIDAD A DISMINUIR EN "+diferencia2+" UNIDADES";
                    
                     jLabel18.setText(mensaje);

@@ -9,8 +9,7 @@
  * Created on 18/09/2012, 03:22:55 AM
  */
 package presupuestos.manoobra;
-
-import com.mysql.jdbc.Connection;
+import java.sql.Connection;
 import com.mysql.jdbc.Statement;
 import java.awt.Rectangle;
 import java.awt.event.ActionEvent;

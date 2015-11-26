@@ -9,8 +9,7 @@
  * Created on 03/12/2012, 11:55:27 AM
  */
 package presupuestos;
-
-import com.mysql.jdbc.Connection;
+import java.sql.Connection;
 import com.mysql.jdbc.ResultSetMetaData;
 import com.mysql.jdbc.Statement;
 import java.awt.Dimension;
@@ -419,21 +418,32 @@ public class tabpresupuesto extends javax.swing.JDialog {
 private void jButton1ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton1ActionPerformed
     obj.id=presu;
     obj.borrarpres();
-    
+   
      try {
             buscarpres();
             cambiarcabecera();
+            obj.vaciacampos();
+            obj.vaciacampospres();
             int filas = jTable1.getRowCount();
-            if(filas>0){
+            if(filas>0)
+            {
                 presu=jTable1.getValueAt(0, 0).toString();
             }
             
-        } catch (SQLException ex) {
+        } catch (SQLException ex) 
+        {
             Logger.getLogger(tabpresupuesto.class.getName()).log(Level.SEVERE, null, ex);
         }   
     jButton1.setEnabled(false);
     okButton.setEnabled(false);
-    // TODO add your handling code here:
+     if(obj.prin.cuentapres()==0)
+     {
+         
+         obj.prin.setdisabled(false);
+         
+         obj.dispose();
+         doClose(RET_OK);
+     }
 }//GEN-LAST:event_jButton1ActionPerformed
 
 private void okButtonMouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_okButtonMouseClicked
@@ -479,7 +489,8 @@ private void okButtonMouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:ev
            /* Nuevo s = new Nuevo(obj.prin, true, obj, conex);
                 s.setBounds(x, y, 900, 550);
                 s.setVisible(true);
-                obj.vaciacampos();*/
+               */
+             obj.vaciacampos();
                 doClose(RET_OK);
         }
         if(cuenta>0&&contar>0){
@@ -504,6 +515,7 @@ private void okButtonMouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:ev
             
             obj.settabu(tab);
             if(cont>0){
+           obj.vaciacampos();
             obj.filapartida=0;
             obj.setid(presu);
             obj.settitulo(presu+" "+descri);
@@ -523,6 +535,7 @@ private void okButtonMouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:ev
     private void doClose(int retStatus) {
         returnStatus = retStatus;
         selecciona();
+        obj.vaciacampos();
         setVisible(false);
         dispose();
     }

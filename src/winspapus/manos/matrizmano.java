@@ -52,6 +52,12 @@ public class matrizmano extends javax.swing.JDialog {
     jTable2.getTableHeader().setPreferredSize(new Dimension(25,30));
     jTable2.setRowHeight(20);
         cargartabus();
+        bloqueaboton(!obj.isbloquedmtabu());
+    }
+    private void bloqueaboton(boolean bloq){
+        jButton1.setEnabled(bloq);
+        jButton2.setEnabled(bloq);
+        jButton4.setEnabled(bloq);
     }
 public final void cargartabus(){
           DefaultTableModel mtabus = new DefaultTableModel() {@Override
@@ -132,7 +138,7 @@ private void cambiarcabecera() {
         jPanel2.setBackground(new java.awt.Color(100, 100, 100));
 
         jLabel1.setBackground(new java.awt.Color(91, 91, 95));
-        jLabel1.setFont(new java.awt.Font("Tahoma", 1, 11)); // NOI18N
+        jLabel1.setFont(new java.awt.Font("Tahoma", 1, 11));
         jLabel1.setForeground(new java.awt.Color(255, 255, 255));
         jLabel1.setHorizontalAlignment(javax.swing.SwingConstants.CENTER);
         jLabel1.setText("Mano de Obra Matriz de Costos");
@@ -153,6 +159,7 @@ private void cambiarcabecera() {
 
         jTable1.setAutoCreateRowSorter(true);
         jTable1.setFont(new java.awt.Font("Tahoma", 0, 9));
+        jTable1.setSelectionBackground(new java.awt.Color(216, 141, 0));
         jTable1.addMouseListener(new java.awt.event.MouseAdapter() {
             public void mouseClicked(java.awt.event.MouseEvent evt) {
                 jTable1MouseClicked(evt);
@@ -197,6 +204,7 @@ private void cambiarcabecera() {
         );
 
         jTable2.setFont(new java.awt.Font("Tahoma", 0, 9));
+        jTable2.setSelectionBackground(new java.awt.Color(216, 141, 0));
         jTable2.addMouseListener(new java.awt.event.MouseAdapter() {
             public void mouseClicked(java.awt.event.MouseEvent evt) {
                 jTable2MouseClicked(evt);
@@ -222,7 +230,7 @@ private void cambiarcabecera() {
             }
         });
 
-        jButton4.setIcon(new javax.swing.ImageIcon(getClass().getResource("/winspapus/imagenes/buscar.fw.png"))); // NOI18N
+        jButton4.setIcon(new javax.swing.ImageIcon(getClass().getResource("/winspapus/imagenes/edita.fw.png"))); // NOI18N
         jButton4.setToolTipText("Detalles");
         jButton4.setEnabled(false);
         jButton4.addActionListener(new java.awt.event.ActionListener() {
@@ -306,12 +314,14 @@ private void cambiarcabecera() {
     }// </editor-fold>//GEN-END:initComponents
 
     private void jTable1MouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_jTable1MouseClicked
-      jButton1.setEnabled(true);
-      jButton2.setEnabled(true);
+      jButton1.setEnabled(!obj.isbloquedmtabu());
+      jButton2.setEnabled(!obj.isbloquedmtabu());
       jButton3.setEnabled(true);
-       jButton4.setEnabled(true);
+       jButton4.setEnabled(!obj.isbloquedmtabu());
+       
       fila = jTable1.rowAtPoint(evt.getPoint());
       mtabu = jTable1.getValueAt(fila, 0).toString();
+      bloqueaboton(!obj.isbloquedmtabu(mtabu));
         try {
             buscamano();
         } catch (SQLException ex) {
@@ -347,7 +357,7 @@ private void cambiarcabecera() {
 
     private void jTable2MouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_jTable2MouseClicked
         row = jTable2.rowAtPoint(evt.getPoint());
-        jButton4.setEnabled(true);
+        jButton4.setEnabled(!obj.isbloquedmtabu(mtabu));
         codimano = jTable2.getValueAt(row, 0).toString();
     }//GEN-LAST:event_jTable2MouseClicked
 
@@ -371,8 +381,12 @@ private void cambiarcabecera() {
 
     private void jButton3ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton3ActionPerformed
         palabra = jTextField2.getText().toString();
-        
-        
+        try {
+            buscamano();
+        } catch (SQLException ex) {
+            Logger.getLogger(matrizmano.class.getName()).log(Level.SEVERE, null, ex);
+        }
+  
         // TODO add your handling code here:
     }//GEN-LAST:event_jButton3ActionPerformed
     

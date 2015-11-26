@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <jasperReport xmlns="http://jasperreports.sourceforge.net/jasperreports" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports http://jasperreports.sourceforge.net/xsd/jasperreport.xsd" name="modificadodesdejava" pageWidth="612" pageHeight="792" whenNoDataType="AllSectionsNoDetail" columnWidth="555" leftMargin="20" rightMargin="20" topMargin="20" bottomMargin="20" isFloatColumnFooter="true" uuid="be8d5c69-dc05-4f40-8a84-b6c0e456de50">
-	<property name="ireport.zoom" value="1.2100000000000004"/>
-	<property name="ireport.x" value="0"/>
-	<property name="ireport.y" value="0"/>
+	<property name="ireport.zoom" value="1.4641000000000008"/>
+	<property name="ireport.x" value="75"/>
+	<property name="ireport.y" value="7"/>
 	<parameter name="mpres" class="java.lang.String">
 		<defaultValueExpression><![CDATA[$P{mpres}]]></defaultValueExpression>
 	</parameter>
@@ -76,11 +76,11 @@
 	<pageHeader>
 		<band height="97" splitType="Stretch">
 			<image hAlign="Right" onErrorType="Blank">
-				<reportElement uuid="c7ed90d1-44f9-4991-9544-b42e9887efe8" x="504" y="26" width="67" height="65"/>
+				<reportElement uuid="c7ed90d1-44f9-4991-9544-b42e9887efe8" x="397" y="1" width="179" height="65"/>
 				<imageExpression><![CDATA[JRImageRenderer.getInstance((byte []) $F{proplogo})]]></imageExpression>
 			</image>
 			<staticText>
-				<reportElement uuid="6af2f0c3-2e9d-4b17-8cb1-9476f82bb2d5" x="457" y="1" width="50" height="11"/>
+				<reportElement uuid="6af2f0c3-2e9d-4b17-8cb1-9476f82bb2d5" x="459" y="76" width="50" height="11"/>
 				<textElement textAlignment="Right">
 					<font size="8"/>
 				</textElement>
@@ -94,18 +94,18 @@
 				<textFieldExpression><![CDATA[$P{titulo}]]></textFieldExpression>
 			</textField>
 			<textField>
-				<reportElement uuid="69e5d47d-3dce-4898-bb11-2b5f77812b2d" x="507" y="1" width="63" height="11"/>
+				<reportElement uuid="69e5d47d-3dce-4898-bb11-2b5f77812b2d" x="509" y="76" width="63" height="11"/>
 				<textElement textAlignment="Right">
 					<font size="8"/>
 				</textElement>
 				<textFieldExpression><![CDATA[$P{fecha}]]></textFieldExpression>
 			</textField>
 			<image onErrorType="Blank">
-				<reportElement uuid="218d5194-7314-430d-8a47-6a1040283514" x="1" y="26" width="67" height="65"/>
+				<reportElement uuid="218d5194-7314-430d-8a47-6a1040283514" x="0" y="0" width="172" height="65"/>
 				<imageExpression><![CDATA[JRImageRenderer.getInstance((byte []) $F{conts_logo})]]></imageExpression>
 			</image>
 			<textField>
-				<reportElement uuid="779fbd7d-f524-4f24-ab7f-80ef964bb9b5" x="135" y="1" width="305" height="76"/>
+				<reportElement uuid="779fbd7d-f524-4f24-ab7f-80ef964bb9b5" x="172" y="1" width="224" height="76"/>
 				<box topPadding="2"/>
 				<textElement textAlignment="Center">
 					<font size="8" isBold="true"/>
@@ -113,7 +113,7 @@
 				<textFieldExpression><![CDATA[$F{mconts_encabe}]]></textFieldExpression>
 			</textField>
 			<textField>
-				<reportElement uuid="ccc6d093-5c60-457f-83f8-470f970e001c" positionType="Float" x="452" y="11" width="109" height="11"/>
+				<reportElement uuid="ccc6d093-5c60-457f-83f8-470f970e001c" positionType="Float" x="454" y="86" width="109" height="11"/>
 				<textElement textAlignment="Right" verticalAlignment="Middle">
 					<font size="8"/>
 				</textElement>
@@ -326,7 +326,7 @@
 				<textElement textAlignment="Center" verticalAlignment="Middle">
 					<font size="6" isBold="true"/>
 				</textElement>
-				<text><![CDATA[0276-3567564 / 0276-3553158 / 0276-3560071 / 0276-3579562 - www.spapu.com.ve / Facebook: Rhspapu / Twitter: @Spapu]]></text>
+				<text><![CDATA[0276-3567564 / 0276-3553158 / 0276-3560071 / 0276-3579562 - www.spapu.net / Facebook: SPAPU.SISTEMASRH / Twitter: @Spapu]]></text>
 			</staticText>
 			<staticText>
 				<reportElement uuid="813c74ce-0725-4200-8619-10d2218090fd" x="369" y="44" width="30" height="15"/>

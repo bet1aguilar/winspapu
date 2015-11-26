@@ -12,6 +12,7 @@ package reportes;
 
 import com.mysql.jdbc.Connection;
 import com.mysql.jdbc.Statement;
+import herramienta.Validacion;
 import java.awt.event.ActionEvent;
 import java.awt.event.KeyEvent;
 import java.io.File;
@@ -29,6 +30,7 @@ import javax.swing.AbstractAction;
 import javax.swing.ActionMap;
 import javax.swing.InputMap;
 import javax.swing.JComponent;
+import javax.swing.JOptionPane;
 import javax.swing.KeyStroke;
 import net.sf.jasperreports.engine.JRException;
 import net.sf.jasperreports.engine.JasperCompileManager;
@@ -50,6 +52,7 @@ public class reportecuadrocierre extends javax.swing.JDialog {
     /** A return status code - returned if OK button has been pressed */
     public static final int RET_OK = 1;
     Connection conex;
+    private Validacion val;
     String pres;
     private double totalpres;
     private double impuesto;
@@ -63,6 +66,7 @@ public class reportecuadrocierre extends javax.swing.JDialog {
         pres=mpres;
         jDateChooser1.setDate(fechita);
         this.conex=conex;
+        val = new Validacion(conex);
         // Close the dialog when Esc is pressed
         String cancelName = "cancel";
         InputMap inputMap = getRootPane().getInputMap(JComponent.WHEN_ANCESTOR_OF_FOCUSED_COMPONENT);
@@ -91,15 +95,42 @@ public class reportecuadrocierre extends javax.swing.JDialog {
     // <editor-fold defaultstate="collapsed" desc="Generated Code">//GEN-BEGIN:initComponents
     private void initComponents() {
 
-        okButton = new javax.swing.JButton();
-        cancelButton = new javax.swing.JButton();
-        jLabel1 = new javax.swing.JLabel();
-        jTextField1 = new javax.swing.JTextField();
-        jLabel2 = new javax.swing.JLabel();
+        jLabel9 = new javax.swing.JLabel();
+        jTextField7 = new javax.swing.JTextField();
+        jLabel4 = new javax.swing.JLabel();
+        jPanel1 = new javax.swing.JPanel();
+        jPanel2 = new javax.swing.JPanel();
         jTextField2 = new javax.swing.JTextField();
+        jTextField1 = new javax.swing.JTextField();
+        jLabel1 = new javax.swing.JLabel();
+        jLabel2 = new javax.swing.JLabel();
         jLabel3 = new javax.swing.JLabel();
-        jDateChooser1 = new com.toedter.calendar.JDateChooser();
         jCheckBox1 = new javax.swing.JCheckBox();
+        jDateChooser1 = new com.toedter.calendar.JDateChooser();
+        jCheckBox2 = new javax.swing.JCheckBox();
+        jCheckBox3 = new javax.swing.JCheckBox();
+        jPanel3 = new javax.swing.JPanel();
+        cancelButton = new javax.swing.JButton();
+        okButton = new javax.swing.JButton();
+        jPanel4 = new javax.swing.JPanel();
+        jCheckBox4 = new javax.swing.JCheckBox();
+        jPanel5 = new javax.swing.JPanel();
+        jLabel5 = new javax.swing.JLabel();
+        jTextField3 = new javax.swing.JTextField();
+        jLabel6 = new javax.swing.JLabel();
+        jTextField4 = new javax.swing.JTextField();
+        jLabel7 = new javax.swing.JLabel();
+        jTextField5 = new javax.swing.JTextField();
+        jLabel8 = new javax.swing.JLabel();
+        jTextField6 = new javax.swing.JTextField();
+        jLabel10 = new javax.swing.JLabel();
+        jTextField8 = new javax.swing.JTextField();
+
+        jLabel9.setFont(new java.awt.Font("Tahoma", 1, 11)); // NOI18N
+        jLabel9.setText("Disminuciones");
+
+        jTextField7.setHorizontalAlignment(javax.swing.JTextField.RIGHT);
+        jTextField7.setText("0.00");
 
         addWindowListener(new java.awt.event.WindowAdapter() {
             public void windowClosing(java.awt.event.WindowEvent evt) {
@@ -107,12 +138,100 @@ public class reportecuadrocierre extends javax.swing.JDialog {
             }
         });
 
-        okButton.setIcon(new javax.swing.ImageIcon(getClass().getResource("/winspapus/imagenes/guardar.png"))); // NOI18N
-        okButton.addActionListener(new java.awt.event.ActionListener() {
+        jLabel4.setBackground(new java.awt.Color(91, 91, 95));
+        jLabel4.setFont(new java.awt.Font("Tahoma", 1, 11));
+        jLabel4.setForeground(new java.awt.Color(255, 255, 255));
+        jLabel4.setHorizontalAlignment(javax.swing.SwingConstants.CENTER);
+        jLabel4.setText("Cuadro de Cierre");
+        jLabel4.setOpaque(true);
+
+        jPanel2.setBorder(javax.swing.BorderFactory.createTitledBorder(new javax.swing.border.LineBorder(new java.awt.Color(0, 0, 0), 1, true), "Datos del Reporte", javax.swing.border.TitledBorder.DEFAULT_JUSTIFICATION, javax.swing.border.TitledBorder.DEFAULT_POSITION, new java.awt.Font("Tahoma", 1, 11), java.awt.Color.black)); // NOI18N
+
+        jTextField2.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
-                okButtonActionPerformed(evt);
+                jTextField2ActionPerformed(evt);
             }
         });
+
+        jTextField1.setText("CUADRO DEMOSTRATIVO DE CIERRE DE OBRA  AL DIA:");
+
+        jLabel1.setFont(new java.awt.Font("Tahoma", 1, 11)); // NOI18N
+        jLabel1.setText("Titulo:");
+
+        jLabel2.setFont(new java.awt.Font("Tahoma", 1, 11));
+        jLabel2.setText("Nro. Oficio:");
+
+        jLabel3.setFont(new java.awt.Font("Tahoma", 1, 11)); // NOI18N
+        jLabel3.setText("Fecha de Culminación:");
+
+        jCheckBox1.setSelected(true);
+        jCheckBox1.setText("Con fecha");
+
+        jDateChooser1.setDateFormatString("dd-MM-yyyy");
+
+        jCheckBox2.setSelected(true);
+        jCheckBox2.setText("Reflejar IVA");
+        jCheckBox2.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jCheckBox2ActionPerformed(evt);
+            }
+        });
+
+        jCheckBox3.setSelected(true);
+        jCheckBox3.setText("Con Totales");
+        jCheckBox3.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jCheckBox3ActionPerformed(evt);
+            }
+        });
+
+        javax.swing.GroupLayout jPanel2Layout = new javax.swing.GroupLayout(jPanel2);
+        jPanel2.setLayout(jPanel2Layout);
+        jPanel2Layout.setHorizontalGroup(
+            jPanel2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGroup(jPanel2Layout.createSequentialGroup()
+                .addContainerGap()
+                .addGroup(jPanel2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
+                    .addComponent(jLabel3)
+                    .addComponent(jLabel2)
+                    .addComponent(jLabel1))
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                .addGroup(jPanel2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                    .addComponent(jTextField1, javax.swing.GroupLayout.PREFERRED_SIZE, 327, javax.swing.GroupLayout.PREFERRED_SIZE)
+                    .addGroup(jPanel2Layout.createSequentialGroup()
+                        .addGroup(jPanel2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
+                            .addComponent(jCheckBox3)
+                            .addGroup(jPanel2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING, false)
+                                .addComponent(jDateChooser1, javax.swing.GroupLayout.Alignment.LEADING, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                                .addComponent(jTextField2, javax.swing.GroupLayout.Alignment.LEADING, javax.swing.GroupLayout.PREFERRED_SIZE, 165, javax.swing.GroupLayout.PREFERRED_SIZE)))
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
+                        .addGroup(jPanel2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                            .addComponent(jCheckBox2)
+                            .addComponent(jCheckBox1))))
+                .addContainerGap(26, Short.MAX_VALUE))
+        );
+        jPanel2Layout.setVerticalGroup(
+            jPanel2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGroup(jPanel2Layout.createSequentialGroup()
+                .addContainerGap()
+                .addGroup(jPanel2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.CENTER)
+                    .addComponent(jTextField1, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                    .addComponent(jLabel1))
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                .addGroup(jPanel2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.CENTER)
+                    .addComponent(jTextField2, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                    .addComponent(jLabel2))
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                .addGroup(jPanel2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.CENTER)
+                    .addComponent(jCheckBox1)
+                    .addComponent(jDateChooser1, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                    .addComponent(jLabel3))
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                .addGroup(jPanel2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                    .addComponent(jCheckBox2)
+                    .addComponent(jCheckBox3))
+                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+        );
 
         cancelButton.setIcon(new javax.swing.ImageIcon(getClass().getResource("/winspapus/imagenes/eliminar.png"))); // NOI18N
         cancelButton.addActionListener(new java.awt.event.ActionListener() {
@@ -121,84 +240,234 @@ public class reportecuadrocierre extends javax.swing.JDialog {
             }
         });
 
-        jLabel1.setText("Titulo:");
-
-        jTextField1.setText("CUADRO DEMOSTRATIVO DE CIERRE DE OBRA  AL DIA:");
-
-        jLabel2.setText("Nro. Oficio:");
-
-        jTextField2.addActionListener(new java.awt.event.ActionListener() {
+        okButton.setIcon(new javax.swing.ImageIcon(getClass().getResource("/winspapus/imagenes/ok.fw.png"))); // NOI18N
+        okButton.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
-                jTextField2ActionPerformed(evt);
+                okButtonActionPerformed(evt);
             }
         });
 
-        jLabel3.setText("Fecha:");
+        javax.swing.GroupLayout jPanel3Layout = new javax.swing.GroupLayout(jPanel3);
+        jPanel3.setLayout(jPanel3Layout);
+        jPanel3Layout.setHorizontalGroup(
+            jPanel3Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGroup(jPanel3Layout.createSequentialGroup()
+                .addContainerGap()
+                .addComponent(okButton, javax.swing.GroupLayout.PREFERRED_SIZE, 43, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                .addComponent(cancelButton, javax.swing.GroupLayout.PREFERRED_SIZE, 41, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addContainerGap())
+        );
+        jPanel3Layout.setVerticalGroup(
+            jPanel3Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGroup(jPanel3Layout.createSequentialGroup()
+                .addContainerGap()
+                .addGroup(jPanel3Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
+                    .addComponent(okButton, 0, 0, Short.MAX_VALUE)
+                    .addComponent(cancelButton))
+                .addContainerGap())
+        );
 
-        jDateChooser1.setDateFormatString("dd-MM-yyyy");
+        getRootPane().setDefaultButton(okButton);
 
-        jCheckBox1.setSelected(true);
-        jCheckBox1.setText("Con fecha");
+        jPanel4.setBorder(javax.swing.BorderFactory.createTitledBorder(new javax.swing.border.LineBorder(new java.awt.Color(0, 0, 0), 1, true), "Ajustes por Redondeo", javax.swing.border.TitledBorder.DEFAULT_JUSTIFICATION, javax.swing.border.TitledBorder.DEFAULT_POSITION, new java.awt.Font("Tahoma", 1, 11), java.awt.Color.black)); // NOI18N
+
+        jCheckBox4.setText("Ajustes por Redondeo");
+        jCheckBox4.addItemListener(new java.awt.event.ItemListener() {
+            public void itemStateChanged(java.awt.event.ItemEvent evt) {
+                jCheckBox4ItemStateChanged(evt);
+            }
+        });
+        jCheckBox4.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jCheckBox4ActionPerformed(evt);
+            }
+        });
+
+        jLabel5.setFont(new java.awt.Font("Tahoma", 1, 11)); // NOI18N
+        jLabel5.setText("Original");
+
+        jTextField3.setEditable(false);
+        jTextField3.setHorizontalAlignment(javax.swing.JTextField.RIGHT);
+        jTextField3.setText("0.00");
+        jTextField3.addKeyListener(new java.awt.event.KeyAdapter() {
+            public void keyTyped(java.awt.event.KeyEvent evt) {
+                jTextField3KeyTyped(evt);
+            }
+        });
+
+        jLabel6.setFont(new java.awt.Font("Tahoma", 1, 11)); // NOI18N
+        jLabel6.setText("No Previstas");
+
+        jTextField4.setEditable(false);
+        jTextField4.setHorizontalAlignment(javax.swing.JTextField.RIGHT);
+        jTextField4.setText("0.00");
+        jTextField4.addKeyListener(new java.awt.event.KeyAdapter() {
+            public void keyTyped(java.awt.event.KeyEvent evt) {
+                jTextField4KeyTyped(evt);
+            }
+        });
+
+        jLabel7.setFont(new java.awt.Font("Tahoma", 1, 11)); // NOI18N
+        jLabel7.setText("Aumentos");
+
+        jTextField5.setEditable(false);
+        jTextField5.setHorizontalAlignment(javax.swing.JTextField.RIGHT);
+        jTextField5.setText("0.00");
+        jTextField5.addKeyListener(new java.awt.event.KeyAdapter() {
+            public void keyTyped(java.awt.event.KeyEvent evt) {
+                jTextField5KeyTyped(evt);
+            }
+        });
+
+        jLabel8.setFont(new java.awt.Font("Tahoma", 1, 11)); // NOI18N
+        jLabel8.setText("Disminuciones");
+
+        jTextField6.setEditable(false);
+        jTextField6.setHorizontalAlignment(javax.swing.JTextField.RIGHT);
+        jTextField6.setText("0.00");
+        jTextField6.addKeyListener(new java.awt.event.KeyAdapter() {
+            public void keyTyped(java.awt.event.KeyEvent evt) {
+                jTextField6KeyTyped(evt);
+            }
+        });
+
+        jLabel10.setFont(new java.awt.Font("Tahoma", 1, 11)); // NOI18N
+        jLabel10.setText("Modificado");
+
+        jTextField8.setEditable(false);
+        jTextField8.setHorizontalAlignment(javax.swing.JTextField.RIGHT);
+        jTextField8.setText("0.00");
+        jTextField8.addKeyListener(new java.awt.event.KeyAdapter() {
+            public void keyTyped(java.awt.event.KeyEvent evt) {
+                jTextField8KeyTyped(evt);
+            }
+        });
+
+        javax.swing.GroupLayout jPanel5Layout = new javax.swing.GroupLayout(jPanel5);
+        jPanel5.setLayout(jPanel5Layout);
+        jPanel5Layout.setHorizontalGroup(
+            jPanel5Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGroup(jPanel5Layout.createSequentialGroup()
+                .addGap(21, 21, 21)
+                .addGroup(jPanel5Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                    .addGroup(jPanel5Layout.createSequentialGroup()
+                        .addGroup(jPanel5Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                            .addComponent(jTextField3, javax.swing.GroupLayout.PREFERRED_SIZE, 151, javax.swing.GroupLayout.PREFERRED_SIZE)
+                            .addComponent(jLabel5)
+                            .addComponent(jTextField5, javax.swing.GroupLayout.PREFERRED_SIZE, 151, javax.swing.GroupLayout.PREFERRED_SIZE)
+                            .addComponent(jLabel7))
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 117, Short.MAX_VALUE)
+                        .addGroup(jPanel5Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                            .addComponent(jTextField4, javax.swing.GroupLayout.PREFERRED_SIZE, 151, javax.swing.GroupLayout.PREFERRED_SIZE)
+                            .addComponent(jLabel6)
+                            .addComponent(jTextField6, javax.swing.GroupLayout.PREFERRED_SIZE, 151, javax.swing.GroupLayout.PREFERRED_SIZE)
+                            .addComponent(jLabel8))
+                        .addGap(31, 31, 31))
+                    .addGroup(jPanel5Layout.createSequentialGroup()
+                        .addGroup(jPanel5Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                            .addComponent(jTextField8, javax.swing.GroupLayout.PREFERRED_SIZE, 151, javax.swing.GroupLayout.PREFERRED_SIZE)
+                            .addComponent(jLabel10))
+                        .addContainerGap(299, Short.MAX_VALUE))))
+        );
+        jPanel5Layout.setVerticalGroup(
+            jPanel5Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGroup(jPanel5Layout.createSequentialGroup()
+                .addContainerGap()
+                .addGroup(jPanel5Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
+                    .addGroup(jPanel5Layout.createSequentialGroup()
+                        .addComponent(jLabel6)
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                        .addComponent(jTextField4, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                        .addComponent(jLabel8)
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                        .addComponent(jTextField6, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
+                    .addGroup(jPanel5Layout.createSequentialGroup()
+                        .addComponent(jLabel5)
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                        .addComponent(jTextField3, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                        .addComponent(jLabel7)
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                        .addComponent(jTextField5, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)))
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                .addComponent(jLabel10)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                .addComponent(jTextField8, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
+        );
+
+        javax.swing.GroupLayout jPanel4Layout = new javax.swing.GroupLayout(jPanel4);
+        jPanel4.setLayout(jPanel4Layout);
+        jPanel4Layout.setHorizontalGroup(
+            jPanel4Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGroup(jPanel4Layout.createSequentialGroup()
+                .addContainerGap()
+                .addGroup(jPanel4Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                    .addComponent(jPanel5, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                    .addComponent(jCheckBox4))
+                .addContainerGap())
+        );
+        jPanel4Layout.setVerticalGroup(
+            jPanel4Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGroup(jPanel4Layout.createSequentialGroup()
+                .addComponent(jCheckBox4)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                .addComponent(jPanel5, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                .addContainerGap())
+        );
+
+        javax.swing.GroupLayout jPanel1Layout = new javax.swing.GroupLayout(jPanel1);
+        jPanel1.setLayout(jPanel1Layout);
+        jPanel1Layout.setHorizontalGroup(
+            jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGroup(jPanel1Layout.createSequentialGroup()
+                .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                    .addGroup(jPanel1Layout.createSequentialGroup()
+                        .addContainerGap()
+                        .addComponent(jPanel2, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+                    .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, jPanel1Layout.createSequentialGroup()
+                        .addGap(401, 401, 401)
+                        .addComponent(jPanel3, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+                    .addGroup(jPanel1Layout.createSequentialGroup()
+                        .addContainerGap()
+                        .addComponent(jPanel4, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)))
+                .addContainerGap())
+        );
+        jPanel1Layout.setVerticalGroup(
+            jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGroup(jPanel1Layout.createSequentialGroup()
+                .addContainerGap()
+                .addComponent(jPanel4, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                .addComponent(jPanel2, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                .addComponent(jPanel3, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addContainerGap())
+        );
 
         javax.swing.GroupLayout layout = new javax.swing.GroupLayout(getContentPane());
         getContentPane().setLayout(layout);
         layout.setHorizontalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, layout.createSequentialGroup()
-                .addContainerGap(295, Short.MAX_VALUE)
-                .addComponent(okButton, javax.swing.GroupLayout.PREFERRED_SIZE, 43, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                .addComponent(cancelButton, javax.swing.GroupLayout.PREFERRED_SIZE, 41, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addGap(21, 21, 21))
-            .addGroup(layout.createSequentialGroup()
-                .addContainerGap()
-                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
-                    .addComponent(jLabel3)
-                    .addComponent(jLabel2)
-                    .addComponent(jLabel1))
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                    .addComponent(jTextField1, javax.swing.GroupLayout.PREFERRED_SIZE, 327, javax.swing.GroupLayout.PREFERRED_SIZE)
-                    .addGroup(layout.createSequentialGroup()
-                        .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING, false)
-                            .addComponent(jDateChooser1, javax.swing.GroupLayout.Alignment.LEADING, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                            .addComponent(jTextField2, javax.swing.GroupLayout.Alignment.LEADING, javax.swing.GroupLayout.DEFAULT_SIZE, 165, Short.MAX_VALUE))
-                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
-                        .addComponent(jCheckBox1)))
-                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+            .addComponent(jLabel4, javax.swing.GroupLayout.DEFAULT_SIZE, 521, Short.MAX_VALUE)
+            .addComponent(jPanel1, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
         );
         layout.setVerticalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(layout.createSequentialGroup()
-                .addGap(20, 20, 20)
-                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.CENTER)
-                    .addComponent(jTextField1, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                    .addComponent(jLabel1))
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
-                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.CENTER)
-                    .addComponent(jTextField2, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                    .addComponent(jLabel2))
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.CENTER)
-                    .addComponent(jCheckBox1)
-                    .addComponent(jDateChooser1, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                    .addComponent(jLabel3))
-                .addGap(21, 21, 21)
-                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
-                    .addComponent(cancelButton, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                    .addComponent(okButton, javax.swing.GroupLayout.PREFERRED_SIZE, 0, Short.MAX_VALUE))
-                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+                .addComponent(jLabel4, javax.swing.GroupLayout.PREFERRED_SIZE, 45, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addGap(0, 0, 0)
+                .addComponent(jPanel1, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
         );
-
-        getRootPane().setDefaultButton(okButton);
 
         pack();
     }// </editor-fold>//GEN-END:initComponents
 
     public void generarreporte(){
         JasperPrint print=null;
-     totalpres=0;
-      Map parameters = new HashMap();
+        totalpres=0;
+        Map parameters = new HashMap();
         impuesto = 0;
             String imp = "SELECT porimp FROM mpres WHERE id='"+pres+"'";
         try {
@@ -221,25 +490,28 @@ public class reportecuadrocierre extends javax.swing.JDialog {
                 truncate = (Statement) conex.createStatement();
                  truncate.execute(borra);
                  String completa="(SELECT mp.numegrup, mp.id, mp.descri, mp.unidad, IF(mp.precasu=0,mp.precunit, mp.precasu) as precio, "
-                         + "mp.cantidad,IF(mp.precasu=0,mp.precunit, mp.precasu)*mp.cantidad, "
-                         + "IFNULL((SELECT aumento FROM admppres WHERE numepart=mp.numero AND mpre_id='"+pres+"'),0) as aumcantidad, "
-                         + "IFNULL((SELECT aumento FROM admppres WHERE numepart=mp.numero AND mpre_id='"+pres+"'),0)*"
-                         + "IF(mp.precasu=0,mp.precunit, mp.precasu) as aummonto,"
-                          + "IFNULL((SELECT disminucion FROM admppres WHERE numepart=mp.numero AND mpre_id='"+pres+"'),0)"
+                         + "mp.cantidad,ROUND(IF(mp.precasu=0,mp.precunit, mp.precasu)*mp.cantidad,2), "
+                         + "IFNULL((SELECT SUM(ROUND(aumento,2)) "
+                         + "FROM admppres WHERE numepart=mp.numero AND mpre_id='"+pres+"'),0) as aumcantidad, "
+                         + "IFNULL((SELECT SUM(ROUND(aumento*IF(mp.precasu=0,mp.precunit, mp.precasu),2)) "
+                         + "FROM admppres WHERE numepart=mp.numero AND mpre_id='"+pres+"'),0)"
+                         + " as aummonto,"
+                          + "IFNULL((SELECT SUM(disminucion) FROM admppres WHERE numepart=mp.numero AND mpre_id='"+pres+"'),0)"
                          + " as dismicantidad, "
-                          + "IFNULL((SELECT disminucion FROM admppres WHERE numepart=mp.numero AND mpre_id='"+pres+"'),0)*"
-                         + "IF(mp.precasu=0,mp.precunit, mp.precasu) as dismonto, "
-                         + "mp.cantidad+IFNULL((SELECT aumento FROM admppres WHERE numepart=mp.numero AND mpre_id='"+pres+"'),0)-"
-                         + "IFNULL((SELECT disminucion FROM admppres WHERE numepart=mp.numero AND mpre_id='"+pres+"'),0) as cantmodificado"
-                         
-                         + ", (mp.cantidad+IFNULL((SELECT aumento FROM admppres WHERE numepart=mp.numero AND mpre_id='"+pres+"'),0)-"
-                         + "IFNULL((SELECT disminucion FROM admppres WHERE numepart=mp.numero AND mpre_id='"+pres+"'),0))"
-                         + "*IF(mp.precasu=0,mp.precunit, mp.precasu)"
-                         + " as montomodificado, '"+pres+"',(((mp.cantidad+IFNULL((SELECT aumento FROM admppres WHERE numepart=mp.numero AND mpre_id='"+pres+"'),0)-"
-                         + "IFNULL((SELECT disminucion FROM admppres WHERE numepart=mp.numero AND mpre_id='"+pres+"'),0))"
+                          + "IFNULL((SELECT SUM(ROUND(disminucion*IF(mp.precasu=0,mp.precunit, mp.precasu),2)) "
+                         + "FROM admppres WHERE numepart=mp.numero AND mpre_id='"+pres+"'),0)"
+                         + " as dismonto,"
+                         + "mp.cantidad+IFNULL((SELECT SUM(aumento) FROM admppres WHERE numepart=mp.numero AND mpre_id='"+pres+"'),0)-"
+                         + "IFNULL((SELECT SUM(disminucion) FROM admppres WHERE numepart=mp.numero AND mpre_id='"+pres+"'),0) as cantmodificado"
+                         + ", ROUND((mp.cantidad+IFNULL((SELECT SUM(aumento) FROM admppres WHERE numepart=mp.numero AND mpre_id='"+pres+"'),0)-"
+                         + "IFNULL((SELECT SUM(disminucion) FROM admppres WHERE numepart=mp.numero AND mpre_id='"+pres+"'),0))"
+                         + "*IF(mp.precasu=0,mp.precunit, mp.precasu),2)"
+                         + " as montomodificado,"
+                         + " '"+pres+"',(((mp.cantidad+IFNULL((SELECT SUM(aumento) FROM admppres WHERE numepart=mp.numero AND mpre_id='"+pres+"'),0)-"
+                         + "IFNULL((SELECT SUM(disminucion) FROM admppres WHERE numepart=mp.numero AND mpre_id='"+pres+"'),0))"
                          + "*IF(mp.precasu=0,mp.precunit, mp.precasu))"
                          + " /(IF(mp.precasu=0,mp.precunit, mp.precasu)*mp.cantidad))*100 as porcmodificado "
-                         + "FROM mppres AS mp WHERE mpre_id='"+pres+"' AND tipo ='Org')";
+                         + "FROM mppres AS mp WHERE mpre_id='"+pres+"' AND tipo ='Org' ORDER BY mp.numegrup)";
                  String original= "INSERT INTO reportecuadrocierre (nro, codigo, descri, unidad, precio, origcant, origmonto,"
                          + "aumcantidad, aummonto,discantidad,dismonto,cantmodificado,montomodificado,mpres, porcmodificado)"
                          + completa;
@@ -262,34 +534,39 @@ public class reportecuadrocierre extends javax.swing.JDialog {
                      Statement sts = (Statement) conex.createStatement();
                      sts.execute(titulos);
                      String agrega = "INSERT INTO reportecuadrocierre (nro, codigo, descri,unidad,precio,npcantidad,npmonto,"
-                             + "aumcantidad,aummonto,discantidad,dismonto,cantmodificado, montomodificado,mpres)"
+                             + "aumcantidad,aummonto,discantidad,dismonto,cantmodificado, montomodificado,mpres,porcmodificado)"
                              + " (SELECT mp.numegrup, mp.id, mp.descri, mp.unidad, IF(mp.precasu=0,mp.precunit,mp.precasu) as precio, "
                              + "mp.cantidad,"
-                             + "mp.cantidad*IF(mp.precasu=0,mp.precunit,mp.precasu) as npmonto, (SELECT aumento FROM admppres WHERE "
+                             + "ROUND(mp.cantidad*IF(mp.precasu=0,mp.precunit,mp.precasu),2) as npmonto, (SELECT SUM(aumento) FROM admppres WHERE "
                              + "(mpre_id='"+pres+"' OR mpre_id IN (SELECT id FROM mpres WHERE mpres_id='"+pres+"')) AND "
                              + "numepart=mp.numero "
-                             + ") as aumcantidad, (SELECT aumento FROM admppres WHERE "
+                             + ") as aumcantidad, ROUND((SELECT SUM(aumento) FROM admppres WHERE "
                              + "(mpre_id='"+pres+"' OR mpre_id IN (SELECT id FROM mpres WHERE mpres_id='"+pres+"')) AND "
                              + "numepart=mp.numero "
-                             + ")*IF(mp.precasu=0,mp.precunit,mp.precasu) as aummonto, (SELECT disminucion FROM admppres WHERE "
+                             + ")*IF(mp.precasu=0,mp.precunit,mp.precasu),2) as aummonto, (SELECT SUM(disminucion) FROM admppres WHERE "
                              + "(mpre_id='"+pres+"' OR mpre_id IN (SELECT id FROM mpres WHERE mpres_id='"+pres+"')) AND "
                              + "numepart=mp.numero "
-                             + ") as discantidad, (SELECT aumento FROM admppres WHERE "
+                             + ") as discantidad, ROUND((SELECT SUM(disminucion) FROM admppres WHERE "
                              + "(mpre_id='"+pres+"' OR mpre_id IN (SELECT id FROM mpres WHERE mpres_id='"+pres+"')) AND "
                              + "numepart=mp.numero "
-                             + ")* IF(mp.precasu=0,mp.precunit,mp.precasu) as dismonto, mp.cantidad+ (SELECT aumento FROM admppres WHERE "
+                             + ")* IF(mp.precasu=0,mp.precunit,mp.precasu),2) as dismonto, mp.cantidad+ IFNULL(((SELECT SUM(aumento) FROM admppres WHERE "
                              + "(mpre_id='"+pres+"' OR mpre_id IN (SELECT id FROM mpres WHERE mpres_id='"+pres+"')) AND "
                              + "numepart=mp.numero "
-                             + ")-(SELECT disminucion FROM admppres WHERE "
+                             + ")-(SELECT SUM(disminucion) FROM admppres WHERE "
                              + "(mpre_id='"+pres+"' OR mpre_id IN (SELECT id FROM mpres WHERE mpres_id='"+pres+"')) AND "
                              + "numepart=mp.numero "
-                             + ") as cantmodificado, mp.cantidad+ (SELECT aumento FROM admppres WHERE "
+                             + ")),0) as cantmodificado, ROUND((mp.cantidad+ IFNULL(((SELECT SUM(aumento) FROM admppres WHERE "
                              + "(mpre_id='"+pres+"' OR mpre_id IN (SELECT id FROM mpres WHERE mpres_id='"+pres+"')) AND "
                              + "numepart=mp.numero "
-                             + ")-(SELECT disminucion FROM admppres WHERE "
+                             + ")-(SELECT SUM(disminucion) FROM admppres WHERE "
                              + "(mpre_id='"+pres+"' OR mpre_id IN (SELECT id FROM mpres WHERE mpres_id='"+pres+"')) AND "
                              + "numepart=mp.numero "
-                             + ")*IF(mp.precasu=0,mp.precunit,mp.precasu) as montomodificado, '"+pres+"' FROM mppres as mp "
+                             + ")),0))*IF(mp.precasu=0,mp.precunit,mp.precasu),2) as montomodificado, '"+pres+"',"
+                             + "(((mp.cantidad+IFNULL((SELECT SUM(aumento) FROM admppres WHERE numepart=mp.numero AND mpre_id='"+pres+"'),0)-"
+                         + "IFNULL((SELECT SUM(disminucion) FROM admppres WHERE numepart=mp.numero AND mpre_id='"+pres+"'),0))"
+                         + "*IF(mp.precasu=0,mp.precunit, mp.precasu))"
+                         + " /(IF(mp.precasu=0,mp.precunit, mp.precasu)*mp.cantidad))*100 as porcmodificado "
+                             + " FROM mppres as mp "
                              + "WHERE mp.tipo='NP' AND mp.tiponp='NP' AND (mp.mpre_id='"+pres+"' OR mp.mpre_id IN (SELECT id FROM "
                              + "mpres WHERE mpres_id='"+pres+"')))";
                      Statement np=(Statement) conex.createStatement();
@@ -313,34 +590,38 @@ public class reportecuadrocierre extends javax.swing.JDialog {
                      Statement sts = (Statement) conex.createStatement();
                      sts.execute(titulos);
                      String agrega = "INSERT INTO reportecuadrocierre (nro, codigo, descri,unidad,precio,npcantidad,npmonto,"
-                             + "aumcantidad,aummonto,discantidad,dismonto,cantmodificado, montomodificado,mpres)"
+                             + "aumcantidad,aummonto,discantidad,dismonto,cantmodificado, montomodificado,mpres,porcmodificado)"
                              + " (SELECT mp.numegrup, mp.id, mp.descri, mp.unidad, IF(mp.precasu=0,mp.precunit,mp.precasu) as precio, "
                              + "mp.cantidad,"
-                             + "mp.cantidad*IF(mp.precasu=0,mp.precunit,mp.precasu) as npmonto, (SELECT aumento FROM admppres WHERE "
+                             + "ROUND(mp.cantidad*IF(mp.precasu=0,mp.precunit,mp.precasu),2) as npmonto, (SELECT SUM(aumento) FROM admppres WHERE "
                              + "(mpre_id='"+pres+"' OR mpre_id IN (SELECT id FROM mpres WHERE mpres_id='"+pres+"')) AND "
                              + "numepart=mp.numero "
-                             + ") as aumcantidad, (SELECT aumento FROM admppres WHERE "
+                             + ") as aumcantidad, ROUND((SELECT SUM(aumento) FROM admppres WHERE "
                              + "(mpre_id='"+pres+"' OR mpre_id IN (SELECT id FROM mpres WHERE mpres_id='"+pres+"')) AND "
                              + "numepart=mp.numero "
-                             + ")*IF(mp.precasu=0,mp.precunit,mp.precasu) as aummonto, (SELECT disminucion FROM admppres WHERE "
+                             + ")*IF(mp.precasu=0,mp.precunit,mp.precasu),2) as aummonto, (SELECT SUM(disminucion) FROM admppres WHERE "
                              + "(mpre_id='"+pres+"' OR mpre_id IN (SELECT id FROM mpres WHERE mpres_id='"+pres+"')) AND "
                              + "numepart=mp.numero "
-                             + ") as discantidad, (SELECT aumento FROM admppres WHERE "
+                             + ") as discantidad, ROUND((SELECT SUM(aumento) FROM admppres WHERE "
                              + "(mpre_id='"+pres+"' OR mpre_id IN (SELECT id FROM mpres WHERE mpres_id='"+pres+"')) AND "
                              + "numepart=mp.numero "
-                             + ")* IF(mp.precasu=0,mp.precunit,mp.precasu) as dismonto, mp.cantidad+ (SELECT aumento FROM admppres WHERE "
+                             + ")* IF(mp.precasu=0,mp.precunit,mp.precasu),2) as dismonto, mp.cantidad+ (SELECT SUM(aumento) FROM admppres WHERE "
                              + "(mpre_id='"+pres+"' OR mpre_id IN (SELECT id FROM mpres WHERE mpres_id='"+pres+"')) AND "
                              + "numepart=mp.numero "
-                             + ")-(SELECT disminucion FROM admppres WHERE "
+                             + ")-(SELECT SUM(disminucion) FROM admppres WHERE "
                              + "(mpre_id='"+pres+"' OR mpre_id IN (SELECT id FROM mpres WHERE mpres_id='"+pres+"')) AND "
                              + "numepart=mp.numero "
-                             + ") as cantmodificado, mp.cantidad+ (SELECT aumento FROM admppres WHERE "
+                             + ") as cantmodificado,ROUND((mp.cantidad+ IFNULL((SELECT SUM(aumento) FROM admppres WHERE "
                              + "(mpre_id='"+pres+"' OR mpre_id IN (SELECT id FROM mpres WHERE mpres_id='"+pres+"')) AND "
                              + "numepart=mp.numero "
-                             + ")-(SELECT disminucion FROM admppres WHERE "
+                             + ")-(SELECT SUM(disminucion) FROM admppres WHERE "
                              + "(mpre_id='"+pres+"' OR mpre_id IN (SELECT id FROM mpres WHERE mpres_id='"+pres+"')) AND "
                              + "numepart=mp.numero "
-                             + ")*IF(mp.precasu=0,mp.precunit,mp.precasu) as montomodificado, '"+pres+"' FROM mppres as mp "
+                             + "),0))*IF(mp.precasu=0,mp.precunit,mp.precasu),2) as montomodificado, '"+pres+"',(((mp.cantidad+IFNULL((SELECT SUM(aumento) FROM admppres WHERE numepart=mp.numero AND mpre_id='"+pres+"'),0)-"
+                         + "IFNULL((SELECT SUM(disminucion) FROM admppres WHERE numepart=mp.numero AND mpre_id='"+pres+"'),0))"
+                         + "*IF(mp.precasu=0,mp.precunit, mp.precasu))"
+                         + " /(IF(mp.precasu=0,mp.precunit, mp.precasu)*mp.cantidad))*100 as porcmodificado "
+                             + " FROM mppres as mp "
                              + "WHERE mp.tipo='NP' AND mp.tiponp='OE' AND (mp.mpre_id='"+pres+"' OR mp.mpre_id IN (SELECT id FROM "
                              + "mpres WHERE mpres_id='"+pres+"')))";
                      Statement np=(Statement) conex.createStatement();
@@ -364,34 +645,37 @@ public class reportecuadrocierre extends javax.swing.JDialog {
                      Statement sts = (Statement) conex.createStatement();
                      sts.execute(titulos);
                      String agrega = "INSERT INTO reportecuadrocierre (nro, codigo, descri,unidad,precio,npcantidad,npmonto,"
-                             + "aumcantidad,aummonto,discantidad,dismonto,cantmodificado, montomodificado,mpres)"
+                             + "aumcantidad,aummonto,discantidad,dismonto,cantmodificado, montomodificado,mpres,porcmodificado)"
                              + " (SELECT mp.numegrup, mp.id, mp.descri, mp.unidad, IF(mp.precasu=0,mp.precunit,mp.precasu) as precio, "
                              + "mp.cantidad,"
-                             + "mp.cantidad*IF(mp.precasu=0,mp.precunit,mp.precasu) as npmonto, (SELECT aumento FROM admppres WHERE "
+                             + "ROUND(mp.cantidad*IF(mp.precasu=0,mp.precunit,mp.precasu),2) as npmonto, (SELECT SUM(aumento) FROM admppres WHERE "
                              + "(mpre_id='"+pres+"' OR mpre_id IN (SELECT id FROM mpres WHERE mpres_id='"+pres+"')) AND "
                              + "numepart=mp.numero "
-                             + ") as aumcantidad, (SELECT aumento FROM admppres WHERE "
+                             + ") as aumcantidad, ROUND((SELECT SUM(aumento) FROM admppres WHERE "
                              + "(mpre_id='"+pres+"' OR mpre_id IN (SELECT id FROM mpres WHERE mpres_id='"+pres+"')) AND "
                              + "numepart=mp.numero "
-                             + ")*IF(mp.precasu=0,mp.precunit,mp.precasu) as aummonto, (SELECT disminucion FROM admppres WHERE "
+                             + ")*IF(mp.precasu=0,mp.precunit,mp.precasu),2) as aummonto, (SELECT SUM(disminucion) FROM admppres WHERE "
                              + "(mpre_id='"+pres+"' OR mpre_id IN (SELECT id FROM mpres WHERE mpres_id='"+pres+"')) AND "
                              + "numepart=mp.numero "
-                             + ") as discantidad, (SELECT aumento FROM admppres WHERE "
+                             + ") as discantidad, ROUND((SELECT SUM(aumento) FROM admppres WHERE "
                              + "(mpre_id='"+pres+"' OR mpre_id IN (SELECT id FROM mpres WHERE mpres_id='"+pres+"')) AND "
                              + "numepart=mp.numero "
-                             + ")* IF(mp.precasu=0,mp.precunit,mp.precasu) as dismonto, mp.cantidad+ (SELECT aumento FROM admppres WHERE "
+                             + ")* IF(mp.precasu=0,mp.precunit,mp.precasu),2) as dismonto, mp.cantidad+ (SELECT SUM(aumento) FROM admppres WHERE "
                              + "(mpre_id='"+pres+"' OR mpre_id IN (SELECT id FROM mpres WHERE mpres_id='"+pres+"')) AND "
                              + "numepart=mp.numero "
-                             + ")-(SELECT disminucion FROM admppres WHERE "
+                             + ")-(SELECT SUM(disminucion) FROM admppres WHERE "
                              + "(mpre_id='"+pres+"' OR mpre_id IN (SELECT id FROM mpres WHERE mpres_id='"+pres+"')) AND "
                              + "numepart=mp.numero "
-                             + ") as cantmodificado, mp.cantidad+ (SELECT aumento FROM admppres WHERE "
+                             + ") as cantmodificado,ROUND(( mp.cantidad+ (SELECT SUM(aumento) FROM admppres WHERE "
                              + "(mpre_id='"+pres+"' OR mpre_id IN (SELECT id FROM mpres WHERE mpres_id='"+pres+"')) AND "
                              + "numepart=mp.numero "
-                             + ")-(SELECT disminucion FROM admppres WHERE "
+                             + ")-(SELECT SUM(disminucion) FROM admppres WHERE "
                              + "(mpre_id='"+pres+"' OR mpre_id IN (SELECT id FROM mpres WHERE mpres_id='"+pres+"')) AND "
                              + "numepart=mp.numero "
-                             + ")*IF(mp.precasu=0,mp.precunit,mp.precasu) as montomodificado, '"+pres+"' FROM mppres as mp "
+                             + "))*IF(mp.precasu=0,mp.precunit,mp.precasu),2 as montomodificado, '"+pres+"',(((mp.cantidad+IFNULL((SELECT SUM(aumento) FROM admppres WHERE numepart=mp.numero AND mpre_id='"+pres+"'),0)-"
+                         + "IFNULL((SELECT SUM(disminucion) FROM admppres WHERE numepart=mp.numero AND mpre_id='"+pres+"'),0))"
+                         + "*IF(mp.precasu=0,mp.precunit, mp.precasu))"
+                         + " /(IF(mp.precasu=0,mp.precunit, mp.precasu)*mp.cantidad))*100 as porcmodificado FROM mppres as mp "
                              + "WHERE mp.tipo='NP' AND mp.tiponp='OA' AND (mp.mpre_id='"+pres+"' OR mp.mpre_id IN (SELECT id FROM "
                              + "mpres WHERE mpres_id='"+pres+"')))";
                      Statement np=(Statement) conex.createStatement();
@@ -415,34 +699,37 @@ public class reportecuadrocierre extends javax.swing.JDialog {
                      Statement sts = (Statement) conex.createStatement();
                      sts.execute(titulos);
                      String agrega = "INSERT INTO reportecuadrocierre (nro, codigo, descri,unidad,precio,npcantidad,npmonto,"
-                             + "aumcantidad,aummonto,discantidad,dismonto,cantmodificado, montomodificado,mpres)"
+                             + "aumcantidad,aummonto,discantidad,dismonto,cantmodificado, montomodificado,mpres,porcmodificado)"
                              + " (SELECT mp.numegrup, mp.id, mp.descri, mp.unidad, IF(mp.precasu=0,mp.precunit,mp.precasu) as precio, "
                              + "mp.cantidad,"
-                             + "mp.cantidad*IF(mp.precasu=0,mp.precunit,mp.precasu) as npmonto, (SELECT aumento FROM admppres WHERE "
+                             + "ROUND(mp.cantidad*IF(mp.precasu=0,mp.precunit,mp.precasu),2) as npmonto, (SELECT SUM(aumento) FROM admppres WHERE "
                              + "(mpre_id='"+pres+"' OR mpre_id IN (SELECT id FROM mpres WHERE mpres_id='"+pres+"')) AND "
                              + "numepart=mp.numero "
-                             + ") as aumcantidad, (SELECT aumento FROM admppres WHERE "
+                             + ") as aumcantidad, ROUND((SELECT SUM(aumento) FROM admppres WHERE "
                              + "(mpre_id='"+pres+"' OR mpre_id IN (SELECT id FROM mpres WHERE mpres_id='"+pres+"')) AND "
                              + "numepart=mp.numero "
-                             + ")*IF(mp.precasu=0,mp.precunit,mp.precasu) as aummonto, (SELECT disminucion FROM admppres WHERE "
+                             + ")*IF(mp.precasu=0,mp.precunit,mp.precasu),2) as aummonto, (SELECT SUM(disminucion) FROM admppres WHERE "
                              + "(mpre_id='"+pres+"' OR mpre_id IN (SELECT id FROM mpres WHERE mpres_id='"+pres+"')) AND "
                              + "numepart=mp.numero "
-                             + ") as discantidad, (SELECT aumento FROM admppres WHERE "
+                             + ") as discantidad, ROUND((SELECT SUM(aumento) FROM admppres WHERE "
                              + "(mpre_id='"+pres+"' OR mpre_id IN (SELECT id FROM mpres WHERE mpres_id='"+pres+"')) AND "
                              + "numepart=mp.numero "
-                             + ")* IF(mp.precasu=0,mp.precunit,mp.precasu) as dismonto, mp.cantidad+ (SELECT aumento FROM admppres WHERE "
+                             + ")* IF(mp.precasu=0,mp.precunit,mp.precasu),2) as dismonto, mp.cantidad+ (SELECT SUM(aumento) FROM admppres WHERE "
                              + "(mpre_id='"+pres+"' OR mpre_id IN (SELECT id FROM mpres WHERE mpres_id='"+pres+"')) AND "
                              + "numepart=mp.numero "
-                             + ")-(SELECT disminucion FROM admppres WHERE "
+                             + ")-(SELECT SUM(disminucion) FROM admppres WHERE "
                              + "(mpre_id='"+pres+"' OR mpre_id IN (SELECT id FROM mpres WHERE mpres_id='"+pres+"')) AND "
                              + "numepart=mp.numero "
-                             + ") as cantmodificado, mp.cantidad+ (SELECT aumento FROM admppres WHERE "
+                             + ") as cantmodificado, ROUND((mp.cantidad+ (SELECT SUM(aumento) FROM admppres WHERE "
                              + "(mpre_id='"+pres+"' OR mpre_id IN (SELECT id FROM mpres WHERE mpres_id='"+pres+"')) AND "
                              + "numepart=mp.numero "
-                             + ")-(SELECT disminucion FROM admppres WHERE "
+                             + ")-(SELECT SUM(disminucion) FROM admppres WHERE "
                              + "(mpre_id='"+pres+"' OR mpre_id IN (SELECT id FROM mpres WHERE mpres_id='"+pres+"')) AND "
                              + "numepart=mp.numero "
-                             + ")*IF(mp.precasu=0,mp.precunit,mp.precasu) as montomodificado, '"+pres+"' FROM mppres as mp "
+                             + "))*IF(mp.precasu=0,mp.precunit,mp.precasu),2) as montomodificado, '"+pres+"',(((mp.cantidad+IFNULL((SELECT SUM(aumento) FROM admppres WHERE numepart=mp.numero AND mpre_id='"+pres+"'),0)-"
+                         + "IFNULL((SELECT SUM(disminucion) FROM admppres WHERE numepart=mp.numero AND mpre_id='"+pres+"'),0))"
+                         + "*IF(mp.precasu=0,mp.precunit, mp.precasu))"
+                         + " /(IF(mp.precasu=0,mp.precunit, mp.precasu)*mp.cantidad))*100 as porcmodificado FROM mppres as mp "
                              + "WHERE mp.tipo='NP' AND mp.tiponp='OC' AND (mp.mpre_id='"+pres+"' OR mp.mpre_id IN (SELECT id FROM "
                              + "mpres WHERE mpres_id='"+pres+"')))";
                      Statement np=(Statement) conex.createStatement();
@@ -465,8 +752,8 @@ public class reportecuadrocierre extends javax.swing.JDialog {
                      Statement sts = (Statement) conex.createStatement();
                      sts.execute(titulos);
                      String agrega = "INSERT INTO reportecuadrocierre (nro, codigo, descri,unidad,precio, vpcantidad, vpmonto,"
-                             + "aumcantidad,aummonto,discantidad,dismonto,cantmodificado, montomodificado,mpres)"
-                             + " (SELECT mp.numegrup, mp.id, mp.descri, mp.unidad, "
+                             + "aumcantidad,aummonto,discantidad,dismonto,cantmodificado, montomodificado,mpres,porcmodificado)"
+                             + " (SELECT mp.tiporec, mp.id, mp.descri, mp.unidad, "
                              + "IF(IF(mp.precasu=0,mp.precunit,mp.precasu)-(SELECT IF(precasu=0,precunit, precasu) FROM "
                              + "mppres WHERE (mpre_id='"+pres+"' OR mpre_id IN (SELECT id FROM mpres WHERE mpres_id='"+pres+"'))"
                              + " AND numero=mp.mppre_id)<0,0,IF(mp.precasu=0,mp.precunit,mp.precasu)-(SELECT IF(precasu=0,precunit, precasu) FROM "
@@ -474,45 +761,50 @@ public class reportecuadrocierre extends javax.swing.JDialog {
                              + " AND numero=mp.mppre_id)) "
                              + "as precio, "
                              + "mp.cantidad,"
-                             + "mp.cantidad*IF((IF(mp.precasu=0,mp.precunit,mp.precasu)-(SELECT IF(precasu=0,precunit, precasu) FROM "
+                             
+                             + "ROUND(mp.cantidad*IF((IF(mp.precasu=0,mp.precunit,mp.precasu)-(SELECT IF(precasu=0,precunit, precasu) FROM "
                              + "mppres WHERE (mpre_id='"+pres+"' OR mpre_id IN (SELECT id FROM mpres WHERE mpres_id='"+pres+"'))"
-                             + " AND numero=mp.mppre_id))<0,0,mp.cantidad*(IF(mp.precasu=0,mp.precunit,mp.precasu)-(SELECT IF(precasu=0,precunit, precasu)"
+                             + " AND numero=mp.mppre_id))<0,0,(IF(mp.precasu=0,mp.precunit,mp.precasu)-(SELECT IF(precasu=0,precunit, precasu)"
                              + " FROM "
                              + "mppres WHERE (mpre_id='"+pres+"' OR mpre_id IN (SELECT id FROM mpres WHERE mpres_id='"+pres+"'))"
-                             + " AND numero=mp.mppre_id))) as vpmonto, "
-                             + "(SELECT aumento FROM admppres WHERE "
+                             + " AND numero=mp.mppre_id))),2) as vpmonto, "
+                             
+                             + "(SELECT SUM(aumento) FROM admppres WHERE "
                              + "(mpre_id='"+pres+"' OR mpre_id IN (SELECT id FROM mpres WHERE mpres_id='"+pres+"')) AND "
                              + "numepart=mp.numero "
-                             + ") as aumcantidad, (SELECT aumento FROM admppres WHERE "
+                             + ") as aumcantidad, ROUND((SELECT SUM(aumento) FROM admppres WHERE "
                              + "(mpre_id='"+pres+"' OR mpre_id IN (SELECT id FROM mpres WHERE mpres_id='"+pres+"')) AND "
                              + "numepart=mp.numero "
-                             + ")*IF(mp.precasu=0,mp.precunit,mp.precasu)-(SELECT IF(precasu=0,precunit, precasu) FROM "
+                             + ")*(IF(mp.precasu=0,mp.precunit,mp.precasu)-(SELECT IF(precasu=0,precunit, precasu) FROM "
                              + "mppres WHERE (mpre_id='"+pres+"' OR mpre_id IN (SELECT id FROM mpres WHERE mpres_id='"+pres+"'))"
-                             + " AND numero=mp.mppre_id)  as aummonto, (SELECT disminucion FROM admppres WHERE "
+                             + " AND numero=mp.mppre_id)),2)  as aummonto, (SELECT SUM(disminucion) FROM admppres WHERE "
                              + "(mpre_id='"+pres+"' OR mpre_id IN (SELECT id FROM mpres WHERE mpres_id='"+pres+"')) AND "
                              + "numepart=mp.numero "
-                             + ") as discantidad, (SELECT aumento FROM admppres WHERE "
+                             + ") as discantidad, ROUND((SELECT SUM(disminucion) FROM admppres WHERE "
                              + "(mpre_id='"+pres+"' OR mpre_id IN (SELECT id FROM mpres WHERE mpres_id='"+pres+"')) AND "
                              + "numepart=mp.numero "
-                             + ")* IF(mp.precasu=0,mp.precunit,mp.precasu)-(SELECT IF(precasu=0,precunit, precasu) FROM "
+                             + ")* (IF(mp.precasu=0,mp.precunit,mp.precasu)-(SELECT IF(precasu=0,precunit, precasu) FROM "
                              + "mppres WHERE (mpre_id='"+pres+"' OR mpre_id IN (SELECT id FROM mpres where mpres_id='"+pres+"'))"
-                             + " AND numero=mp.mppre_id)  as dismonto, mp.cantidad+ (SELECT aumento FROM admppres WHERE "
+                             + " AND numero=mp.mppre_id)),2)  as dismonto, mp.cantidad+ IFNULL(((SELECT SUM(aumento) FROM admppres WHERE "
                              + "(mpre_id='"+pres+"' OR mpre_id IN (SELECT id FROM mpres WHERE mpres_id='"+pres+"')) AND "
                              + "numepart=mp.numero "
-                             + ")-(SELECT disminucion FROM admppres WHERE "
+                             + ")-(SELECT SUM(disminucion) FROM admppres WHERE "
                              + "(mpre_id='"+pres+"' OR mpre_id IN (SELECT id FROM mpres WHERE mpres_id='"+pres+"')) AND "
                              + "numepart=mp.numero "
-                             + ") as cantmodificado, mp.cantidad+ (SELECT aumento FROM admppres WHERE "
+                             + ")),0) as cantmodificado, ROUND((mp.cantidad+ IFNULL((SELECT SUM(aumento) FROM admppres WHERE "
                              + "(mpre_id='"+pres+"' OR mpre_id IN (SELECT id FROM mpres WHERE mpres_id='"+pres+"')) AND "
                              + "numepart=mp.numero "
-                             + ")-(SELECT disminucion FROM admppres WHERE "
+                             + ")-(SELECT SUM(disminucion) FROM admppres WHERE "
                              + "(mpre_id='"+pres+"' OR mpre_id IN (SELECT id FROM mpres WHERE mpres_id='"+pres+"')) AND "
                              + "numepart=mp.numero "
-                             + ")*IF(mp.precasu=0,mp.precunit,mp.precasu)-(SELECT IF(precasu=0,precunit, precasu) FROM "
+                             + "),0))*IFNULL(IF(mp.precasu=0,mp.precunit,mp.precasu)-(SELECT IF(precasu=0,precunit, precasu) FROM "
                              + "mppres WHERE (mpre_id='"+pres+"' OR mpre_id IN (SELECT id FROM mpres WHERE mpres_id='"+pres+"'))"
-                             + " AND numero=mp.mppre_id)  as montomodificado, '"+pres+"' FROM mppres as mp "
+                             + " AND numero=mp.mppre_id),0),2) as montomodificado, '"+pres+"',(((mp.cantidad+IFNULL((SELECT SUM(aumento) FROM admppres WHERE numepart=mp.numero AND mpre_id='"+pres+"'),0)-"
+                         + "IFNULL((SELECT SUM(disminucion) FROM admppres WHERE numepart=mp.numero AND mpre_id='"+pres+"'),0))"
+                         + "*IF(mp.precasu=0,mp.precunit, mp.precasu))"
+                         + " /(IF(mp.precasu=0,mp.precunit, mp.precasu)*mp.cantidad))*100 as porcmodificado FROM mppres as mp "
                              + "WHERE mp.tipo='VP' AND (mp.mpre_id='"+pres+"' OR mp.mpre_id IN (SELECT id FROM "
-                             + "mpres WHERE mpres_id='"+pres+"')))";
+                             + "mpres WHERE mpres_id='"+pres+"')) ORDER BY mp.numegrup)";
                      System.out.println("VP "+agrega);
                      Statement np=(Statement) conex.createStatement();
                      np.execute(agrega);
@@ -533,13 +825,25 @@ public class reportecuadrocierre extends javax.swing.JDialog {
                  }else{
                      fecha="";
                  }
-                 
+                  parameters.put("conimpuesto", jCheckBox2.isSelected()?1:0);
+                  parameters.put("ajuste", jCheckBox4.isSelected()?1:0);
+                  parameters.put("contotales", jCheckBox3.isSelected()?1:0);
+                  if(jCheckBox4.isSelected())
+                  {
+                      parameters.put("ajusteOrig", Double.valueOf(jTextField3.getText()));
+                      parameters.put("ajusteNP", Double.valueOf(jTextField4.getText()));
+                      parameters.put("ajusteAumento", Double.valueOf(jTextField5.getText()));
+                      parameters.put("ajusteDisminucion", Double.valueOf(jTextField6.getText()));
+                      parameters.put("ajusteModificado", Double.valueOf(jTextField8.getText()));
+                  }
+                  
                   parameters.put("fecha", fecha);
                   parameters.put("titulo",titulo);
                   parameters.put("mpres",pres);
                   print = JasperFillManager.fillReport(report, parameters, conex);
                     JasperViewer.viewReport(print, false);
             } catch (JRException ex) {
+                JOptionPane.showMessageDialog(rootPane, "No se generó el reporte "+ex.getMessage());
                 Logger.getLogger(reportecuadrocierre.class.getName()).log(Level.SEVERE, null, ex);
             }
            
@@ -567,7 +871,59 @@ public class reportecuadrocierre extends javax.swing.JDialog {
     private void jTextField2ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jTextField2ActionPerformed
         // TODO add your handling code here:
     }//GEN-LAST:event_jTextField2ActionPerformed
+
+private void jCheckBox2ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jCheckBox2ActionPerformed
+// TODO add your handling code here:
+}//GEN-LAST:event_jCheckBox2ActionPerformed
+
+private void jCheckBox3ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jCheckBox3ActionPerformed
+// TODO add your handling code here:
+}//GEN-LAST:event_jCheckBox3ActionPerformed
+
+private void jCheckBox4ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jCheckBox4ActionPerformed
+// TODO add your handling code here:
+}//GEN-LAST:event_jCheckBox4ActionPerformed
+
+private void jCheckBox4ItemStateChanged(java.awt.event.ItemEvent evt) {//GEN-FIRST:event_jCheckBox4ItemStateChanged
+    if(jCheckBox4.isSelected())
+        disabledEnableFieldsAjuste(true);
+    else
+        disabledEnableFieldsAjuste(false);
+}//GEN-LAST:event_jCheckBox4ItemStateChanged
+
+private void jTextField3KeyTyped(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_jTextField3KeyTyped
+    val.validaFloatNeg(jTextField3.getText(), evt);    
+}//GEN-LAST:event_jTextField3KeyTyped
+
+private void jTextField5KeyTyped(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_jTextField5KeyTyped
+val.validaFloatNeg(jTextField5.getText(), evt);
+}//GEN-LAST:event_jTextField5KeyTyped
+
+private void jTextField4KeyTyped(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_jTextField4KeyTyped
+val.validaFloatNeg(jTextField4.getText(), evt);
+}//GEN-LAST:event_jTextField4KeyTyped
+
+private void jTextField6KeyTyped(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_jTextField6KeyTyped
+val.validaFloatNeg(jTextField6.getText(), evt);
+}//GEN-LAST:event_jTextField6KeyTyped
+
+private void jTextField8KeyTyped(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_jTextField8KeyTyped
+val.validaFloatNeg(jTextField8.getText(), evt);
+}//GEN-LAST:event_jTextField8KeyTyped
     
+/**
+ * Habilita y deshabilita los campos para ajuste de Redondeo en el 
+ * cuadro de cierre
+ * @param is 
+ */
+private void disabledEnableFieldsAjuste(boolean is)
+    {
+        jTextField3.setEditable(is);
+        jTextField4.setEditable(is);
+        jTextField5.setEditable(is);
+        jTextField6.setEditable(is);
+        jTextField8.setEditable(is);
+    }
     private void doClose(int retStatus) {
         returnStatus = retStatus;
         setVisible(false);
@@ -581,12 +937,33 @@ public class reportecuadrocierre extends javax.swing.JDialog {
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JButton cancelButton;
     private javax.swing.JCheckBox jCheckBox1;
+    private javax.swing.JCheckBox jCheckBox2;
+    private javax.swing.JCheckBox jCheckBox3;
+    private javax.swing.JCheckBox jCheckBox4;
     private com.toedter.calendar.JDateChooser jDateChooser1;
     private javax.swing.JLabel jLabel1;
+    private javax.swing.JLabel jLabel10;
     private javax.swing.JLabel jLabel2;
     private javax.swing.JLabel jLabel3;
+    private javax.swing.JLabel jLabel4;
+    private javax.swing.JLabel jLabel5;
+    private javax.swing.JLabel jLabel6;
+    private javax.swing.JLabel jLabel7;
+    private javax.swing.JLabel jLabel8;
+    private javax.swing.JLabel jLabel9;
+    private javax.swing.JPanel jPanel1;
+    private javax.swing.JPanel jPanel2;
+    private javax.swing.JPanel jPanel3;
+    private javax.swing.JPanel jPanel4;
+    private javax.swing.JPanel jPanel5;
     private javax.swing.JTextField jTextField1;
     private javax.swing.JTextField jTextField2;
+    private javax.swing.JTextField jTextField3;
+    private javax.swing.JTextField jTextField4;
+    private javax.swing.JTextField jTextField5;
+    private javax.swing.JTextField jTextField6;
+    private javax.swing.JTextField jTextField7;
+    private javax.swing.JTextField jTextField8;
     private javax.swing.JButton okButton;
     // End of variables declaration//GEN-END:variables
     private int returnStatus = RET_CANCEL;

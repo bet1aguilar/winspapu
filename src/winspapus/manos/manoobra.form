@@ -49,7 +49,9 @@
                   <EmptySpace max="-2" attributes="0"/>
               </Group>
               <Group type="102" alignment="1" attributes="0">
-                  <EmptySpace pref="584" max="32767" attributes="0"/>
+                  <EmptySpace pref="533" max="32767" attributes="0"/>
+                  <Component id="jButton1" min="-2" pref="45" max="-2" attributes="0"/>
+                  <EmptySpace max="-2" attributes="0"/>
                   <Component id="okButton" min="-2" pref="45" max="-2" attributes="0"/>
                   <EmptySpace max="-2" attributes="0"/>
                   <Component id="cancelButton" min="-2" pref="45" max="-2" attributes="0"/>
@@ -66,9 +68,12 @@
                   <EmptySpace min="-2" max="-2" attributes="0"/>
                   <Component id="jScrollPane1" pref="137" max="32767" attributes="0"/>
                   <EmptySpace max="-2" attributes="0"/>
-                  <Group type="103" groupAlignment="3" attributes="0">
-                      <Component id="okButton" alignment="3" min="-2" pref="45" max="-2" attributes="0"/>
-                      <Component id="cancelButton" alignment="3" min="-2" pref="45" max="-2" attributes="0"/>
+                  <Group type="103" groupAlignment="0" attributes="0">
+                      <Group type="103" groupAlignment="3" attributes="0">
+                          <Component id="okButton" alignment="3" min="-2" pref="45" max="-2" attributes="0"/>
+                          <Component id="cancelButton" alignment="3" min="-2" pref="45" max="-2" attributes="0"/>
+                      </Group>
+                      <Component id="jButton1" alignment="0" min="-2" pref="45" max="-2" attributes="0"/>
                   </Group>
                   <EmptySpace max="-2" attributes="0"/>
               </Group>
@@ -150,6 +155,9 @@
                 <Property name="columnModel" type="javax.swing.table.TableColumnModel" editor="org.netbeans.modules.form.editors2.TableColumnModelEditor">
                   <TableColumnModel selectionModel="0"/>
                 </Property>
+                <Property name="selectionBackground" type="java.awt.Color" editor="org.netbeans.beaninfo.editors.ColorEditor">
+                  <Color blue="0" green="8d" red="d8" type="rgb"/>
+                </Property>
                 <Property name="tableHeader" type="javax.swing.table.JTableHeader" editor="org.netbeans.modules.form.editors2.JTableHeaderEditor">
                   <TableHeader reorderingAllowed="true" resizingAllowed="true"/>
                 </Property>
@@ -201,7 +209,7 @@
         <Component class="javax.swing.JButton" name="okButton">
           <Properties>
             <Property name="icon" type="javax.swing.Icon" editor="org.netbeans.modules.form.editors2.IconEditor">
-              <Image iconType="3" name="/winspapus/imagenes/guardar.png"/>
+              <Image iconType="3" name="/winspapus/imagenes/asignar.fw.png"/>
             </Property>
           </Properties>
           <Events>
@@ -220,6 +228,17 @@
           </Properties>
           <Events>
             <EventHandler event="actionPerformed" listener="java.awt.event.ActionListener" parameters="java.awt.event.ActionEvent" handler="cancelButtonActionPerformed"/>
+          </Events>
+        </Component>
+        <Component class="javax.swing.JButton" name="jButton1">
+          <Properties>
+            <Property name="icon" type="javax.swing.Icon" editor="org.netbeans.modules.form.editors2.IconEditor">
+              <Image iconType="3" name="/winspapus/imagenes/anade.fw.png"/>
+            </Property>
+            <Property name="toolTipText" type="java.lang.String" value="Agregar Nueva Mano de Obra"/>
+          </Properties>
+          <Events>
+            <EventHandler event="actionPerformed" listener="java.awt.event.ActionListener" parameters="java.awt.event.ActionEvent" handler="jButton1ActionPerformed"/>
           </Events>
         </Component>
       </SubComponents>

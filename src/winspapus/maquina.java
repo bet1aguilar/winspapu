@@ -41,12 +41,14 @@ Connection conex, conexion;
 String idcompra, dd, tm, licencia;
 Principal prin;
 SimpleDateFormat formatofecha=new SimpleDateFormat("yyyy-MM-dd");
+String usuarioid;
 String fecha1,fecha2;   
    Date hoy = new Date();
     /** Creates new form maquina */
-    public maquina(java.awt.Frame parent, boolean modal, Connection conex, String idcompra, String dd, String tm, String licencia, Principal prin, Connection conexion) {
+    public maquina(java.awt.Frame parent, boolean modal, Connection conex, String idcompra, String dd, String tm, String licencia, Principal prin, Connection conexion, String usuarioid) {
         super(parent, modal);
         initComponents();
+        this.usuarioid=usuarioid;
         this.prin=prin;
         this.conex=conex;
         this.conexion=conexion;
@@ -61,6 +63,7 @@ String fecha1,fecha2;
         ActionMap actionMap = getRootPane().getActionMap();
         actionMap.put(cancelName, new AbstractAction() {
 
+            @Override
             public void actionPerformed(ActionEvent e) {
                 doClose(RET_CANCEL);
             }
@@ -126,9 +129,19 @@ String fecha1,fecha2;
                 jTextField1ActionPerformed(evt);
             }
         });
+        jTextField1.addKeyListener(new java.awt.event.KeyAdapter() {
+            public void keyTyped(java.awt.event.KeyEvent evt) {
+                jTextField1KeyTyped(evt);
+            }
+        });
 
         jTextArea1.setColumns(20);
         jTextArea1.setRows(5);
+        jTextArea1.addKeyListener(new java.awt.event.KeyAdapter() {
+            public void keyTyped(java.awt.event.KeyEvent evt) {
+                jTextArea1KeyTyped(evt);
+            }
+        });
         jScrollPane1.setViewportView(jTextArea1);
 
         javax.swing.GroupLayout layout = new javax.swing.GroupLayout(getContentPane());
@@ -196,6 +209,7 @@ String fecha1,fecha2;
                 idmaquina = rstid.getString(1);
             }
         } catch (SQLException ex) {
+            JOptionPane.showMessageDialog(rootPane, "Error al insertar su máquina en el servidor "+ex.getMessage());
             Logger.getLogger(maquina.class.getName()).log(Level.SEVERE, null, ex);
         }
         //sql="insert into instalacion (usuario_id,maquina_id,version_compra";
@@ -208,33 +222,86 @@ String fecha1,fecha2;
             while(rst.next()){
                 usuario_id=rst.getString(1);
             }} catch (SQLException ex) {
-            Logger.getLogger(maquina.class.getName()).log(Level.SEVERE, null, ex);
-        }
+                JOptionPane.showMessageDialog(rootPane, "Error al consultar el ID del Usuario "+ex.getMessage());
+                Logger.getLogger(maquina.class.getName()).log(Level.SEVERE, null, ex);
+            }
                 String insertinst="INSERT INTO instalacion (usuario_id, maquinas_id, version_compra_id) "
                         + "VALUES ('"+usuario_id+"','"+idmaquina+"','"+idcompra+"')";
         try {
             Statement stinsert = (Statement) conex.createStatement();
             stinsert.execute(insertinst);
         } catch (SQLException ex) {
+            JOptionPane.showMessageDialog(rootPane, "Error al Insertar la instalación "+ex.getMessage());
             Logger.getLogger(maquina.class.getName()).log(Level.SEVERE, null, ex);
         }
-                
-        sql="update version_compra set instalacion=1 where id='" + idcompra +"'";
-        try {
-            Statement vc = (Statement) conex.createStatement();
-            vc.execute(sql);
-           
-            fecha1=formatofecha.format(hoy);    
+               fecha1=formatofecha.format(hoy);    
             fecha2=formatofecha.format(hoy);    
-                sql="insert into mpresadm (fecha,codigo, tm, licencia,status,activo, comprobacion)"
-                        + " values ('"+fecha1+"','"+dd+"','"+tm+"','"+licencia+"','1',0,'"+fecha2+"')";
+                
+                String sqlusuario = "SELECT *, IFNULL(tipo_organismo,0) FROM usuario WHERE id="+usuarioid;
+                Statement stusuario = null;
+        try {
+            stusuario = (Statement) conex.createStatement();
+             ResultSet rstusuario = null;
+       
+            rstusuario = stusuario.executeQuery(sqlusuario);
+       
+                String nombre = "", representante ="", rif = "", direccion = "", telefono = "";
+                int publico=0;
+                while(rstusuario.next())
+                {
+                    nombre=rstusuario.getString("nombre");
+                    representante=rstusuario.getString("contacto");
+                    rif=rstusuario.getString("rif");
+                    direccion = rstusuario.getString("direccion");
+                    telefono = rstusuario.getString("telefono");
+                    publico = rstusuario.getInt("tipo_organismo");
+                    
+                }
+                    String cuenta = "SELECT COUNT(*) FROM instalacion";
+                    
+                        Statement stcuenta = (Statement) conexion.createStatement();
+                        ResultSet rstcuenta = stcuenta.executeQuery(cuenta);
+                        int cuentas=0;
+                        while(rstcuenta.next())
+                        {
+                            cuentas = rstcuenta.getInt(1);
+                        }
+                        
+                        if(cuentas==0){
+                            String inserta = "INSERT INTO instalacion (id, propietario, demo, representante, rif, direccion, telefono, publico, bloqueado, licencia)"
+                                    + " VALUES ('1','"+nombre+"', '1', '"+representante+"','"+rif+"', '"+direccion+"', '"+telefono+"',"+publico+","+publico+",'"+licencia+"')";
+                           Statement st = (Statement) conexion.createStatement();
+                           st.execute(inserta);
+                        }
+                        else{
+                             String update = "UPDATE instalacion SET demo='1', propietario='"+nombre+"', rif='"+rif+"'"
+                                     + ", direccion='"+direccion+"', telefono='"+telefono+"', publico="+publico+", bloqueado='"+publico+"' WHERE id='1'";
+                           Statement st = (Statement) conexion.createStatement();
+                           st.execute(update); 
+                        }
+                        sql="insert into mpresadm (fecha,codigo, tm, licencia,status,activo, comprobacion)"
+                     + " values ('"+fecha1+"','"+dd+"','"+tm+"','"+licencia+"','1',0,'"+fecha2+"')";
                 System.out.println(sql);
                  Statement esc = (Statement) conexion.createStatement();
                 esc.execute(sql); 
                  JOptionPane.showMessageDialog(rootPane, "Instalación registrada Satisfactoriamente");
                  prin.sinst=1; 
-              doClose(RET_OK);
+                 
+              
+               } catch (SQLException ex) {
+                   doClose(RET_OK);
+                    JOptionPane.showMessageDialog(rootPane, "Error al Modificar Instalación local "+ex.getMessage());
+            Logger.getLogger(maquina.class.getName()).log(Level.SEVERE, null, ex);
+        }
+          
+        sql="update version_compra set instalacion=1 where id='" + idcompra +"'";
+        try {
+            Statement vc = (Statement) conex.createStatement();
+            vc.execute(sql);
+           
+            
         } catch (SQLException ex) {
+            JOptionPane.showMessageDialog(rootPane, "Error al Modificar Instalación en el servidor "+ex.getMessage());
             Logger.getLogger(Versiones.class.getName()).log(Level.SEVERE, null, ex);
         }
         doClose(RET_OK);
@@ -252,6 +319,20 @@ String fecha1,fecha2;
 private void jTextField1ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jTextField1ActionPerformed
 // TODO add your handling code here:
 }//GEN-LAST:event_jTextField1ActionPerformed
+
+private void jTextField1KeyTyped(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_jTextField1KeyTyped
+Character c = evt.getKeyChar();
+                if(Character.isLetter(c)) {
+                    evt.setKeyChar(Character.toUpperCase(c));
+                }// TODO add your handling code here:
+}//GEN-LAST:event_jTextField1KeyTyped
+
+private void jTextArea1KeyTyped(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_jTextArea1KeyTyped
+Character c = evt.getKeyChar();
+                if(Character.isLetter(c)) {
+                    evt.setKeyChar(Character.toUpperCase(c));
+                }// TODO add your handling code here:
+}//GEN-LAST:event_jTextArea1KeyTyped
     
     private void doClose(int retStatus) {
         returnStatus = retStatus;

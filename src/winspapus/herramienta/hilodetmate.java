@@ -49,12 +49,14 @@ public class hilodetmate extends Thread{
             sql = "Select * from materialespartida";
             ResultSet rst7 = carga7.executeQuery(sql); 
              while(rst7.next()){                 
-                 sql= "INSERT INTO dmtabs VALUES ('"+mtabu+"',"
+                 sql= "REPLACE INTO dmtabs "
+                         + "(mtabus_id, mptab_id, mmtab_id, numepart, cantidad, status) "
+                         + "VALUES ('"+mtabu+"',"
                                               + "'"+rst7.getString("IDPartidas")+"',"
                                               + "'"+rst7.getString("IDMateriales")+"',"
                                               + rst7.getInt("Numero")+","                                                         
                                               + rst7.getFloat("Cantidad")+","
-                                              + rst7.getFloat("precio")+","                                                          
+                                                                                            
                                               + "1)";                   
                    escribir7.execute(sql); 
 

@@ -325,6 +325,14 @@ WHERE id=$P{mtabus}]]>
 				</textElement>
 				<text><![CDATA[Impuestos]]></text>
 			</staticText>
+			<textField>
+				<reportElement uuid="74375e73-af43-4b1b-9029-0e786ee6b040" x="518" y="45" width="37" height="15"/>
+				<box leftPadding="5"/>
+				<textElement verticalAlignment="Middle">
+					<font size="9"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$V{PAGE_NUMBER}]]></textFieldExpression>
+			</textField>
 		</band>
 	</pageHeader>
 	<detail>
@@ -432,31 +440,20 @@ WHERE id=$P{mtabus}]]>
 	</columnFooter>
 	<pageFooter>
 		<band height="40" splitType="Stretch">
-			<textField>
-				<reportElement uuid="74375e73-af43-4b1b-9029-0e786ee6b040" x="518" y="25" width="37" height="15"/>
-				<box leftPadding="5"/>
-				<textElement verticalAlignment="Middle">
-					<font size="9"/>
-				</textElement>
-				<textFieldExpression><![CDATA[$V{PAGE_NUMBER}]]></textFieldExpression>
-			</textField>
 			<staticText>
 				<reportElement uuid="aff01453-48af-483b-b5db-ead5cf76a88b" x="0" y="11" width="555" height="15"/>
 				<textElement textAlignment="Center" verticalAlignment="Middle">
-					<font size="8" isBold="true"/>
+					<font size="7" isBold="true"/>
 				</textElement>
 				<text><![CDATA[SPAPU (Sistemas R.H. C.A.)  San Cristóbal Edo. Táchira, Barrio Obrero Carrera 18 Entre calles 8 y 9 Edf. Marcol's No. 8-23 ]]></text>
 			</staticText>
 			<staticText>
-				<reportElement uuid="592a075a-c9af-4064-9f52-c179dfb0a2bc" x="0" y="25" width="518" height="15"/>
+				<reportElement uuid="ef763633-2ce5-466e-a3a6-30ca3d8cc2af" x="0" y="26" width="555" height="10"/>
 				<textElement textAlignment="Center" verticalAlignment="Middle">
-					<font size="8" isBold="true"/>
+					<font size="7" isBold="true"/>
 				</textElement>
-				<text><![CDATA[0276-3567564 / 0276-3553158 / 0276-3560071 / 0276-3579562]]></text>
+				<text><![CDATA[0276-3567564 / 0276-3553158 / 0276-3560071 / 0276-3579562 - www.spapu.net / Facebook: SPAPU.SISTEMASRH / Twitter: @Spapu]]></text>
 			</staticText>
-			<line>
-				<reportElement uuid="cc443ef4-8b4b-4573-98f2-24c2c7d7db1f" x="0" y="3" width="555" height="1"/>
-			</line>
 		</band>
 	</pageFooter>
 </jasperReport>

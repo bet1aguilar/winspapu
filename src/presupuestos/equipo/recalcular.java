@@ -9,11 +9,11 @@
  * Created on 20/09/2012, 10:05:38 PM
  */
 package presupuestos.equipo;
-
-import com.mysql.jdbc.Connection;
+import java.sql.Connection;
 import com.mysql.jdbc.Statement;
 import java.awt.event.ActionEvent;
 import java.awt.event.KeyEvent;
+import java.math.BigDecimal;
 import java.sql.SQLException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -225,7 +225,7 @@ public class recalcular extends javax.swing.JDialog {
 
     private void okButtonMouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_okButtonMouseClicked
        int valida = 0, seleccionado=-1;
-        float porcentaje=0;
+        BigDecimal porcentaje= new BigDecimal("0.00");
         if(jTextField1.getText().toString().equals("")){
             valida=1;
         }
@@ -234,7 +234,7 @@ public class recalcular extends javax.swing.JDialog {
             jLabel6.setVisible(false);
             seleccionado=jComboBox1.getSelectedIndex();
             if(seleccionado==0){ 
-                porcentaje = (Float.valueOf(jTextField1.getText().toString())/100)+1;
+                porcentaje =new BigDecimal((Double.valueOf(jTextField1.getText().toString())/100)+1);
                 try {
                     //AUMENTO
                     Statement st = (Statement) conex.createStatement();
@@ -247,7 +247,7 @@ public class recalcular extends javax.swing.JDialog {
                 }
             }else{
                 if(seleccionado==1){
-                    porcentaje = 1-Float.valueOf(jTextField1.getText().toString())/100;
+                    porcentaje = new BigDecimal(1).subtract(new BigDecimal(Double.valueOf(jTextField1.getText().toString())/100));
                 try {
                     //DISMINUCION
                     Statement st = (Statement) conex.createStatement();

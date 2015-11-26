@@ -22,32 +22,25 @@ public class hilomanoobra extends Thread{
     private java.sql.Connection conn;
     RecuperarTab recup;
     Principal prin;
- public static final int RET_OK = 1;
     hilomanoobra(java.sql.Connection conexion, java.sql.Connection conn, RecuperarTab recup, Principal prin) {
         this.conexion=(Connection) conexion;
         this.conn= conn;
         this.recup=recup;
         this.prin=prin;
     }
-    public void conectar(){
-        
-    }
+    
     @Override
     public void run() {
          try {
             
             Statement carga= (Statement) conn.createStatement();
-            Statement escribir = (Statement) conexion.createStatement();
+          
             String sql = "Select * from Config";
             ResultSet rst = carga.executeQuery(sql);
             String mtabu;
             rst.next();
             mtabu = rst.getString("IDConfig");
-          
-            // PARTIDAS
-            String grupo,descri;
-            
-          
+         
             //MANO DE OBRA
             Statement carga4= (Statement) conn.createStatement();
             Statement escribir4 = (Statement) conexion.createStatement();
@@ -55,7 +48,7 @@ public class hilomanoobra extends Thread{
             ResultSet rst4 = carga4.executeQuery(sql); 
              while(rst4.next()){
 
-                 sql= "INSERT INTO mmotabs VALUES ('"+mtabu+"',"
+                 sql= "REPLACE INTO mmotabs VALUES ('"+mtabu+"',"
                                               + "'"+rst4.getString("IDManoObra")+"',"
                                               + "'"+rst4.getString("Descripcion")+"',"
                                               + rst4.getFloat("Bono")+","                                                         

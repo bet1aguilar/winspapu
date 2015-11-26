@@ -10,10 +10,12 @@
  */
 package presupuestos;
 
-import com.mysql.jdbc.Connection;
+
 import com.mysql.jdbc.Statement;
 import java.awt.event.ActionEvent;
 import java.awt.event.KeyEvent;
+import java.sql.Connection;
+import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -62,31 +64,47 @@ public class copiapres extends javax.swing.JDialog {
             //------------COPIA PARTIDAS
             Statement stpart = (Statement) conex.createStatement();
             String partidas = "INSERT INTO mppres "
-                    + "SELECT '"+nombre+"',id,numero,numegrup,descri,idband,porcgad,porcpre,porcutil,precasu,precunit,rendimi,"
+                    + "SELECT IF(tipo='Org','"+nombre+"', IF(tipo='NP',CONCAT('"+nombre+"',tiponp,nropresupuesto), "
+                    + "CONCAT('"+nombre+"',' VP-',nrocuadro))),id,numero,numegrup,descri,idband,porcgad,"
+                    + "porcpre,porcutil,precasu,precunit,rendimi,"
                     + "unidad, redondeo, status, cantidad, tipo, nropresupuesto, nrocuadro, mppre_id, tiporec, refere, "
                     + "fechaini, fechafin, cron, rango, lapso, capitulo,tiponp FROM mppres WHERE mpre_id= '"+pres+"' OR "
                     + "mpre_id IN (SELECT id FROM mpres WHERE mpres_id='"+pres+"')";
             stpart.execute(partidas);
-            String mepres = "INSERT INTO mepres "
-                    + "SELECT '"+nombre+"', id, descri, deprecia, precio, status FROM mepres WHERE mpre_id='"+pres+"'";
-            stpart.execute(mepres);
-            String deppres = "INSERT INTO deppres"
-                    + " SELECT '"+nombre+"', mppre_id, mepre_id, numero, cantidad, precio, status FROM deppres WHERE mpre_id='"+pres+"'";
+            
+          
+            
+          String  mepres = "INSERT INTO mepres (mpre_id, id, descri, deprecia, precio, status) "
+                    + "SELECT CONCAT('"+nombre+"', REPLACE(mpre_id, '"+pres+"','')), id, descri, deprecia, precio, status FROM "
+                    + "mepres WHERE (mpre_id='"+pres+"' OR mpre_id IN (SELECT id FROM mpres WHERE mpres_id='"+pres+"'))";
+             stpart.execute(mepres);
+            
+            String deppres = "INSERT INTO deppres (mpre_id, mppre_id, mepre_id, numero, cantidad, precio, status) "
+                    + " SELECT CONCAT('"+nombre+"', REPLACE(mpre_id, '"+pres+"','')), mppre_id, mepre_id, numero, "
+                    + "cantidad, precio, status FROM deppres WHERE (mpre_id='"+pres+"' OR"
+                    + " mpre_id IN (SELECT id FROM mpres WHERE mpres_id='"+pres+"'))";
             Statement otro = (Statement) conex.createStatement();
             otro.execute(deppres);
-            String dmpres = "INSERT INTO dmpres SELECT '"+nombre+"', mppre_id, mmpre_id, numepart, cantidad, precio, status FROM "
-                    + "dmpres WHERE mpre_id = '"+pres+"'";
+            String dmpres = "INSERT INTO dmpres (mpre_id, mppre_id, mmpre_id, numepart, cantidad, precio, status) "
+                    + "SELECT CONCAT('"+nombre+"', REPLACE(mpre_id, '"+pres+"','')), "
+                    + "mppre_id, mmpre_id, numepart, cantidad, precio, status FROM "
+                    + "dmpres WHERE (mpre_id = '"+pres+"' OR mpre_id IN (SELECT id FROM mpres WHERE mpres_id='"+pres+"'))";
             otro.execute(dmpres);
-            String mmpres = "INSERT INTO mmpres SELECT '"+nombre+"', id, descri, desperdi, precio, unidad, status FROM mmpres"
-                    + " WHERE mpre_id='"+pres+"'";
+            String mmpres = "INSERT INTO mmpres (mpre_id, id, descri, desperdi, precio, unidad, status)"
+                    + " SELECT CONCAT('"+nombre+"', REPLACE(mpre_id, '"+pres+"','')), id, descri, "
+                    + "desperdi, precio, unidad, status FROM mmpres"
+                    + " WHERE (mpre_id='"+pres+"' OR mpre_id IN (SELECT id FROM mpres WHERE mpres_id ='"+pres+"'))";
             Statement otro1 = (Statement) conex.createStatement();
             otro1.execute(mmpres);
-            String dmoppres = "INSERT INTO dmoppres SELECT '"+nombre+"', mmopre_id, mppre_id, numero, cantidad, bono, salario, subsidi, status"
-                    + " FROM dmoppres WHERE mpre_id = '"+pres+"'";
+            String dmoppres = "INSERT INTO dmoppres (mpre_id, mmopre_id, mppre_id, numero, cantidad, bono, salario, subsidi, status) "
+                    + " SELECT CONCAT('"+nombre+"', REPLACE(mpre_id, '"+pres+"','')), mmopre_id, mppre_id, numero, cantidad, bono, salario, subsidi, status"
+                    + " FROM dmoppres WHERE (mpre_id = '"+pres+"' OR mpre_id IN (SELECT id FROM mpres WHERE mpres_id = '"+pres+"'))";
+            System.out.println(" dmoppres copiar pres "+dmoppres);
             Statement sdmppres = (Statement) conex.createStatement();
             sdmppres.execute(dmoppres);
-            String mmopres = "INSERT INTO mmopres SELECT '"+nombre+"', id, descri, bono,salario, subsid, status FROM mmopres "
-                    + "WHERE mpre_id='"+pres+"'";
+            String mmopres = "INSERT INTO mmopres (mpre_id, id, descri, bono, salario, subsid, status)"
+                    + "  SELECT CONCAT('"+nombre+"', REPLACE(mpre_id, '"+pres+"','')), id, descri, bono,salario, subsid, status FROM mmopres "
+                    + "WHERE (mpre_id='"+pres+"' OR mpre_id IN (SELECT id FROM mpres WHERE mpres_id ='"+pres+"'))";
             Statement smmopres = (Statement) conex.createStatement();
             smmopres.execute(mmopres);
             String pays = "INSERT INTO pays"
@@ -111,8 +129,9 @@ public class copiapres extends javax.swing.JDialog {
             Statement scmpres = (Statement) conex.createStatement();
             scmpres.execute(cmpres);
             Statement valus = (Statement) conex.createStatement();
-            String sql = "INSERT INTO mvalus (desde, hasta, status, mpre_id, tipo, lapso)"
-                    + "SELECT desde, hasta, status, '"+nombre+"', tipo, lapso FROM mvalus WHERE mpre_id='"+pres+"'";
+            String sql = "INSERT INTO mvalus (id, desde, hasta, status, mpre_id, tipo, lapso)"
+                    + "SELECT id, desde, hasta, status, '"+nombre+"', tipo, lapso FROM mvalus WHERE mpre_id='"+pres+"'";
+            System.out.println("mvalus"+sql);
             valus.execute(sql);
             Statement dvalus = (Statement) conex.createStatement();
             String sdvalus = "INSERT INTO dvalus SELECT '"+nombre+"', mvalu_id, mppre_id,cantidad,"
@@ -132,20 +151,46 @@ public class copiapres extends javax.swing.JDialog {
             String sql = "INSERT INTO mpres (id,nomabr,nombre,ubicac,fecini,fecfin,feccon,fecimp,porgam,porcfi,porimp"
                     + ", poripa,porpre,poruti,codpro,codcon,parpre,nrocon,nroctr,fecapr,nrolic,status,mpres_id,memo,"
                     + "timemo,fecmemo,seleccionado,"
-                    + "fecharegistro)"
+                    + "fecharegistro, valu)"
                     + "SELECT '"+nombre+"', nomabr, nombre, ubicac, fecini, fecfin,"
                     + "feccon, fecimp, "
                     + " porgam,porcfi, porimp,poripa,porpre,"
                     + "poruti, codpro,codcon, parpre, nrocon, nroctr, fecapr,"
                     + "nrolic, status, mpres_id, memo, timemo, fecmemo, "
-                    + "seleccionado, NOW()"
+                    + "seleccionado, NOW(), valu"
                     + " FROM mpres WHERE id='"+pres+"'";
             ste.execute(sql);
+            
+            // COPIAR PRESUPUESTOS RELACIONADOS
+            String relacionados= "SELECT id FROM mpres WHERE id IN "
+                                + "(SELECT id FROM mpres WHERE mpres_id='"+pres+"')";
+            Statement strel = (Statement) conex.createStatement();
+            ResultSet rstrel = strel.executeQuery(relacionados);
+            while(rstrel.next())
+            {
+                String id = rstrel.getString(1);
+                String replace = id.replace(pres, "");
+                String codigopres = nombre+replace;    
+                Statement stes = (Statement) conex.createStatement();
+            String s = "INSERT INTO mpres (id,nomabr,nombre,ubicac,fecini,fecfin,feccon,fecimp,porgam,porcfi,porimp"
+                    + ", poripa,porpre,poruti,codpro,codcon,parpre,nrocon,nroctr,fecapr,nrolic,status,mpres_id,memo,"
+                    + "timemo,fecmemo,seleccionado,"
+                    + "fecharegistro, valu)"
+                    + "SELECT '"+codigopres+"', nomabr, nombre, ubicac, fecini, fecfin,"
+                    + "feccon, fecimp, "
+                    + " porgam,porcfi, porimp,poripa,porpre,"
+                    + "poruti, codpro,codcon, parpre, nrocon, nroctr, fecapr,"
+                    + "nrolic, status, '"+nombre+"', memo, timemo, fecmemo, "
+                    + "seleccionado, NOW(), valu"
+                    + " FROM mpres WHERE id='"+id+"'";
+            stes.execute(s);
+            }
+            //----------------------------------
             copiarresto();
             JOptionPane.showMessageDialog(null, "Se ha copiado el presupuesto");
             
         } catch (SQLException ex) {
-            JOptionPane.showMessageDialog(null, "No se ha copiado el presupuesto");
+            JOptionPane.showMessageDialog(null, "No se ha copiado el presupuesto "+ex.getMessage());
             Logger.getLogger(copiapres.class.getName()).log(Level.SEVERE, null, ex);
         }
     }

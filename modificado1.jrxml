@@ -1,13 +1,14 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <jasperReport xmlns="http://jasperreports.sourceforge.net/jasperreports" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports http://jasperreports.sourceforge.net/xsd/jasperreport.xsd" name="modificado1" language="groovy" pageWidth="612" pageHeight="792" columnWidth="555" leftMargin="20" rightMargin="20" topMargin="20" bottomMargin="20" isSummaryWithPageHeaderAndFooter="true" isFloatColumnFooter="true" uuid="83eaadad-50c1-4ace-b629-f8c934b50a1e">
-	<property name="ireport.zoom" value="1.2100000000000009"/>
-	<property name="ireport.x" value="0"/>
-	<property name="ireport.y" value="0"/>
+	<property name="ireport.zoom" value="1.5"/>
+	<property name="ireport.x" value="109"/>
+	<property name="ireport.y" value="225"/>
 	<style name="style1">
 		<conditionalStyle>
 			<conditionExpression><![CDATA[new Boolean($F{numero}.equals(''))]]></conditionExpression>
-			<style forecolor="#000000" backcolor="#868695" fill="Solid" fontSize="14"
-isBold="true" isItalic="false" isUnderline="false" isStrikeThrough="false"/>
+			<style forecolor="#000000" backcolor="#CCCCCC" fill="Solid" vAlign="Middle" fontSize="14" isBold="true" isItalic="false" isUnderline="false" isStrikeThrough="false">
+				<pen lineColor="#666666"/>
+			</style>
 		</conditionalStyle>
 	</style>
 	<parameter name="encabezado" class="java.lang.String"/>
@@ -30,6 +31,9 @@ isBold="true" isItalic="false" isUnderline="false" isStrikeThrough="false"/>
 	<parameter name="civins" class="java.lang.String"/>
 	<parameter name="porimp" class="java.lang.String"/>
 	<parameter name="porimp1" class="java.lang.Double"/>
+	<parameter name="contotales" class="java.lang.Integer">
+		<defaultValueExpression><![CDATA[0]]></defaultValueExpression>
+	</parameter>
 	<queryString>
 		<![CDATA[SELECT
      IFNULL(reportemodificado.`numero`,'') AS numero,
@@ -70,6 +74,14 @@ FROM
 	<variable name="total" class="java.lang.Double">
 		<variableExpression><![CDATA[$V{subtotal}+$V{impuesto}]]></variableExpression>
 	</variable>
+	<variable name="pagina" class="java.math.BigDecimal" resetType="Page" calculation="Sum">
+		<variableExpression><![CDATA[$F{total}]]></variableExpression>
+		<initialValueExpression><![CDATA[0]]></initialValueExpression>
+	</variable>
+	<variable name="acumreport" class="java.math.BigDecimal" calculation="Sum">
+		<variableExpression><![CDATA[$F{total}]]></variableExpression>
+		<initialValueExpression><![CDATA[0]]></initialValueExpression>
+	</variable>
 	<pageHeader>
 		<band height="149" splitType="Stretch">
 			<textField>
@@ -80,21 +92,21 @@ FROM
 				<textFieldExpression><![CDATA[$P{encabezado}]]></textFieldExpression>
 			</textField>
 			<textField>
-				<reportElement uuid="7c5e8a1f-ca0d-40be-a4de-4bff8d22aca0" positionType="Float" x="458" y="11" width="109" height="11"/>
+				<reportElement uuid="7c5e8a1f-ca0d-40be-a4de-4bff8d22aca0" positionType="Float" x="471" y="77" width="71" height="11"/>
 				<textElement textAlignment="Right" verticalAlignment="Middle">
 					<font size="7"/>
 				</textElement>
 				<textFieldExpression><![CDATA["Pág. "+$V{PAGE_NUMBER}+" de "]]></textFieldExpression>
 			</textField>
 			<textField isStretchWithOverflow="true" evaluationTime="Report">
-				<reportElement uuid="890d711b-accf-48f5-99c4-516157267fff" x="567" y="11" width="5" height="11"/>
-				<textElement textAlignment="Right" verticalAlignment="Middle">
+				<reportElement uuid="890d711b-accf-48f5-99c4-516157267fff" x="541" y="77" width="31" height="11"/>
+				<textElement verticalAlignment="Middle">
 					<font size="7"/>
 				</textElement>
-				<textFieldExpression><![CDATA[$V{PAGE_NUMBER}]]></textFieldExpression>
+				<textFieldExpression><![CDATA[" " + $V{PAGE_NUMBER}]]></textFieldExpression>
 			</textField>
 			<staticText>
-				<reportElement uuid="f62baa39-043b-47d6-ab52-07450f6ada29" x="464" y="0" width="65" height="11"/>
+				<reportElement uuid="f62baa39-043b-47d6-ab52-07450f6ada29" x="464" y="66" width="65" height="11"/>
 				<box rightPadding="0"/>
 				<textElement textAlignment="Right" verticalAlignment="Top">
 					<font size="7"/>
@@ -102,7 +114,7 @@ FROM
 				<text><![CDATA[Fecha:]]></text>
 			</staticText>
 			<textField>
-				<reportElement uuid="52327781-511f-4c82-8ea3-7485b652062b" x="529" y="0" width="43" height="11"/>
+				<reportElement uuid="52327781-511f-4c82-8ea3-7485b652062b" x="529" y="66" width="43" height="11"/>
 				<box rightPadding="0"/>
 				<textElement textAlignment="Right" verticalAlignment="Top">
 					<font size="7"/>
@@ -182,7 +194,7 @@ FROM
 					<rightPen lineWidth="1.0"/>
 				</box>
 				<textElement verticalAlignment="Middle">
-					<font size="9"/>
+					<font size="7"/>
 				</textElement>
 				<textFieldExpression><![CDATA[$P{partidapres}]]></textFieldExpression>
 			</textField>
@@ -200,7 +212,7 @@ FROM
 				</textElement>
 				<text><![CDATA[Partida:]]></text>
 			</staticText>
-			<textField>
+			<textField isBlankWhenNull="true">
 				<reportElement uuid="6deef554-ce3e-485b-8cc0-cfcd28ef63ac" positionType="Float" x="466" y="131" width="105" height="17"/>
 				<box>
 					<pen lineWidth="1.0"/>
@@ -210,7 +222,7 @@ FROM
 					<rightPen lineWidth="1.0"/>
 				</box>
 				<textElement verticalAlignment="Middle">
-					<font size="9"/>
+					<font size="7"/>
 				</textElement>
 				<textFieldExpression><![CDATA[$P{nrocont}]]></textFieldExpression>
 			</textField>
@@ -228,12 +240,12 @@ FROM
 				</textElement>
 				<text><![CDATA[Contrato:]]></text>
 			</staticText>
-			<image hAlign="Center" onErrorType="Blank">
-				<reportElement uuid="478f795c-b032-4054-9b02-132ebf1b1073" x="3" y="25" width="54" height="50"/>
+			<image hAlign="Left" onErrorType="Blank">
+				<reportElement uuid="478f795c-b032-4054-9b02-132ebf1b1073" x="0" y="0" width="147" height="66"/>
 				<imageExpression><![CDATA[JRImageRenderer.getInstance((byte []) $P{logo2})]]></imageExpression>
 			</image>
-			<image hAlign="Center" onErrorType="Blank">
-				<reportElement uuid="a9395c8d-6b98-42e1-adab-5c016878b0dc" x="516" y="25" width="54" height="50"/>
+			<image hAlign="Right" onErrorType="Blank">
+				<reportElement uuid="a9395c8d-6b98-42e1-adab-5c016878b0dc" x="420" y="0" width="151" height="66"/>
 				<imageExpression><![CDATA[JRImageRenderer.getInstance((byte []) $P{logo1})]]></imageExpression>
 			</image>
 		</band>
@@ -397,10 +409,50 @@ FROM
 		</band>
 	</detail>
 	<columnFooter>
-		<band height="1" splitType="Stretch">
+		<band height="31" splitType="Stretch">
 			<line>
 				<reportElement uuid="ee3bb69f-f31b-4fec-933d-77f01e07548f" x="0" y="0" width="572" height="1"/>
 			</line>
+			<rectangle>
+				<reportElement uuid="1373bb8e-e66c-4239-84d8-63a9f9f1f276" x="1" y="1" width="570" height="30">
+					<printWhenExpression><![CDATA[new Boolean($P{contotales}==1)]]></printWhenExpression>
+				</reportElement>
+			</rectangle>
+			<staticText>
+				<reportElement uuid="ca6e1732-3189-48e5-9da9-d560036663b1" x="384" y="1" width="100" height="15">
+					<printWhenExpression><![CDATA[new Boolean($P{contotales}==1)]]></printWhenExpression>
+				</reportElement>
+				<textElement textAlignment="Right" verticalAlignment="Middle">
+					<font size="7" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Total Página:]]></text>
+			</staticText>
+			<staticText>
+				<reportElement uuid="a0f89822-787b-434a-a49e-3e1bb35619ff" x="384" y="16" width="100" height="15">
+					<printWhenExpression><![CDATA[new Boolean($P{contotales}==1)]]></printWhenExpression>
+				</reportElement>
+				<textElement textAlignment="Right" verticalAlignment="Middle">
+					<font size="7" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Total Acumulado:]]></text>
+			</staticText>
+			<textField pattern="#,##0.00" isBlankWhenNull="true">
+				<reportElement uuid="065703f2-1173-41aa-a03c-5d1773d0943d" x="484" y="1" width="86" height="15">
+					<printWhenExpression><![CDATA[new Boolean($P{contotales}==1)]]></printWhenExpression>
+				</reportElement>
+				<box rightPadding="3"/>
+				<textElement textAlignment="Right" verticalAlignment="Middle">
+					<font size="7"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$V{pagina}]]></textFieldExpression>
+			</textField>
+			<textField pattern="#,##0.00" isBlankWhenNull="true">
+				<reportElement uuid="e021b3fe-02ca-403b-8016-6e2632763448" x="484" y="16" width="86" height="15"/>
+				<textElement textAlignment="Right" verticalAlignment="Middle">
+					<font size="7" isBold="false"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$V{acumreport}]]></textFieldExpression>
+			</textField>
 		</band>
 	</columnFooter>
 	<pageFooter>
@@ -410,7 +462,7 @@ FROM
 				<textElement textAlignment="Center" verticalAlignment="Middle">
 					<font size="6" isBold="true"/>
 				</textElement>
-				<text><![CDATA[0276-3567564 / 0276-3553158 / 0276-3560071 / 0276-3579562 - www.spapu.com.ve / Facebook: Rhspapu / Twitter: @Spapu]]></text>
+				<text><![CDATA[0276-3567564 / 0276-3553158 / 0276-3560071 / 0276-3579562 - www.spapu.net / Facebook: SPAPU.SISTEMASRH / Twitter: @Spapu]]></text>
 			</staticText>
 			<staticText>
 				<reportElement uuid="a96abeac-b01a-4859-8060-234076d7b103" x="1" y="58" width="568" height="10"/>
@@ -428,7 +480,7 @@ FROM
 				<textFieldExpression><![CDATA[$P{ingins}]]></textFieldExpression>
 			</textField>
 			<rectangle>
-				<reportElement uuid="c668fc5d-d148-4b91-877c-3d19fcabd5c4" x="0" y="0" width="571" height="58"/>
+				<reportElement uuid="c668fc5d-d148-4b91-877c-3d19fcabd5c4" x="0" y="0" width="571" height="59"/>
 			</rectangle>
 			<rectangle>
 				<reportElement uuid="ed79c580-2b60-481d-a9c2-4509c2da5154" x="0" y="0" width="164" height="59"/>

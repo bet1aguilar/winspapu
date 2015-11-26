@@ -10,12 +10,14 @@
  */
 package valuaciones;
 
-import com.mysql.jdbc.Connection;
+import java.sql.Connection;
 import com.mysql.jdbc.ResultSetMetaData;
 import com.mysql.jdbc.Statement;
+import config.Redondeo;
 import java.awt.Dimension;
 import java.awt.event.ActionEvent;
 import java.awt.event.KeyEvent;
+import java.math.BigDecimal;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.StringTokenizer;
@@ -44,16 +46,17 @@ public class parametrorecon extends javax.swing.JDialog {
     public static final int RET_CANCEL = 0;
     /** A return status code - returned if OK button has been pressed */
     public static final int RET_OK = 1;
-    Connection conex;
+    private Connection conex;
     String pres;
     int nume, numegrupo;
     private DefaultTableModel metabs;
     private String[] auxpart;
     private int partida;
     private int auxcont;
+    Redondeo redondear = new Redondeo();
     private int contsel;
     private String[] partidas;
-    private float[] cantidades;
+    private BigDecimal[] cantidades;
     /** Creates new form parametrorecon */
     String nrocuadro=null;
     private boolean enc;
@@ -107,8 +110,8 @@ public class parametrorecon extends javax.swing.JDialog {
         }
     }
     public final void modelovalu(){
-        String selectvalu="SELECT id FROM mvalus WHERE mpre_id='"+pres+"' AND id NOT IN "
-                + "(SELECT valu FROM mpres WHERE mpres_id='"+pres+"' AND valu IS NOT NULL)";
+        String selectvalu="SELECT id FROM mvalus WHERE status=1 AND mpre_id='"+pres+"' AND id NOT IN "
+                + "(SELECT valu FROM mpres WHERE mpres_id='"+pres+"' AND (valu IS NOT NULL))";
         System.out.println("selectvalu "+selectvalu);
         int cuenta=0;
         Statement st;
@@ -558,22 +561,22 @@ public class parametrorecon extends javax.swing.JDialog {
             Logger.getLogger(reconsideraciones.class.getName()).log(Level.SEVERE, null, ex);
         }
     }
-     public float cambiapreciopartida(String numeropartida){
+     public BigDecimal cambiapreciopartida(String numeropartida){
         //AL CAMBIAR UN VALOR DE LOS PARAMETROS DEL PRESUPUESTO COMO LOS PORCENTAJES DE PRESTACIONES SOCIALES
         // SE RECALCULA EL COSTO DE TODAS LAS PARTIDAS
-        float presta = Float.valueOf(jTextField5.getText())/100;
-        float admin = Float.valueOf(jTextField6.getText())/100;
-        float util = Float.valueOf(jTextField7.getText())/100;
-        float finan = Float.valueOf(jTextField8.getText())/100;
-        float impart = Float.valueOf(jTextField9.getText())/100;
-        float impgen = Float.valueOf(jTextField10.getText())/100;
-        float precio=0, totalmat=0, totaleq=0, totalmano=0, totalcantidad=0;
-        float bono=0, subsid=0;
+        BigDecimal presta =new BigDecimal(jTextField5.getText()).divide(new BigDecimal("100"));
+        BigDecimal admin = new BigDecimal(jTextField6.getText()).divide(new BigDecimal("100"));
+        BigDecimal util = new BigDecimal(jTextField7.getText()).divide(new BigDecimal("100"));
+        BigDecimal finan = new BigDecimal(jTextField8.getText()).divide(new BigDecimal("100"));
+        BigDecimal impart = new BigDecimal(jTextField9.getText()).divide(new BigDecimal("100"));
+        BigDecimal impgen = new BigDecimal(jTextField10.getText()).divide(new BigDecimal("100"));
+        BigDecimal precio=new BigDecimal("0"), totalmat=new BigDecimal("0"), totaleq=new BigDecimal("0"), totalmano=new BigDecimal("0"), totalcantidad=new BigDecimal("0");
+        BigDecimal bono=new BigDecimal("0"), subsid=new BigDecimal("0");
         String codpres = pres+" VP-"+nrocuadro;
-        float rendimi=0;
+        BigDecimal rendimi=new BigDecimal("0");
         String mvalu=jComboBox1.getSelectedItem().toString();
         if(!jCheckBox1.isSelected()){
-            String select="SELECT porcgad, porcpre, porcutil FROM mppres WHERE numero="+numeropartida+" "
+            String select="SELECT porcgad, porcpre, IFNULL(porcutil,0) FROM mppres WHERE numero="+numeropartida+" "
                     + "AND (mpre_id='"+pres+"' OR mpre_id IN (SELECT id FROM mpres WHERE mpres_id='"+pres+"'))";
             String porcgad=null, porcpre=null, porcutil=null;
             try {
@@ -585,13 +588,13 @@ public class parametrorecon extends javax.swing.JDialog {
                     porcutil=rstr.getString(3);
                 }
                 if(porcgad!=null){
-                    admin=Float.valueOf(porcgad)/100;
+                    admin=new BigDecimal(porcgad).divide(new BigDecimal("100"));
                 }
                 if(porcpre!=null){
-                    presta=Float.valueOf(porcpre)/100;
+                    presta=new BigDecimal(porcpre).divide(new BigDecimal("100"));
                 }
                 if(porcutil!=null){
-                    util=Float.valueOf(porcutil)/100;
+                    util=new BigDecimal(porcutil).divide(new BigDecimal("100"));
                 }
             } catch (SQLException ex) {
                 System.out.println("No se pudo consultar el porcentaje de las partidas en los parametros para la reconsideración");
@@ -605,7 +608,7 @@ public class parametrorecon extends javax.swing.JDialog {
             Statement sts = (Statement) conex.createStatement();
             ResultSet rsts = sts.executeQuery(selecrendimi);
             while(rsts.next()){
-                rendimi=rsts.getFloat(1);
+                rendimi=rsts.getBigDecimal(1);
             }
         } catch (SQLException ex) {
             System.out.println("Error al consultar el rendimiento de la partida, cuando se va a insertar en una nueva reconsideración");
@@ -613,7 +616,7 @@ public class parametrorecon extends javax.swing.JDialog {
         }
         
         // SUMANDO TOTAL DE MATERIAL
-        String totalmaterial="SELECT SUM((mm.precio+(mm.precio*(mm.desperdi/100)))*dm.cantidad) as total "
+        String totalmaterial="SELECT IFNULL(SUM(ROUND((mm.precio+(mm.precio*(mm.desperdi/100)))*dm.cantidad,2)),0) as total "
                 + "FROM dmpres as dm, mmpres as mm WHERE dm.numepart="+numeropartida+" AND dm.mmpre_id=mm.id "
                 + "AND (dm.mpre_id='"+pres+"' OR dm.mpre_id IN (SELECT id FROM mpres WHERE mpres_id='"+pres+"'))"
                 + " AND dm.mpre_id = mm.mpre_id";
@@ -621,14 +624,15 @@ public class parametrorecon extends javax.swing.JDialog {
             Statement st = (Statement) conex.createStatement();
             ResultSet rst = st.executeQuery(totalmaterial);
             while(rst.next()){
-              totalmat = rst.getFloat("total");
+              totalmat = rst.getBigDecimal("total");
             }
         } catch (SQLException ex) {
             System.out.println("Error al Sumar materiales de la partida de la valuación para agregarla en reconsideración");
             Logger.getLogger(parametrorecon.class.getName()).log(Level.SEVERE, null, ex);
         }
         
-        String totalequipo = "SELECT SUM(IF(me.deprecia=0, (de.cantidad*me.precio),(de.cantidad*me.deprecia*me.precio))) as total "
+        String totalequipo = "SELECT IFNULL(SUM(IF(me.deprecia=0, ROUND((de.cantidad*me.precio),2)"
+                + ",ROUND((de.cantidad*me.deprecia*me.precio),2))),0) as total "
                 + "FROM mepres as me, deppres as de WHERE de.mepre_id=me.id AND de.numero="+numeropartida+" AND "
                 + "(de.mpre_id='"+pres+"' OR de.mpre_id IN (SELECT id FROM mpres WHERE mpres_id='"+pres+"')) "
                 + "AND de.mpre_id=me.mpre_id";
@@ -636,46 +640,46 @@ public class parametrorecon extends javax.swing.JDialog {
             Statement st= (Statement) conex.createStatement();
             ResultSet rst = st.executeQuery(totalequipo);
             while(rst.next()){
-                totaleq=rst.getFloat(1);
+                totaleq=rst.getBigDecimal(1);
             }
         } catch (SQLException ex) {
             System.out.println("Error al consultar el total en equipos para la inserción de partidas en la reconsideración");
             Logger.getLogger(parametrorecon.class.getName()).log(Level.SEVERE, null, ex);
         }
         
-        String consultamano = "SELECT SUM(dm.cantidad) as cantidad, mm.bono, mm.subsid, "
-                    + "SUM(mm.salario*dm.cantidad) as total FROM mmopres as mm, dmoppres as dm "
+        String consultamano = "SELECT IFNULL(SUM(dm.cantidad),0) as cantidad, IFNULL(mm.bono,0) as bono, IFNULL(mm.subsid,0) as subsid, "
+                    + "IFNULL(SUM(ROUND(mm.salario*dm.cantidad,2)),0) as total FROM mmopres as mm, dmoppres as dm "
                 + "WHERE dm.numero ="+numeropartida+" AND (dm.mpre_id='"+pres+"' OR dm.mpre_id IN "
                 + "(SELECT id FROM mpres WHERE mpres_id='"+pres+"')) AND dm.mmopre_id=mm.id AND dm.mpre_id = mm.mpre_id";
         try {
             Statement st = (Statement) conex.createStatement();
             ResultSet rst = st.executeQuery(consultamano);
             while(rst.next()){
-                totalmano = rst.getFloat("total");
-                totalcantidad = rst.getFloat("cantidad");
-                bono = rst.getFloat("mm.bono");
-                subsid = rst.getFloat("mm.subsid");
+                totalmano = rst.getBigDecimal("total");
+                totalcantidad = rst.getBigDecimal("cantidad");
+                bono = rst.getBigDecimal("bono");
+                subsid = rst.getBigDecimal("subsid");
             }
         } catch (SQLException ex) {
             System.out.println("Error al sumar la cantidad de mano de obra en la inserción de la reconsideración");
             Logger.getLogger(parametrorecon.class.getName()).log(Level.SEVERE, null, ex);
         }
-        bono = totalcantidad*bono;
-        subsid = totalcantidad*subsid;
-        presta = totalmano*presta;
-        float auxcontmano = totalmano+bono+subsid+presta;
-        if(rendimi==0)
-            rendimi=1;
-        totalmano=auxcontmano/rendimi;
-        totaleq=totaleq/rendimi;
-        float total = totalmat+totaleq+totalmano;
-        float auxtotal=total;
-        admin = total*admin;
-        util=(auxtotal+admin)*util;
-        auxtotal=total+admin+util;
-        finan=auxtotal*finan;
-        impart=auxtotal*impart;
-        total=auxtotal+finan+impart;
+        bono = redondear.redondearDosDecimales(totalcantidad.multiply(bono));
+        subsid = redondear.redondearDosDecimales(totalcantidad.multiply(subsid));
+        presta = redondear.redondearDosDecimales(totalmano.multiply(presta));
+        BigDecimal auxcontmano = totalmano.add(bono).add(subsid).add(presta);
+        if(rendimi.doubleValue()==0)
+            rendimi=new BigDecimal(1);
+        totalmano=auxcontmano.divide(rendimi, 2, BigDecimal.ROUND_HALF_UP);
+        totaleq=totaleq.divide(rendimi, 2, BigDecimal.ROUND_HALF_UP);
+        BigDecimal total = totalmat.add(totaleq).add(totalmano);
+        BigDecimal auxtotal=total;
+        admin = redondear.redondearDosDecimales(total.multiply(admin));
+        util=redondear.redondearDosDecimales((auxtotal.add(admin)).multiply(util));
+        auxtotal=total.add(admin).add(util);
+        finan=redondear.redondearDosDecimales(auxtotal.multiply(finan));
+        impart=redondear.redondearDosDecimales(auxtotal.multiply(impart));
+        total=auxtotal.add(finan).add(impart);
         return total;
         
     }
@@ -683,15 +687,15 @@ public class parametrorecon extends javax.swing.JDialog {
         String  idband = null, porcgad=null, porcpre=jTextField5.getText(), porcutil=null, precasu=null;
         String precunit = null, rendimi = null, unidad = null, redondeo = null, status = null;
         String mtabus_id="", cantidad="";
-        float porfin = Float.valueOf(jTextField8.getText()), admin=Float.valueOf(jTextField6.getText());
-        float porutil = Float.valueOf(jTextField7.getText()), impart = Float.valueOf(jTextField9.getText());
-        float impgen = Float.valueOf(jTextField10.getText());
+        BigDecimal porfin = new BigDecimal(jTextField8.getText()), admin=new BigDecimal(jTextField6.getText());
+        BigDecimal porutil = new BigDecimal(jTextField7.getText()), impart = new BigDecimal(jTextField9.getText());
+        BigDecimal impgen =new BigDecimal(jTextField10.getText());
         int valu = Integer.parseInt(jComboBox1.getSelectedItem().toString());
         verificarcheck();
         for(int i=0; i<contsel;i++){
            
             String numero = partidas[i];
-            float cantvalu = cantidades[i];
+            BigDecimal cantvalu = cantidades[i];
             
             // CONTAR NUMERO DE REGISTROS DE MPRES DONDE ESTA REGISTRADO EL CODIGO 
             // DE PRESUPUESTO DE MPRES VP-NROCUADRO
@@ -718,7 +722,7 @@ public class parametrorecon extends javax.swing.JDialog {
                     + "nrolic, 1, '"+pres+"',memo,timemo, fecmemo, 0,partidapres,NOW(), "+valu+" FROM mpres WHERE id='"+pres+"'");
                 }
                 cuenta();  
-                float precio=cambiapreciopartida(numero);
+                BigDecimal precio=cambiapreciopartida(numero);
                 String insertpart=null;
                 if(jCheckBox1.isSelected()){
                     String gad = jTextField6.getText();
@@ -729,7 +733,7 @@ public class parametrorecon extends javax.swing.JDialog {
                     + "unidad, redondeo, status,"
                     + "cantidad, tipo, nrocuadro, tiporec,mppre_id) "
                         + "SELECT '"+codpres+"',id,"+nume+","+numegrupo+",descri,idband,"
-                        + ""+gad+", "+pre+", "+uti+", "+precio+", "+precio+", rendimi, unidad, "
+                        + ""+gad+", "+pre+", "+uti+", precasu, "+precio+", rendimi, unidad, "
                         + "redondeo, 1, "+cantvalu+", 'VP', "+nrocuadro+",'VP-"+numero+"',"+numero+" "
                         + "FROM mppres WHERE numero="+numero+" AND (mpre_id='"+pres+"' OR "
                         + "mpre_id IN (SELECT id FROM mpres WHERE mpres_id='"+pres+"'))";
@@ -739,7 +743,7 @@ public class parametrorecon extends javax.swing.JDialog {
                     + "unidad, redondeo, status,"
                     + "cantidad, tipo, nrocuadro, tiporec,mppre_id) "
                         + "SELECT '"+codpres+"',id,"+nume+","+numegrupo+",descri,idband,"
-                        + "porcgad, porcpre, porcutil, "+precio+", "+precio+", rendimi, unidad, "
+                        + "porcgad, porcpre, porcutil, precasu, "+precio+", rendimi, unidad, "
                         + "redondeo, 1, "+cantvalu+", 'VP', "+nrocuadro+",'VP-"+numero+"',"+numero+" "
                         + "FROM mppres WHERE numero="+numero+" AND (mpre_id='"+pres+"' OR "
                         + "mpre_id IN (SELECT id FROM mpres WHERE mpres_id='"+pres+"'))";
@@ -770,7 +774,7 @@ public class parametrorecon extends javax.swing.JDialog {
                             + "SELECT '"+codpres+"', id, descri,desperdi, precio, unidad, status "
                             + "FROM mmpres WHERE (id IN (SELECT mmpre_id FROM "
                         + "dmpres WHERE mpre_id='"+codpres+"')"
-                        + ") AND mpre_id='"+pres+"' AND id NOT IN (SELECT id FROM mmpres WHERE mpre_id='"+codpres+"') LIMIT 1";
+                        + ") AND mpre_id='"+pres+"' AND id NOT IN (SELECT id FROM mmpres WHERE mpre_id='"+codpres+"')";
                     Statement insertar = (Statement) conex.createStatement();
                     insertar.execute(insertemat);
         } catch (SQLException ex) {
@@ -792,7 +796,7 @@ public class parametrorecon extends javax.swing.JDialog {
                             + "SELECT '"+codpres+"', id, descri,deprecia, precio, status "
                             + "FROM mepres WHERE (id IN (SELECT mepre_id FROM "
                         + "deppres WHERE mpre_id='"+codpres+"')"
-                        + ") AND mpre_id='"+pres+"' AND id NOT IN (SELECT id FROM mepres WHERE mpre_id='"+codpres+"') LIMIT 1";
+                        + ") AND mpre_id='"+pres+"' AND id NOT IN (SELECT id FROM mepres WHERE mpre_id='"+codpres+"')";
                     Statement insertar = (Statement) conex.createStatement();
                     insertar.execute(inserteeq);
         } catch (SQLException ex) {
@@ -802,18 +806,18 @@ public class parametrorecon extends javax.swing.JDialog {
     public void insertamano(String codpres, String numero)
     {
          try {
-            String selecmano = "INSERT INTO dmoppres "
+            String selecmano = "REPLACE INTO dmoppres "
                         + "SELECT '"+codpres+"',mmopre_id , mppre_id, "+nume+", cantidad, bono, salario, subsidi, status "
                         + "FROM dmoppres WHERE numero="+numero+" AND (mpre_id='"+pres+"' OR mpre_id IN "
                         + "(SELECT id FROM mpres WHERE mpres_id='"+pres+"')) AND numero NOT IN "
                     + "(SELECT numero FROM dmoppres WHERE mpre_id='"+codpres+"')";
                 Statement detmano = (Statement) conex.createStatement();
                 detmano.execute(selecmano);
-                String insertemano = "INSERT INTO mmopres "
+                String insertemano = "REPLACE INTO mmopres "
                             + "SELECT '"+codpres+"', id, descri,bono, salario, subsid, status "
                             + "FROM mmopres WHERE (id IN (SELECT mmopre_id FROM "
                         + "dmoppres WHERE mpre_id='"+codpres+"')"
-                        + ") AND mpre_id='"+pres+"' AND id NOT IN (SELECT id FROM mmopres WHERE mpre_id='"+codpres+"') LIMIT 1";
+                        + ") AND mpre_id='"+pres+"' AND id NOT IN (SELECT id FROM mmopres WHERE mpre_id='"+codpres+"')";
                     Statement insertar = (Statement) conex.createStatement();
                     insertar.execute(insertemano);
         } catch (SQLException ex) {
@@ -909,7 +913,7 @@ public void verificarcheck() {
        
         Object obj;
         partidas = new String [registros];
-        cantidades = new float [registros];
+        cantidades = new BigDecimal [registros];
         Boolean bol;
         String strNombre;
         StringBuilder builder = null;
@@ -927,7 +931,7 @@ public void verificarcheck() {
                     if (bol.booleanValue()) {
                         //Falta buscar numero real en mptabs
                         String numegrup=jTable1.getValueAt(i, 1).toString();
-                        cantidades[contsel]= Float.valueOf(jTable1.getValueAt(i, 5).toString());
+                        cantidades[contsel]=new  BigDecimal(jTable1.getValueAt(i, 5).toString());
                         String select= "SELECT numero FROM mppres WHERE (mpre_id='"+pres+"' OR mpre_id IN (SELECT id FROM mpres WHERE mpres_id='"+pres+"'))"
                                 + " AND numegrup="+numegrup+"";
                         try {

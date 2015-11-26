@@ -10,12 +10,13 @@
  */
 package presupuestos;
 
-import com.mysql.jdbc.Connection;
 import com.mysql.jdbc.ResultSetMetaData;
 import com.mysql.jdbc.Statement;
 import java.awt.Dimension;
 import java.awt.event.ActionEvent;
 import java.awt.event.KeyEvent;
+import java.math.BigDecimal;
+import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.logging.Level;
@@ -532,7 +533,7 @@ private void cambiarcabecera() {
          for(int i=0; i<contsel;i++){
              System.out.println(manos[i]);
          }
-            float subsi=0;
+            BigDecimal subsi=new BigDecimal("0.00");
         
         for(int i=0; i<contsel;i++){
             
@@ -544,7 +545,7 @@ private void cambiarcabecera() {
                     descri = rst.getObject(1).toString();
                     salario = rst.getObject(2).toString();
                     bono = rst.getObject(3).toString();
-                    subsi = rst.getFloat("subsid");
+                    subsi = rst.getBigDecimal("subsid");
                 }
                 sql="INSERT INTO dmoppres (mpre_id, mppre_id, mmopre_id, numero, cantidad, bono, salario, status)"
                         + " VALUES ('"+mpres+"', '"+codicove+"', " + 

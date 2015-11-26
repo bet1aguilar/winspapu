@@ -9,11 +9,12 @@
  * Created on 04/09/2013, 12:55:47 PM
  */
 package presupuestos;
-
-import com.mysql.jdbc.Connection;
+import java.sql.Connection;
 import com.mysql.jdbc.Statement;
+import config.Redondeo;
 import java.awt.event.ActionEvent;
 import java.awt.event.KeyEvent;
+import java.math.BigDecimal;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.StringTokenizer;
@@ -36,8 +37,9 @@ public class recalcula extends javax.swing.JDialog {
     public static final int RET_CANCEL = 0;
     /** A return status code - returned if OK button has been pressed */
     public static final int RET_OK = 1;
-Connection conex;
-float aumenta, dismi;
+private Connection conex;
+BigDecimal aumenta, dismi;
+Redondeo redon = new Redondeo();
 String pres;
 Presupuesto objpres;
     /** Creates new form recalcula */
@@ -342,15 +344,15 @@ Presupuesto objpres;
     }
     public void redondprecunit(){
         
-        float precunit, precasu;
+        BigDecimal precunit, precasu;
         String numero;
         String redondea = "SELECT precunit,numero FROM mppres WHERE mpre_id='"+pres+"' AND status=1";
         try {
             Statement st = (Statement) conex.createStatement();
             ResultSet rst = st.executeQuery(redondea);
             while(rst.next()){
-                precunit = rst.getFloat(1);
-                precasu = (float) Math.rint(precunit);
+                precunit = rst.getBigDecimal(1);
+                precasu = precunit;
                 numero = rst.getString(2);
                 String actualiza = "UPDATE mppres SET precasu="+precasu+", redondeo=1 WHERE mpre_id='"+pres+"'"
                         + "AND numero="+numero+" AND status=1";
@@ -366,14 +368,14 @@ Presupuesto objpres;
         }
     }
     public void precasuaprecunit(){
-        float precunit, precasu;
+        BigDecimal precunit, precasu;
         String numero;
         String redondea = "SELECT precunit,numero FROM mppres WHERE mpre_id='"+pres+"' AND status=1";
         try {
             Statement st = (Statement) conex.createStatement();
             ResultSet rst = st.executeQuery(redondea);
             while(rst.next()){
-                precunit = rst.getFloat(1);
+                precunit = rst.getBigDecimal(1);
                
                 numero = rst.getString(2);
                 String actualiza = "UPDATE mppres SET precasu="+precunit+", redondeo=1 WHERE mpre_id='"+pres+"'"
@@ -390,22 +392,22 @@ Presupuesto objpres;
     }
     public void porcaumenta(){  // SELECCIONA PRECIO UNITARIO DE LAS PARTIDAS, LE
                                 // AUMENTA UN PORCENTAJE Y LO IGUALA AL PRECIO ASUMIDO
-        float precunit, precasu; 
+        BigDecimal precunit, precasu; 
         String numero;
         
         if(jTextField1.getText().equals("")){
             JOptionPane.showMessageDialog(rootPane, "Debe insertar un porcentaje para aumentar, el campo de texto no debe estar vacio");
         }else{
-        float porcentaje = Float.valueOf(jTextField1.getText());
+        BigDecimal porcentaje =new BigDecimal(jTextField1.getText());
         String consulta = "SELECT precunit,numero FROM mppres WHERE mpre_id='"+pres+"' AND status=1;";
         try {
             Statement stconsulta = (Statement) conex.createStatement();
             ResultSet rstconsulta = stconsulta.executeQuery(consulta);
             while(rstconsulta.next())
             {
-                precunit = rstconsulta.getFloat(1);
+                precunit = rstconsulta.getBigDecimal(1);
                 numero = rstconsulta.getString(2);
-                precasu = precunit * (1+porcentaje/100);
+                precasu = redon.redondearDosDecimales(precunit.multiply(new BigDecimal("1").add(porcentaje.divide(new BigDecimal("100")))));
                 String act = "UPDATE mppres SET precasu ="+precasu+" WHERE numero="+numero+" AND mpre_id='"+pres+"' AND status=1";
                 Statement stact = (Statement) conex.createStatement();
                 stact.execute(act);
@@ -418,22 +420,22 @@ Presupuesto objpres;
     }
     public void porcdismi(){// SELECCIONA PRECIO UNITARIO DE LAS PARTIDAS, LE
                                 // DISMINUYE UN PORCENTAJE Y LO IGUALA AL PRECIO ASUMIDO
-        float precunit, precasu; 
+        BigDecimal precunit, precasu; 
         String numero;
         
         if(jTextField1.getText().equals("")){
             JOptionPane.showMessageDialog(rootPane, "Debe insertar un porcentaje para disminuir, el campo de texto no debe estar vacio");
         }else{
-        float porcentaje = Float.valueOf(jTextField1.getText());
+        BigDecimal porcentaje = new BigDecimal(jTextField1.getText());
         String consulta = "SELECT precunit,numero FROM mppres WHERE mpre_id='"+pres+"' AND status=1;";
         try {
             Statement stconsulta = (Statement) conex.createStatement();
             ResultSet rstconsulta = stconsulta.executeQuery(consulta);
             while(rstconsulta.next())
             {
-                precunit = rstconsulta.getFloat(1);
+                precunit = rstconsulta.getBigDecimal(1);
                 numero = rstconsulta.getString(2);
-                precasu = precunit -(precunit * porcentaje/100);
+                precasu = precunit.subtract(redon.redondearDosDecimales(precunit.multiply(porcentaje.divide(new BigDecimal("100")))));
                 String act = "UPDATE mppres SET precasu ="+precasu+" WHERE numero="+numero+" AND mpre_id='"+pres+"' AND status=1";
                 Statement stact = (Statement) conex.createStatement();
                 stact.execute(act);
@@ -447,84 +449,89 @@ Presupuesto objpres;
     public void recalcularprecapu(){
         
         String cambia = "SELECT numero, rendimi, porcgad, porcutil, porcpre"
-                + " FROM mppres WHERE (mpre_id='"+pres+"' OR mpre_id IN (SELECT id FROM mpres WHERE mpres_id='"+pres+"'))";
-        String datostab = "SELECT porimp, porcfi FROM mpres WHERE id='"+pres+"'";
-        float impu=0, cosfin=0, rendimi, porcgad, porcutil, porcpre;
-        int cuenta=0;
+                + " FROM mppres WHERE (mpre_id='"+pres+"' OR mpre_id IN (SELECT id FROM"
+                + " mpres WHERE mpres_id='"+pres+"'))";
+        String datostab = "SELECT poripa, porcfi FROM mpres WHERE id='"+pres+"'";
+       
         
         String numero;
         try {
-            
+             BigDecimal impu= new BigDecimal("0.00"), cosfin= new BigDecimal("0.00");
             // DATOS TABULADOR
             Statement stabu = (Statement) conex.createStatement();
             ResultSet rstabu = stabu.executeQuery(datostab);
             while(rstabu.next()){
-                impu = rstabu.getFloat(1);
-                cosfin = rstabu.getFloat(2);
+                impu = rstabu.getBigDecimal(1);
+                cosfin = rstabu.getBigDecimal(2);
             }
             
             // CALCULO DE LA PARTIDA
             Statement conteo = (Statement) conex.createStatement();
             ResultSet rsconteo = conteo.executeQuery(cambia);
             while(rsconteo.next()){
+                BigDecimal rendimi, porcgad, porcutil, porcpre;
+        int cuenta=0;
                 numero = rsconteo.getString(1);
-                rendimi = rsconteo.getFloat("rendimi");
-                porcgad = rsconteo.getFloat("porcgad");
-                porcutil = rsconteo.getFloat("porcutil");
-                porcpre = rsconteo.getFloat("porcpre");
-                float contmat = 0, contequipo =0, contmano = 0, cantmano=0, bono=0, subsid=0, precunitrecalculado=0;
-                float precunit=0;
+                rendimi = rsconteo.getBigDecimal("rendimi");
+                porcgad = objpres.porcgadpres;
+                porcutil = objpres.porcutilpres;
+                porcpre = objpres.porcprepres.divide(new BigDecimal("100"));
+                BigDecimal contmat= new BigDecimal("0.00"), contequipo = new BigDecimal("0.00"), contmano = new BigDecimal("0.00"), cantmano= new BigDecimal("0.00"), bono= new BigDecimal("0.00"), subsid= new BigDecimal("0.00"), precunitrecalculado= new BigDecimal("0.00");
+                BigDecimal precunit= new BigDecimal("0.00");
                 
-                String consulta = "SELECT SUM(((mm.precio+(mm.precio*(mm.desperdi/100)))*dm.cantidad)) as total FROM "
+                String consulta = "SELECT IFNULL(SUM(((mm.precio+(mm.precio*(mm.desperdi/100)))*dm.cantidad)),0) as total FROM "
                         + "dmpres as dm, mmpres as mm "
                         + " WHERE dm.mmpre_id=mm.id AND dm.mpre_id=mm.mpre_id AND mm.mpre_id='"+pres+"' AND "
                         + "dm.numepart="+numero;
                 Statement mates = (Statement) conex.createStatement();
                 ResultSet rmates = mates.executeQuery(consulta);
                 while(rmates.next()){
-                    contmat = rmates.getFloat(1);
+                    contmat = redon.redondearDosDecimales(rmates.getBigDecimal(1));
                 }
-                String consultaeq = "SELECT SUM(IF(me.deprecia=0, de.cantidad*me.precio,"
-                        + " de.cantidad*me.deprecia*me.precio)) as total FROM "
+                String consultaeq = "SELECT IFNULL(SUM(IF(me.deprecia=0, de.cantidad*me.precio,"
+                        + " de.cantidad*me.deprecia*me.precio)),0) as total FROM "
                         + "deppres as de, mepres as me WHERE me.id=de.mepre_id AND me.mpre_id=de.mpre_id"
                         + " AND de.mpre_id='"+pres+"' AND de.numero="+numero+"";
                 Statement steq = (Statement) conex.createStatement();
                 ResultSet rsteq = steq.executeQuery(consultaeq);
                 while(rsteq.next()){
-                    contequipo = rsteq.getFloat(1);
+                    contequipo = redon.redondearDosDecimales(rsteq.getBigDecimal(1));
                 }
-                if(rendimi>0){
-                contequipo = contequipo/rendimi;
+                if(rendimi.doubleValue()>0){
+                contequipo = contequipo.divide(rendimi,2,BigDecimal.ROUND_HALF_UP);
                 }
-                String consultaman = "SELECT SUM(do.cantidad) as cantidad, mo.bono, mo.subsid, SUM(mo.salario*do.cantidad) as total"
+                String consultaman = "SELECT IFNULL(SUM(do.cantidad),0) as cantidad, IFNULL(mo.bono,0), IFNULL(mo.subsid,0), IFNULL(SUM(mo.salario*do.cantidad),0) as total"
                         + " FROM mmopres as mo, dmoppres as do WHERE do.mmopre_id = mo.id AND do.mpre_id= mo.mpre_id"
                         + " AND do.mpre_id='"+pres+"' AND do.numero = "+numero+"";
                 Statement stman = (Statement) conex.createStatement();
                 ResultSet rstman = stman.executeQuery(consultaman);
                 while(rstman.next()){
-                    contmano = rstman.getFloat("total");
-                    cantmano= rstman.getFloat("cantidad");
-                    bono = rstman.getFloat("mo.bono");
-                    subsid=rstman.getFloat("mo.subsid");                    
+                    contmano = redon.redondearDosDecimales(rstman.getBigDecimal(4));
+                    cantmano= rstman.getBigDecimal(1);
+                    bono = rstman.getBigDecimal(2);
+                    subsid=rstman.getBigDecimal(3);                    
                 }
-                float presta = contmano*porcpre;
-                bono = cantmano*bono;
-                subsid = cantmano*subsid;
-                float auxmonto = contmano + presta + bono + subsid;
-                if(rendimi==0){
-                    rendimi=1;
+                BigDecimal presta = redon.redondearDosDecimales(contmano.multiply(porcpre));
+                bono = redon.redondearDosDecimales(cantmano.multiply(bono));
+                subsid = redon.redondearDosDecimales(cantmano.multiply(subsid));
+                BigDecimal auxmonto = contmano.add(presta).add(bono).add(subsid);
+                if(rendimi== new BigDecimal("0.00")){
+                    rendimi= new BigDecimal("1.00");
                 }
-                contmano = auxmonto/rendimi;
+                contmano = auxmonto.divide(rendimi,2, BigDecimal.ROUND_HALF_UP);
                 
-                precunit = contmat + contequipo + contmano;
-                porcgad = precunit * (1+porcgad/100);
-                porcutil = porcgad * (1+porcutil/100);
+                precunit = contmat.add(contequipo).add( contmano);
+                porcgad = redon.redondearDosDecimales(precunit.multiply(new BigDecimal(1).add(porcgad.divide(new BigDecimal("100")))));
+                porcutil = redon.redondearDosDecimales(porcgad.multiply(new BigDecimal(1).add(porcutil.divide(new BigDecimal("100")))));
                 
-                impu = porcutil * impu/100;
-                cosfin = porcutil * cosfin/100;
-                porcutil = porcutil + impu +cosfin;
+                impu = redon.redondearDosDecimales(porcutil.multiply(impu.divide(new BigDecimal("100"))));
+                cosfin = redon.redondearDosDecimales(porcutil.multiply(cosfin.divide(new BigDecimal("100"))));
+                porcutil = porcutil.add(impu).add(cosfin);
                 precunitrecalculado = porcutil;
-                String actualiza = "UPDATE mppres SET precunit="+precunitrecalculado+",precasu="+precunitrecalculado+" WHERE numero="+numero+" AND mpre_id='"+pres+"'";
+                String actualiza = "UPDATE mppres SET porcgad = "+objpres.porcgadpres+", "
+                        + "porcpre = "+objpres.porcprepres+", porcutil = "+objpres.porcutilpres+","
+                        + "precunit="+precunitrecalculado+",precasu=0 WHERE numero="+numero+" AND mpre_id='"+pres+"'";
+                System.out.println("actualiza "+actualiza);
                 Statement stact = (Statement) conex.createStatement();
               stact.execute(actualiza);
               
@@ -669,13 +676,13 @@ Presupuesto objpres;
             precasuaprecunit();
         }
         if(jRadioButton4.isSelected()){
-            aumenta=Float.valueOf(jTextField1.getText().toString());
+            aumenta=new BigDecimal(jTextField1.getText().toString());
              int op=JOptionPane.showConfirmDialog(rootPane, "Proceso delicado, desea continuar? s/n","Aumentar "+aumenta+"%", JOptionPane.YES_NO_OPTION);
             if(op==JOptionPane.YES_OPTION)
             porcaumenta();
         }
         if(jRadioButton5.isSelected()){
-            dismi=Float.valueOf(jTextField2.getText().toString());
+            dismi= new BigDecimal(jTextField2.getText().toString());
               int op=JOptionPane.showConfirmDialog(rootPane, "Proceso delicado, desea continuar? s/n","Disminuir "+dismi+"%", JOptionPane.YES_NO_OPTION);
             if(op==JOptionPane.YES_OPTION)
             porcdismi();

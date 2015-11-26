@@ -11,8 +11,8 @@
 package presupuestos;
 
 
+import java.sql.SQLException;
 import winspapus.*;
-import com.mysql.jdbc.Connection;
 import java.awt.event.ActionEvent;
 import java.awt.event.KeyEvent;
 import java.io.ByteArrayOutputStream;
@@ -21,6 +21,10 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.math.BigDecimal;
+import java.sql.Connection;
+import java.sql.ResultSet;
+import java.sql.Statement;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.HashMap;
@@ -54,18 +58,18 @@ public class reporteapu extends javax.swing.JDialog {
 
     public static final int RET_CANCEL = 0;
     public static final int RET_OK = 1;
-    Connection conex;
+    private Connection conex;
     String ruta;
     String mpres, numero;
     Partida partida;
     String fecha ;
-     SimpleDateFormat formato = new SimpleDateFormat("dd/MM/yyyy");
+    SimpleDateFormat formato = new SimpleDateFormat("dd/MM/yyyy");
 
-    public reporteapu(java.awt.Frame parent, boolean modal, Connection conex, String mtabus, String num,Partida part) {
+    public reporteapu(java.awt.Frame parent, boolean modal, Connection conex, String mpres, String num,Partida part) {
         super(parent, modal);
         initComponents();
         this.conex = conex;
-        this.mpres = mtabus;
+        this.mpres = mpres;
         this.partida = part;
         this.numero = num;
         buttonGroup1.add(jRadioButton1);
@@ -107,6 +111,53 @@ public class reporteapu extends javax.swing.JDialog {
             else{
             
               fecha=formato.format(jDateChooser1.getDate());
+            }
+            String tipo="", presorig=mpres;
+            BigDecimal resta = new BigDecimal("0.00");
+            BigDecimal precioOrig= new BigDecimal("0.00"), preciorecon=new BigDecimal("0.00");
+            String tiposql = "SELECT tipo FROM mppres WHERE numegrup="+numero+" AND (mpre_id='"+mpres+"' "
+                    + "OR mpre_id IN (SELECT id FROM mpres WHERE mpres_id='"+mpres+"'))";
+            try {
+                Statement sts = conex.createStatement();
+                ResultSet rsts = sts.executeQuery(tiposql);
+                while(rsts.next())                
+                    tipo=rsts.getString(1);
+                if(tipo.equals("VP"))
+                {
+                    String origpres = "SELECT mpres_id FROM mpres WHERE id='"+mpres+"'";
+                    Statement origsts = conex.createStatement();
+                    ResultSet origrst = origsts.executeQuery(origpres);
+                    while(origrst.next())
+                    {
+                        presorig=origrst.getString(1);
+                    }
+                }
+            } catch (SQLException ex) {
+                Logger.getLogger(reporteapu.class.getName()).log(Level.SEVERE, null, ex);
+            }
+            String sql = "SELECT IFNULL(ROUND((SELECT IF(precasu=0, precunit, precasu) FROM mppres "
+                    + " WHERE numero=m.mppre_id AND (mpre_id='"+presorig+"' OR mpre_id IN (SELECT id FROM mpres "
+                    + "WHERE mpres_id='"+presorig+"'))),2),0), ROUND(IF(precasu=0, precunit, precasu),2) FROM mppres m WHERE m.numegrup="+numero+" AND "
+                    + "(m.mpre_id='"+mpres+"' OR m.mpre_id IN (SELECT id FROM mpres WHERE mpres_id='"+mpres+"'))";
+            System.out.println("sql recon: "+sql);
+            try {
+                Statement st = conex.createStatement();
+                ResultSet rst = st.executeQuery(sql);
+                while(rst.next())
+                {
+                    precioOrig = rst.getBigDecimal(1);
+                    preciorecon = rst.getBigDecimal(2);
+                }
+            } catch (SQLException ex) {
+                Logger.getLogger(reporteapu.class.getName()).log(Level.SEVERE, null, ex);
+            }
+            if(tipo.equals("VP"))
+            {
+                parameters.put("precioanterior","PRECIO ANTERIOR:");
+                parameters.put("titulorecon","PRECIO A RECONSIDERAR:");
+                parameters.put("anterior", precioOrig);
+                resta = preciorecon.subtract(precioOrig);
+                parameters.put("resta", resta);
             }
             parameters.put("mpres", mpres);
             parameters.put("numegrup", numero);

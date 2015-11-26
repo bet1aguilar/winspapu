@@ -48,7 +48,7 @@ public class hilorecuperar extends Thread{
            
             //            
             //RECUPERAR TABULADORES
-            sql= "INSERT INTO mtabus "
+            sql= "REPLACE INTO mtabus "
                     + "(id, descri, vigencia, padyga, pcosfin, pimpue,pprest,putild,status,seleccionado) "
                     + "VALUES "
                     + "('"+mtabu+"',"
@@ -76,43 +76,23 @@ public class hilorecuperar extends Thread{
                 int regis = rstbd.getRow();
                 if (regis==0)
                 {
-                   sql= "INSERT INTO mbdats VALUES ('"+strBanco+"',"
+                   sql= "REPLACE INTO mbdats VALUES ('"+strBanco+"',"
                                               + "'"+rst1.getString("Descripcion")+"',"
                                               + rst1.getInt("Numero")+","                                                         
                                               + "1)";
                    escribir1.execute(sql); 
                 }    
             }
-            // PARTIDAS
-            String grupo,descri;
-                     
-           //MANO DE OBRA POR PARTIDAS
-            Statement carga5= (Statement) conn.createStatement();
-            Statement escribir5 = (Statement) conexion.createStatement();
-            sql = "Select * from manoobrapartida";
-            ResultSet rst5 = carga5.executeQuery(sql); 
-            while(rst5.next()){ 
-                 sql= "INSERT INTO dmoptabs VALUES ('"+mtabu+"',"                                              
-                                              + "'"+rst5.getString("IDManoObra")+"',"
-                                              + rst5.getInt("numero")+","
-                                              + rst5.getFloat("cantidad")+","                                                         
-                                              + rst5.getFloat("bono")+","                                                          
-                                              + rst5.getFloat("salario")+","                                                          
-                                              +  rst5.getFloat("subsidio")+","                                                          
-                                              + "'1',"
-                                              + "'"+rst5.getString("IDPartidas")+"')";                   
-                   escribir5.execute(sql); 
-            }
-               
+                
           
                 
-             JOptionPane.showMessageDialog(recup, "Recuperación de datos del Tabulador Completado..");
+             
     // recup.doClose(RET_OK);
      prin.buscatab();
-     recup.doClose(RET_OK);
+     
             
         } catch (SQLException ex) {
-            JOptionPane.showConfirmDialog(recup, "Ocurrió un error al cargar el tabulador "+ex.getMessage());
+            JOptionPane.showMessageDialog(recup, "Ocurrió un error al cargar el tabulador "+ex.getMessage());
             recup.doClose(RET_OK);
             Logger.getLogger(RecuperarTab.class.getName()).log(Level.SEVERE, null, ex);
         }

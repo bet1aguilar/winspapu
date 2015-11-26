@@ -13,6 +13,7 @@ package winspapus.partidas;
 import com.mysql.jdbc.Connection;
 import com.mysql.jdbc.ResultSetMetaData;
 import com.mysql.jdbc.Statement;
+import java.awt.Dimension;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.logging.Level;
@@ -43,6 +44,12 @@ public class grupo extends javax.swing.JDialog {
         this.obj = obj;
         cargamodelo();
         cambiarcabecera();
+        jTable1.setOpaque(true);
+        jTable1.setShowHorizontalLines(true);
+        jTable1.setShowVerticalLines(false);
+        jTable1.getTableHeader().setSize(new Dimension(25,40));
+        jTable1.getTableHeader().setPreferredSize(new Dimension(25,30));
+        jTable1.setRowHeight(20);
       
     }
     
@@ -71,13 +78,13 @@ public class grupo extends javax.swing.JDialog {
             }
              
              while (rs.next()) {
-                 Object[] fila = new Object[cantidadColumnas];
-                 Object obj = Boolean.valueOf(false);
-               fila[0]= obj;
+                 Object[] filas = new Object[cantidadColumnas];
+                 Object objeto = Boolean.valueOf(false);
+               filas[0]= objeto;
                 for (int i = 0; i < cantidadColumnas; i++) {
-                    fila[i]=rs.getObject(i+1);
+                    filas[i]=rs.getObject(i+1);
                 }
-                dtm.addRow(fila);
+                dtm.addRow(filas);
                 
             }
         } catch (SQLException ex) {
@@ -116,6 +123,7 @@ public class grupo extends javax.swing.JDialog {
         jTable1 = new javax.swing.JTable();
         jButton1 = new javax.swing.JButton();
         jButton2 = new javax.swing.JButton();
+        jButton3 = new javax.swing.JButton();
 
         setDefaultCloseOperation(javax.swing.WindowConstants.DISPOSE_ON_CLOSE);
 
@@ -125,7 +133,7 @@ public class grupo extends javax.swing.JDialog {
         jPanel2.setBorder(javax.swing.BorderFactory.createLineBorder(new java.awt.Color(0, 0, 0)));
 
         jLabel1.setBackground(new java.awt.Color(91, 91, 95));
-        jLabel1.setFont(new java.awt.Font("Tahoma", 1, 11)); // NOI18N
+        jLabel1.setFont(new java.awt.Font("Tahoma", 1, 11));
         jLabel1.setForeground(new java.awt.Color(255, 255, 255));
         jLabel1.setHorizontalAlignment(javax.swing.SwingConstants.CENTER);
         jLabel1.setText("Grupo de Partidas");
@@ -173,21 +181,31 @@ public class grupo extends javax.swing.JDialog {
             }
         });
 
+        jButton3.setIcon(new javax.swing.ImageIcon(getClass().getResource("/winspapus/imagenes/borra.png"))); // NOI18N
+        jButton3.setEnabled(false);
+        jButton3.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jButton3ActionPerformed(evt);
+            }
+        });
+
         javax.swing.GroupLayout jPanel1Layout = new javax.swing.GroupLayout(jPanel1);
         jPanel1.setLayout(jPanel1Layout);
         jPanel1Layout.setHorizontalGroup(
             jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, jPanel1Layout.createSequentialGroup()
-                .addContainerGap(453, Short.MAX_VALUE)
-                .addComponent(jButton1, javax.swing.GroupLayout.PREFERRED_SIZE, 45, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                .addComponent(jButton2, javax.swing.GroupLayout.PREFERRED_SIZE, 45, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addGap(21, 21, 21))
             .addGroup(jPanel1Layout.createSequentialGroup()
                 .addContainerGap()
                 .addComponent(jScrollPane1, javax.swing.GroupLayout.DEFAULT_SIZE, 550, Short.MAX_VALUE)
                 .addContainerGap())
             .addComponent(jPanel2, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+            .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, jPanel1Layout.createSequentialGroup()
+                .addContainerGap(413, Short.MAX_VALUE)
+                .addComponent(jButton1, javax.swing.GroupLayout.PREFERRED_SIZE, 45, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                .addComponent(jButton2, javax.swing.GroupLayout.PREFERRED_SIZE, 45, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                .addComponent(jButton3, javax.swing.GroupLayout.PREFERRED_SIZE, 45, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addContainerGap())
         );
         jPanel1Layout.setVerticalGroup(
             jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
@@ -196,9 +214,11 @@ public class grupo extends javax.swing.JDialog {
                 .addGap(29, 29, 29)
                 .addComponent(jScrollPane1, javax.swing.GroupLayout.PREFERRED_SIZE, 141, javax.swing.GroupLayout.PREFERRED_SIZE)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                    .addComponent(jButton2, javax.swing.GroupLayout.PREFERRED_SIZE, 45, javax.swing.GroupLayout.PREFERRED_SIZE)
-                    .addComponent(jButton1, javax.swing.GroupLayout.PREFERRED_SIZE, 45, javax.swing.GroupLayout.PREFERRED_SIZE))
+                .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                    .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                        .addComponent(jButton2, javax.swing.GroupLayout.PREFERRED_SIZE, 45, javax.swing.GroupLayout.PREFERRED_SIZE)
+                        .addComponent(jButton1, javax.swing.GroupLayout.PREFERRED_SIZE, 45, javax.swing.GroupLayout.PREFERRED_SIZE))
+                    .addComponent(jButton3, javax.swing.GroupLayout.PREFERRED_SIZE, 45, javax.swing.GroupLayout.PREFERRED_SIZE))
                 .addContainerGap(32, Short.MAX_VALUE))
         );
 
@@ -235,6 +255,7 @@ public class grupo extends javax.swing.JDialog {
         // TODO add your handling code here:
         fila= jTable1.rowAtPoint(evt.getPoint());
         jButton2.setEnabled(true);
+        jButton3.setEnabled(true);
         id= (String) jTable1.getValueAt(fila, 0);
     }//GEN-LAST:event_jTable1MouseClicked
 
@@ -251,6 +272,19 @@ public class grupo extends javax.swing.JDialog {
            cargamodelo();        // TODO add your handling code here:
     }//GEN-LAST:event_jButton1MouseClicked
 
+private void jButton3ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton3ActionPerformed
+    int codigo = jTable1.getSelectedRow();
+    String idGrupo = jTable1.getValueAt(codigo, 0).toString();
+    String eliminar = "DELETE FROM mbdats WHERE id='"+idGrupo+"'";
+        try {
+            Statement st = (Statement) conex.createStatement();
+            st.execute(eliminar);
+            JOptionPane.showMessageDialog(rootPane, "Se ha eliminado el grupo");        
+        } catch (SQLException ex) {
+            Logger.getLogger(grupo.class.getName()).log(Level.SEVERE, null, ex);
+        }
+}//GEN-LAST:event_jButton3ActionPerformed
+
     /**
      * @param args the command line arguments
      */
@@ -258,6 +292,7 @@ public class grupo extends javax.swing.JDialog {
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JButton jButton1;
     private javax.swing.JButton jButton2;
+    private javax.swing.JButton jButton3;
     private javax.swing.JLabel jLabel1;
     private javax.swing.JPanel jPanel1;
     private javax.swing.JPanel jPanel2;

@@ -10,7 +10,7 @@
  */
 package presupuestos;
 
-import com.mysql.jdbc.Connection;
+import java.sql.Connection;
 import com.mysql.jdbc.Statement;
 import java.awt.event.ActionEvent;
 import java.awt.event.KeyEvent;
@@ -38,7 +38,7 @@ public class rangos extends javax.swing.JDialog {
     public static final int RET_OK = 1;
     private int numrangos=2;
     int ok=0;
-    Connection conex=null;
+    private Connection conex=null;
     String numegrup=null;
     int edita=0;
     private String pres=null, partida=null;

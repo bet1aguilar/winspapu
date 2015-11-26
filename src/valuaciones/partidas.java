@@ -390,7 +390,7 @@ public final void cargapresupuesto() throws SQLException{
         
         for(int y=0; y<contsel;y++){
             String number="";
-            String sql = "SELECT id, IF(precunit=0,precasu,precunit),numero FROM mppres where numegrup='"+partidas[y]+"' AND "
+            String sql = "SELECT id, IF(precunit=0,precasu,precunit),numero FROM mppres where numero='"+partidas[y]+"' AND "
                     + "(mpre_id='"+mpres+"' OR mpre_id IN (SELECT id FROM mpres WHERE mpres_id='"+mpres+"')) "
                     + "AND status=1";
             System.out.println("Quiero ver Precio: "+sql);
@@ -425,7 +425,7 @@ public final void cargapresupuesto() throws SQLException{
                         
              String acumulada = "SELECT SUM(cantidad) FROM dvalus WHERE (mpre_id='"+mpres+"' OR mpre_id "
             + "IN (SELECT id FROM mpres WHERE mpres_id='"+mpres+"'))"
-            + " AND numepart='"+partidas[y]+"' GROUP BY numepart";
+            + " AND numepart='"+number+"' GROUP BY numepart";
                  Statement consulta = (Statement) conex.createStatement();
                  ResultSet rsconsulta = consulta.executeQuery(acumulada);
                  while(rsconsulta.next()){
@@ -434,7 +434,7 @@ public final void cargapresupuesto() throws SQLException{
                  
                 int cuantos=0;
                 String cuentas = "SELECT COUNT(*) as cuenta FROM dvalus WHERE mvalu_id="+mvalu+" AND mpre_id='"+mpres+"' "
-                        + "AND numepart="+partidas[y];
+                        + "AND numepart="+number;
                 Statement str = (Statement) conex.createStatement();
                 ResultSet rstr = str.executeQuery(cuentas);
                 while(rstr.next()){
@@ -539,7 +539,7 @@ public final void cargapresupuesto() throws SQLException{
    public void hacerbool(int partida){
             
     
-
+//NUMEGRUP
     String part = jTable1.getValueAt(partida, 1).toString();
     Object obj;
        Boolean bol;

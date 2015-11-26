@@ -10,12 +10,13 @@
  */
 package parametros;
 
-import com.mysql.jdbc.Connection;
 import com.mysql.jdbc.PreparedStatement;
 import com.mysql.jdbc.Statement;
+import java.awt.Dimension;
 import java.awt.Graphics2D;
 import java.awt.Image;
 import java.awt.Rectangle;
+import java.awt.Toolkit;
 import java.awt.event.ActionEvent;
 import java.awt.event.KeyEvent;
 import java.awt.image.BufferedImage;
@@ -24,6 +25,7 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.sql.Blob;
+import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.logging.Level;
@@ -49,19 +51,25 @@ public class contratistas extends javax.swing.JDialog {
     public static final int RET_OK = 1;
     private Connection conex;
     File fichero;
+    private int publico=0;
     private String primero;
     private int edita=1;
     private int nuevo=0;
+    private boolean desbloqueado;
+    java.awt.Frame parent;
+    private int sicierras=0;
     public contratistas(java.awt.Frame parent, boolean modal, Connection conex) {
         super(parent, modal);
         initComponents();
-       
+       this.parent = parent;
         this.conex = conex;
         jTextField1.setVisible(false);
+         
          definemodelo();
          
          cargaventana();
-        
+        bloqueo bloq = new bloqueo(conex);
+        bloqueaboton(!bloq.isbloqued());
         jLabel9.setVisible(false);
         jLabel10.setVisible(false);
         String cancelName = "cancel";
@@ -76,7 +84,12 @@ public class contratistas extends javax.swing.JDialog {
             }
         });
     }
-
+    private void bloqueaboton(boolean bloq)
+    {
+        okButton1.setEnabled(bloq);
+        jButton2.setEnabled(bloq);
+    }
+  
     public contratistas(java.awt.Frame parent, boolean modal, Connection conex, int i) {
         super(parent, modal);
         initComponents();
@@ -137,7 +150,7 @@ public class contratistas extends javax.swing.JDialog {
             if(bytes!=null){
             leidos= bytes.getBytes(1,(int) bytes.length());
             image = new ImageIcon(leidos);
-            Icon icono = new ImageIcon(image.getImage().getScaledInstance(image.getIconWidth(), image.getIconHeight(), Image.SCALE_DEFAULT));
+            Icon icono = new ImageIcon(image.getImage().getScaledInstance(jLabel14.getWidth(), jLabel14.getHeight(), Image.SCALE_DEFAULT));
                 jLabel14.setIcon(icono);
             }else{
                 jLabel14.setIcon(null);
@@ -233,6 +246,8 @@ public class contratistas extends javax.swing.JDialog {
         okButton1 = new javax.swing.JButton();
         cancelButton = new javax.swing.JButton();
         jButton2 = new javax.swing.JButton();
+        okButton2 = new javax.swing.JButton();
+        okButton3 = new javax.swing.JButton();
         jTextField13 = new javax.swing.JTextField();
         jLabel20 = new javax.swing.JLabel();
         jTextField14 = new javax.swing.JTextField();
@@ -240,8 +255,6 @@ public class contratistas extends javax.swing.JDialog {
         jLabel21 = new javax.swing.JLabel();
         jScrollPane3 = new javax.swing.JScrollPane();
         jTextArea3 = new javax.swing.JTextArea();
-        jScrollPane1 = new javax.swing.JScrollPane();
-        jPanel3 = new javax.swing.JPanel();
         jLabel14 = new javax.swing.JLabel();
 
         addWindowListener(new java.awt.event.WindowAdapter() {
@@ -301,11 +314,11 @@ public class contratistas extends javax.swing.JDialog {
         jTextArea2.setLineWrap(true);
         jTextArea2.setRows(3);
         jTextArea2.addKeyListener(new java.awt.event.KeyAdapter() {
-            public void keyPressed(java.awt.event.KeyEvent evt) {
-                jTextArea2KeyPressed(evt);
-            }
             public void keyTyped(java.awt.event.KeyEvent evt) {
                 jTextArea2KeyTyped(evt);
+            }
+            public void keyPressed(java.awt.event.KeyEvent evt) {
+                jTextArea2KeyPressed(evt);
             }
         });
         jScrollPane2.setViewportView(jTextArea2);
@@ -380,6 +393,11 @@ public class contratistas extends javax.swing.JDialog {
                 okButtonMouseClicked(evt);
             }
         });
+        okButton.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                okButtonActionPerformed(evt);
+            }
+        });
 
         okButton1.setIcon(new javax.swing.ImageIcon(getClass().getResource("/winspapus/imagenes/nuevo.png"))); // NOI18N
         okButton1.setToolTipText("Nuevo");
@@ -404,12 +422,32 @@ public class contratistas extends javax.swing.JDialog {
             }
         });
 
+        okButton2.setIcon(new javax.swing.ImageIcon(getClass().getResource("/winspapus/imagenes/llave.fw.png"))); // NOI18N
+        okButton2.setToolTipText("Desbloquear Para Organismos Públicos, Contacte con Sistemas R.H. C.A.");
+        okButton2.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                okButton2ActionPerformed(evt);
+            }
+        });
+
+        okButton3.setIcon(new javax.swing.ImageIcon(getClass().getResource("/winspapus/imagenes/buscar.fw.png"))); // NOI18N
+        okButton3.setToolTipText("Buscar Contratista");
+        okButton3.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                okButton3ActionPerformed(evt);
+            }
+        });
+
         javax.swing.GroupLayout jPanel4Layout = new javax.swing.GroupLayout(jPanel4);
         jPanel4.setLayout(jPanel4Layout);
         jPanel4Layout.setHorizontalGroup(
             jPanel4Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, jPanel4Layout.createSequentialGroup()
-                .addGap(22, 22, 22)
+                .addGap(110, 110, 110)
+                .addComponent(okButton2, javax.swing.GroupLayout.PREFERRED_SIZE, 45, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                .addComponent(okButton3, javax.swing.GroupLayout.PREFERRED_SIZE, 45, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addComponent(okButton1, javax.swing.GroupLayout.PREFERRED_SIZE, 45, javax.swing.GroupLayout.PREFERRED_SIZE)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addComponent(jButton2, javax.swing.GroupLayout.PREFERRED_SIZE, 45, javax.swing.GroupLayout.PREFERRED_SIZE)
@@ -424,13 +462,17 @@ public class contratistas extends javax.swing.JDialog {
             .addGroup(jPanel4Layout.createSequentialGroup()
                 .addContainerGap()
                 .addGroup(jPanel4Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                    .addComponent(okButton2, javax.swing.GroupLayout.PREFERRED_SIZE, 45, javax.swing.GroupLayout.PREFERRED_SIZE)
+                    .addComponent(okButton3, javax.swing.GroupLayout.PREFERRED_SIZE, 45, javax.swing.GroupLayout.PREFERRED_SIZE)
                     .addComponent(okButton1, javax.swing.GroupLayout.PREFERRED_SIZE, 45, javax.swing.GroupLayout.PREFERRED_SIZE)
                     .addComponent(jButton2, javax.swing.GroupLayout.PREFERRED_SIZE, 45, javax.swing.GroupLayout.PREFERRED_SIZE)
                     .addComponent(okButton, javax.swing.GroupLayout.PREFERRED_SIZE, 45, javax.swing.GroupLayout.PREFERRED_SIZE)
                     .addComponent(cancelButton, javax.swing.GroupLayout.PREFERRED_SIZE, 45, javax.swing.GroupLayout.PREFERRED_SIZE))
-                .addContainerGap())
+                .addGap(19, 19, 19))
         );
 
+        getRootPane().setDefaultButton(okButton);
+        getRootPane().setDefaultButton(okButton);
         getRootPane().setDefaultButton(okButton);
         getRootPane().setDefaultButton(okButton);
 
@@ -466,23 +508,9 @@ public class contratistas extends javax.swing.JDialog {
         });
         jScrollPane3.setViewportView(jTextArea3);
 
-        jPanel3.setBorder(javax.swing.BorderFactory.createBevelBorder(javax.swing.border.BevelBorder.RAISED, java.awt.Color.lightGray, java.awt.Color.gray, java.awt.Color.black, java.awt.Color.darkGray));
-
-        jLabel14.setBackground(new java.awt.Color(153, 153, 153));
+        jLabel14.setBackground(new java.awt.Color(255, 255, 255));
         jLabel14.setHorizontalAlignment(javax.swing.SwingConstants.CENTER);
-
-        javax.swing.GroupLayout jPanel3Layout = new javax.swing.GroupLayout(jPanel3);
-        jPanel3.setLayout(jPanel3Layout);
-        jPanel3Layout.setHorizontalGroup(
-            jPanel3Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addComponent(jLabel14, javax.swing.GroupLayout.DEFAULT_SIZE, 169, Short.MAX_VALUE)
-        );
-        jPanel3Layout.setVerticalGroup(
-            jPanel3Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addComponent(jLabel14, javax.swing.GroupLayout.DEFAULT_SIZE, 131, Short.MAX_VALUE)
-        );
-
-        jScrollPane1.setViewportView(jPanel3);
+        jLabel14.setOpaque(true);
 
         javax.swing.GroupLayout jPanel1Layout = new javax.swing.GroupLayout(jPanel1);
         jPanel1.setLayout(jPanel1Layout);
@@ -507,13 +535,15 @@ public class contratistas extends javax.swing.JDialog {
                         .addContainerGap())
                     .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, jPanel1Layout.createSequentialGroup()
                         .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
-                            .addComponent(jScrollPane2, javax.swing.GroupLayout.Alignment.LEADING, javax.swing.GroupLayout.DEFAULT_SIZE, 542, Short.MAX_VALUE)
                             .addComponent(jTextField15, javax.swing.GroupLayout.Alignment.LEADING, javax.swing.GroupLayout.DEFAULT_SIZE, 542, Short.MAX_VALUE)
-                            .addComponent(jScrollPane3, javax.swing.GroupLayout.DEFAULT_SIZE, 542, Short.MAX_VALUE)
-                            .addComponent(jPanel4, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
+                            .addComponent(jPanel4, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                            .addComponent(jScrollPane3, javax.swing.GroupLayout.Alignment.LEADING, javax.swing.GroupLayout.PREFERRED_SIZE, 517, javax.swing.GroupLayout.PREFERRED_SIZE))
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                         .addComponent(jLabel9)
-                        .addGap(35, 35, 35))))
+                        .addGap(35, 35, 35))
+                    .addGroup(jPanel1Layout.createSequentialGroup()
+                        .addComponent(jScrollPane2, javax.swing.GroupLayout.DEFAULT_SIZE, 408, Short.MAX_VALUE)
+                        .addGap(181, 181, 181))))
             .addGroup(jPanel1Layout.createSequentialGroup()
                 .addContainerGap()
                 .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
@@ -559,13 +589,12 @@ public class contratistas extends javax.swing.JDialog {
                                 .addComponent(jLabel18)
                                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                                 .addComponent(jTextField12, javax.swing.GroupLayout.PREFERRED_SIZE, 70, javax.swing.GroupLayout.PREFERRED_SIZE)))))
-                .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                    .addGroup(jPanel1Layout.createSequentialGroup()
-                        .addGap(109, 109, 109)
-                        .addComponent(jButton1))
-                    .addGroup(jPanel1Layout.createSequentialGroup()
-                        .addGap(21, 21, 21)
-                        .addComponent(jScrollPane1, javax.swing.GroupLayout.PREFERRED_SIZE, 175, javax.swing.GroupLayout.PREFERRED_SIZE)))
+                .addGap(119, 119, 119)
+                .addComponent(jButton1)
+                .addContainerGap())
+            .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, jPanel1Layout.createSequentialGroup()
+                .addContainerGap(548, Short.MAX_VALUE)
+                .addComponent(jLabel14, javax.swing.GroupLayout.PREFERRED_SIZE, 149, javax.swing.GroupLayout.PREFERRED_SIZE)
                 .addContainerGap())
         );
         jPanel1Layout.setVerticalGroup(
@@ -589,9 +618,9 @@ public class contratistas extends javax.swing.JDialog {
                             .addComponent(jLabel7)
                             .addComponent(jScrollPane2, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)))
                     .addComponent(jLabel9))
-                .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                .addGap(9, 9, 9)
+                .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
                     .addGroup(jPanel1Layout.createSequentialGroup()
-                        .addGap(9, 9, 9)
                         .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
                             .addComponent(jTextField2, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                             .addComponent(jLabel4))
@@ -611,9 +640,7 @@ public class contratistas extends javax.swing.JDialog {
                         .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
                             .addComponent(jTextField7, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                             .addComponent(jLabel12)))
-                    .addGroup(jPanel1Layout.createSequentialGroup()
-                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                        .addComponent(jScrollPane1, javax.swing.GroupLayout.PREFERRED_SIZE, 137, javax.swing.GroupLayout.PREFERRED_SIZE)))
+                    .addComponent(jLabel14, javax.swing.GroupLayout.PREFERRED_SIZE, 130, javax.swing.GroupLayout.PREFERRED_SIZE))
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                     .addGroup(jPanel1Layout.createSequentialGroup()
@@ -634,7 +661,7 @@ public class contratistas extends javax.swing.JDialog {
                                     .addComponent(jTextField12, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                                     .addComponent(jLabel18)))
                             .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, jPanel1Layout.createSequentialGroup()
-                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 7, Short.MAX_VALUE)
+                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 12, Short.MAX_VALUE)
                                 .addComponent(jTextField10, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)))
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                         .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
@@ -645,10 +672,10 @@ public class contratistas extends javax.swing.JDialog {
                     .addComponent(jButton1))
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                    .addComponent(jScrollPane3, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                    .addComponent(jLabel21))
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
-                .addComponent(jPanel4, javax.swing.GroupLayout.PREFERRED_SIZE, 69, Short.MAX_VALUE)
+                    .addComponent(jLabel21)
+                    .addComponent(jScrollPane3, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                .addComponent(jPanel4, javax.swing.GroupLayout.PREFERRED_SIZE, 75, Short.MAX_VALUE)
                 .addContainerGap())
         );
 
@@ -660,7 +687,7 @@ public class contratistas extends javax.swing.JDialog {
         );
         layout.setVerticalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addComponent(jPanel1, javax.swing.GroupLayout.DEFAULT_SIZE, 555, Short.MAX_VALUE)
+            .addComponent(jPanel1, javax.swing.GroupLayout.DEFAULT_SIZE, 557, Short.MAX_VALUE)
         );
 
         pack();
@@ -686,7 +713,7 @@ public class contratistas extends javax.swing.JDialog {
             fichero = fileChooser.getSelectedFile();
             jTextField7.setText(fichero.getPath().toString());
             ImageIcon fot = new ImageIcon(fichero.getPath().toString());
-            Icon icono = new ImageIcon(fot.getImage().getScaledInstance(fot.getIconWidth(),fot.getIconHeight(), Image.SCALE_DEFAULT));
+            Icon icono = new ImageIcon(fot.getImage().getScaledInstance(jLabel14.getWidth(), jLabel14.getHeight(),Image.SCALE_DEFAULT));
             jLabel14.setIcon(icono);
             this.repaint();
             BufferedImage img = new BufferedImage(icono.getIconWidth(), icono.getIconHeight(), BufferedImage.TYPE_INT_RGB);
@@ -720,7 +747,7 @@ public final void nuevo(){
         jTextField1.setBounds(rect);
         jTextField1.setText("");
         jTextField15.setText("");
-        
+        jTextArea2.setText("");
         jTextField2.setText("");
         jTextField3.setText("");
         jTextField4.setText("");
@@ -934,8 +961,13 @@ private void okButtonMouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:ev
         }
         
         JOptionPane.showMessageDialog(rootPane, "Se ha guardado el registro");// TODO add your handling code here:
+        if(sicierras==1){
+            this.doClose(RET_OK);
+        }
 }//GEN-LAST:event_okButtonMouseClicked
-
+public void sicierra(int i){
+    sicierras = i;
+}
 private void jTextField1KeyTyped(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_jTextField1KeyTyped
    Character c = evt.getKeyChar();
                 if(Character.isLetter(c)) {
@@ -1041,7 +1073,72 @@ private void jTextArea3KeyTyped(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_
         
         // TODO add your handling code here:
     }//GEN-LAST:event_jButton2ActionPerformed
+    public void asignacontra(String id){
+        jSpinner1.setValue(id);
+        cargaventana();
+    }
+    private void okButton2ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_okButton2ActionPerformed
+    bloqueo b = new bloqueo(conex);
+     pideclave();
+    if(desbloqueado)
+    {
+        if(b.isbloqued()){
+             int op = JOptionPane.showConfirmDialog(this, "Desea Desbloquear el contratista?","Desbloquear Contratista", JOptionPane.YES_NO_OPTION);
+            if(op==JOptionPane.YES_OPTION)
+            {
+                b.actualiza(0);
+            }
+        }else{
+            int op = JOptionPane.showConfirmDialog(this, "Desea Bloquear el contratista?","Bloquear Contratista", JOptionPane.YES_NO_OPTION);
+            if(op==JOptionPane.YES_OPTION)
+            {
+                b.actualiza(1);
+            }
+        }
+         bloqueaboton(!b.isbloqued());
+    }
+        
+        // TODO add your handling code here:
+    }//GEN-LAST:event_okButton2ActionPerformed
+
+    private void okButton3ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_okButton3ActionPerformed
+        edita=1;
+        nuevo=0;
+        viejo();
+        definemodelo();
+        buscaContratista contrat = new buscaContratista(null, true, conex, this);
+        Toolkit tk = Toolkit.getDefaultToolkit();
+        Dimension tama = tk.getScreenSize();
+        int x = (tama.width/2)-600/2;
+        int y = (tama.height/2)-600/2;
+        contrat.setBounds(x, y, 600, 600);
+        contrat.setVisible(true);
+       
+        // TODO add your handling code here:
+    }//GEN-LAST:event_okButton3ActionPerformed
+
+    private void okButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_okButtonActionPerformed
+        // TODO add your handling code here:
+    }//GEN-LAST:event_okButtonActionPerformed
+    private void viejo(){
+        Rectangle rect = new Rectangle();
+        jTextField1.setVisible(false);
+        rect.setBounds(jSpinner1.getBounds());
+        jSpinner1.setVisible(true);        
+        jSpinner1.setBounds(rect);
+        
+    }
+    protected void desbloqueo(boolean desbloqueo){
+        desbloqueado=desbloqueo;
+    }
     
+    private void pideclave(){
+        claveAdmin admin = new claveAdmin(null, true,this,conex);
+        int xi=(int)(this.getWidth()/2)-400/2;
+        int yi = (int) (this.getHeight()/2)-200/2;
+        admin.setBounds(xi, yi, 400, 200);
+        admin.setVisible(true);
+    }
     private void doClose(int retStatus) {
         returnStatus = retStatus;
         setVisible(false);
@@ -1076,9 +1173,7 @@ private void jTextArea3KeyTyped(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_
     private javax.swing.JLabel jLabel9;
     private javax.swing.JPanel jPanel1;
     private javax.swing.JPanel jPanel2;
-    private javax.swing.JPanel jPanel3;
     private javax.swing.JPanel jPanel4;
-    private javax.swing.JScrollPane jScrollPane1;
     private javax.swing.JScrollPane jScrollPane2;
     private javax.swing.JScrollPane jScrollPane3;
     private javax.swing.JSpinner jSpinner1;
@@ -1101,6 +1196,8 @@ private void jTextArea3KeyTyped(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_
     private javax.swing.JTextField jTextField9;
     private javax.swing.JButton okButton;
     private javax.swing.JButton okButton1;
+    private javax.swing.JButton okButton2;
+    private javax.swing.JButton okButton3;
     // End of variables declaration//GEN-END:variables
     private int returnStatus = RET_CANCEL;
 }

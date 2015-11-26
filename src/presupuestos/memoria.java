@@ -178,7 +178,7 @@ Date fecha = new Date();
         jPanel4.setBackground(new java.awt.Color(100, 100, 100));
 
         jLabel1.setBackground(new java.awt.Color(91, 91, 95));
-        jLabel1.setFont(new java.awt.Font("Tahoma", 1, 11)); // NOI18N
+        jLabel1.setFont(new java.awt.Font("Tahoma", 1, 11));
         jLabel1.setForeground(new java.awt.Color(255, 255, 255));
         jLabel1.setHorizontalAlignment(javax.swing.SwingConstants.CENTER);
         jLabel1.setText("Memoria Descriptiva");
@@ -217,7 +217,9 @@ Date fecha = new Date();
         jLabel3.setText("Fecha:");
 
         jTextArea1.setColumns(20);
+        jTextArea1.setLineWrap(true);
         jTextArea1.setRows(5);
+        jTextArea1.setWrapStyleWord(true);
         jTextArea1.setSelectionColor(new java.awt.Color(216, 141, 0));
         jTextArea1.addKeyListener(new java.awt.event.KeyAdapter() {
             public void keyTyped(java.awt.event.KeyEvent evt) {

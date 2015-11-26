@@ -5,6 +5,7 @@
 package reportes;
 
 import com.mysql.jdbc.Statement;
+import config.Redondeo;
 import java.awt.event.ActionEvent;
 import java.awt.event.KeyEvent;
 import java.io.ByteArrayOutputStream;
@@ -14,6 +15,8 @@ import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.math.BigDecimal;
+import java.math.BigInteger;
+import java.math.RoundingMode;
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -59,18 +62,19 @@ public class reportepresupuesto extends javax.swing.JDialog {
     public static final int RET_OK = 1;
     Connection conex;
      String ruta;
+     Redondeo redondear = new Redondeo();
     String mtabus, numero;
    String tiponp = "";
     String pres;
     SimpleDateFormat format = new SimpleDateFormat("dd/MM/yyyy");
     String fecha;
     int cual=0;
-    double totalpres;
-       public double subtotal1 = 0,  subtotal=0,impuesto=0, total=0;
+    BigDecimal totalpres;
+       public BigDecimal subtotal1 = new BigDecimal("0.00"),  subtotal=new BigDecimal("0.00"),impu=new BigDecimal("0.00"),impuesto=new BigDecimal("0.00"), total=new BigDecimal("0.00");
     /**
      * Creates new form reportepresupuesto
      */
-    public reportepresupuesto(java.awt.Frame parent, boolean modal, Connection conex, String pres, double totalpres) {
+    public reportepresupuesto(java.awt.Frame parent, boolean modal, Connection conex, String pres, BigDecimal totalpres) {
         super(parent, modal);
         initComponents();
         this.conex = conex;
@@ -149,7 +153,7 @@ public class reportepresupuesto extends javax.swing.JDialog {
         jPanel3.setBackground(new java.awt.Color(100, 100, 100));
 
         jLabel1.setBackground(new java.awt.Color(91, 91, 95));
-        jLabel1.setFont(new java.awt.Font("Tahoma", 1, 11)); // NOI18N
+        jLabel1.setFont(new java.awt.Font("Tahoma", 1, 11));
         jLabel1.setForeground(new java.awt.Color(255, 255, 255));
         jLabel1.setHorizontalAlignment(javax.swing.SwingConstants.CENTER);
         jLabel1.setText("Reporte Presupuesto");
@@ -224,6 +228,11 @@ public class reportepresupuesto extends javax.swing.JDialog {
         });
 
         jComboBox1.setModel(new javax.swing.DefaultComboBoxModel(new String[] { "Presupuesto Original", "Presupuesto de Partidas no Previstas", "Presupuesto Modificado" }));
+        jComboBox1.addItemListener(new java.awt.event.ItemListener() {
+            public void itemStateChanged(java.awt.event.ItemEvent evt) {
+                jComboBox1ItemStateChanged(evt);
+            }
+        });
 
         jLabel2.setFont(new java.awt.Font("Tahoma", 1, 11));
         jLabel2.setText("Tipo de Presupuesto:");
@@ -235,7 +244,7 @@ public class reportepresupuesto extends javax.swing.JDialog {
         jLabel3.setFont(new java.awt.Font("Tahoma", 1, 11));
         jLabel3.setText("Fecha:");
 
-        jTextField1.setText("PRESUPUESTO");
+        jTextField1.setText("PRESUPUESTO ORIGINAL");
 
         jCheckBox5.setSelected(true);
         jCheckBox5.setText("Con Firmas");
@@ -457,24 +466,23 @@ public class reportepresupuesto extends javax.swing.JDialog {
     }// </editor-fold>//GEN-END:initComponents
 public void generareportepres(){
      JasperPrint print=null;
-     totalpres=0;
+     totalpres=new BigDecimal("0.00");
+     BigDecimal impuestobase= new BigDecimal("0.00");
       Map parameters = new HashMap();
-        impuesto = 0;
+        impuesto = new BigDecimal("0.00");
             String imp = "SELECT porimp FROM mpres WHERE id='"+pres+"'";
         try {
             Statement simp = (Statement) conex.createStatement();
             ResultSet rsimp = simp.executeQuery(imp);
             while(rsimp.next()){
-                impuesto=rsimp.getFloat(1);
+                impuesto=rsimp.getBigDecimal(1);
             }
-            
+            impuestobase=impuesto;
         } catch (SQLException ex) {
             Logger.getLogger(reportepresupuesto.class.getName()).log(Level.SEVERE, null, ex);
         }
             
          try {
-              
-             
               FileInputStream input=null;
               String titulo = jTextField1.getText().toString();
             try {
@@ -488,7 +496,7 @@ public void generareportepres(){
             
             while (rst1.next()){
                 if(rst1.getObject(1)!=null) {
-                    subtotal = rst1.getDouble(1);
+                    subtotal = rst1.getBigDecimal(1);
                      System.out.println("subtotal bd: "+rst1.getDouble(1));
                 }
             }
@@ -497,9 +505,9 @@ public void generareportepres(){
           
             
           
-            impuesto = subtotal*(impuesto/100);
+            impuesto = redondear.redondearDosDecimales(subtotal.multiply(impuesto.divide(new BigDecimal("100"))));
            
-            total = subtotal+impuesto;
+            total = subtotal.add(impuesto);
             totalpres=total;
                       
             
@@ -717,7 +725,7 @@ public void generareportepres(){
                 }               
                 
                 if(cual==2){
-                    float impuestos=0;
+                    BigDecimal impuestos=new BigDecimal("0.00");
                     if(jCheckBox2.isSelected()){
                           input = new FileInputStream(new File("noprevistasubtotal.jrxml"));
                     }else{
@@ -738,8 +746,9 @@ public void generareportepres(){
                    if(jComboBox2.getSelectedIndex()==4){
                         tiponp="";
                     }
-                    String select = "SELECT SUM(IF(precasu=0, precunit,precasu)*cantidad),"
-                            + "mp.porimp as porimp FROM mppres, mpres as mp WHERE "
+                   
+                    String select = "SELECT IFNULL(SUM(IF(precasu=0, precunit,precasu)*cantidad),0),"
+                            + "IFNULL(mp.porimp,0) as porimp FROM mppres, mpres as mp WHERE "
                             + "(mpre_id IN (SELECT id FROM mpres WHERE mpres_id='"+pres+"')) "
                             + "AND mpre_id=mp.id AND mppres.nropresupuesto='"+jTextField2.getText().toString()+"'"
                             + " AND tipo='NP' AND tiponp LIKE ('%"+tiponp+"%')";
@@ -748,10 +757,12 @@ public void generareportepres(){
                         Statement ste = (Statement) conex.createStatement();
                         ResultSet rste = ste.executeQuery(select);
                         while(rste.next()){
-                            totalpres = rste.getDouble(1);
-                           impuestos = rste.getFloat(2);
+                            totalpres = rste.getBigDecimal(1);
+                           impuestos = rste.getBigDecimal(2);
                         }
-                        totalpres = totalpres+(totalpres*(impuestos/100));
+                        impuesto=impuestos;
+                        impu =redondear.redondearDosDecimales(totalpres.multiply(impuestos.divide(new BigDecimal("100"))));
+                        totalpres = totalpres.add(impu);
                     } catch (SQLException ex) {
                         Logger.getLogger(reportepresupuesto.class.getName()).log(Level.SEVERE, null, ex);
                     }
@@ -825,18 +836,18 @@ public void generareportepres(){
                     try {
                         Statement truncate = (Statement) conex.createStatement();
                         truncate.execute(borra);
-                        String cantidad = "IFNULL(mp.cantidad+IFNULL((SELECT SUM(aumento) FROM admppres WHERE numepart=mp.numero AND mpre_id='"+pres+"'),0)-"
+                        String cantidad = "ROUND(IFNULL(mp.cantidad+IFNULL((SELECT SUM(aumento) FROM admppres WHERE numepart=mp.numero AND mpre_id='"+pres+"'),0)-"
                                 + "IFNULL((SELECT SUM(disminucion) "
-                                + "FROM admppres WHERE numepart=mp.numero AND mpre_id='"+pres+"'),0),0)";
+                                + "FROM admppres WHERE numepart=mp.numero AND mpre_id='"+pres+"'),0),0),2)";
                         String originales = "INSERT INTO reportemodificado "
                                 + "SELECT numegrup as numero, id as codigo, descri, unidad,"
-                                + "IFNULL(mp.cantidad+IFNULL"
+                                + "ROUND(IFNULL(mp.cantidad+IFNULL"
                                 + "((SELECT SUM(aumento) FROM admppres WHERE numepart=mp.numero AND mpre_id='"+pres+"'),0)-"
                                 + "IFNULL((SELECT SUM(disminucion) "
-                                + "FROM admppres WHERE numepart=mp.numero AND mpre_id='"+pres+"'),0),0) as cantidad, "
+                                + "FROM admppres WHERE numepart=mp.numero AND mpre_id='"+pres+"'),0),0),2) as cantidad, "
                                 + "IF(mp.precasu=0,mp.precunit,mp.precasu) as precunit,"
-                                + ""+cantidad+"*IF(mp.precasu=0,mp.precunit,"
-                                + "mp.precasu) as total FROM mppres as mp WHERE mpre_id='"+pres+"'";
+                                + "ROUND("+cantidad+"*IF(mp.precasu=0,mp.precunit,"
+                                + "mp.precasu),2) as total FROM mppres as mp WHERE mpre_id='"+pres+"' AND tipo='Org' ORDER BY mp.numegrup";
                         Statement stori = (Statement) conex.createStatement();
                         stori.execute(originales);
                         
@@ -844,7 +855,8 @@ public void generareportepres(){
                         int cont=0;
                         String cuentanp = "SELECT COUNT(*) FROM mppres as mp "
                                 + "WHERE tipo='NP' AND tiponp='NP' AND (mpre_id = '"+pres+"' OR mpre_id "
-                                + "IN (SELECT id FROM mpres WHERE mpres_id='"+pres+"'))";
+                                + "IN (SELECT id FROM mpres WHERE mpres_id='"+pres+"')) AND mp.numero IN "
+                                + "(SELECT numepart FROM dvalus WHERE mpre_id='"+pres+"' AND status=1)"; //DEBEN ESTAR EN ALGUNA VALUACION PARA APARECER EN MODIFICADO
                         Statement stnp = (Statement) conex.createStatement();
                         ResultSet rstnp = stnp.executeQuery(cuentanp);
                         while(rstnp.next()){
@@ -877,7 +889,8 @@ public void generareportepres(){
                         cont=0;
                         String cuentaoa = "SELECT COUNT(*) FROM mppres as mp "
                                 + "WHERE tipo='NP' AND tiponp='OA' AND (mpre_id = '"+pres+"' OR mpre_id "
-                                + "IN (SELECT id FROM mpres WHERE mpres_id='"+pres+"'))";
+                                + "IN (SELECT id FROM mpres WHERE mpres_id='"+pres+"'))AND mp.numero IN "
+                                + "(SELECT numepart FROM dvalus WHERE mpre_id='"+pres+"' AND status=1)";
                         Statement stoa = (Statement) conex.createStatement();
                         ResultSet rstoa = stoa.executeQuery(cuentaoa);
                         while(rstoa.next()){
@@ -905,7 +918,8 @@ public void generareportepres(){
                          cont=0;
                         String cuentaoe = "SELECT COUNT(*) FROM mppres as mp "
                                 + "WHERE tipo='NP' AND tiponp='OE' AND (mpre_id = '"+pres+"' OR mpre_id "
-                                + "IN (SELECT id FROM mpres WHERE mpres_id='"+pres+"'))";
+                                + "IN (SELECT id FROM mpres WHERE mpres_id='"+pres+"')) AND mp.numero IN "
+                                + "(SELECT numepart FROM dvalus WHERE mpre_id='"+pres+"' AND status=1)";
                         Statement stoe = (Statement) conex.createStatement();
                         ResultSet rstoe = stoe.executeQuery(cuentaoe);
                         while(rstoe.next()){
@@ -934,7 +948,8 @@ public void generareportepres(){
                          cont=0;
                         String cuentaoc = "SELECT COUNT(*) FROM mppres as mp "
                                 + "WHERE tipo='NP' AND tiponp='OC' AND (mpre_id = '"+pres+"' OR mpre_id "
-                                + "IN (SELECT id FROM mpres WHERE mpres_id='"+pres+"'))";
+                                + "IN (SELECT id FROM mpres WHERE mpres_id='"+pres+"')) AND mp.numero IN "
+                                + "(SELECT numepart FROM dvalus WHERE mpre_id='"+pres+"' AND status=1)";
                         Statement stoc = (Statement) conex.createStatement();
                         ResultSet rstoc = stoc.executeQuery(cuentaoc);
                         while(rstoc.next()){
@@ -1002,11 +1017,12 @@ public void generareportepres(){
                         Statement stmonto = (Statement) conex.createStatement();
                         ResultSet rstmonto = stmonto.executeQuery(consultamonto);
                         while(rstmonto.next()){
-                            totalpres=rstmonto.getDouble("total");
+                            totalpres=rstmonto.getBigDecimal("total");
                         }
-                         impuesto = totalpres*(impuesto/100);
+                        impu = impuesto;
+                         impuesto = redondear.redondearDosDecimales(totalpres.multiply(impuesto.divide(new BigDecimal("100"))));
            
-                            total = totalpres+impuesto;
+                            total = totalpres.add(impuesto);
                             totalpres=total;
                     } catch (SQLException ex) {
                         Logger.getLogger(reportepresupuesto.class.getName()).log(Level.SEVERE, null, ex);
@@ -1022,13 +1038,13 @@ public void generareportepres(){
             denumeroaletra nume = new denumeroaletra();
           String letras="";
           int decimalPlaces = 2; 
-          BigDecimal bd = new BigDecimal(totalpres); 
+          BigDecimal bd = totalpres; 
           bd = bd.setScale(decimalPlaces, BigDecimal.ROUND_HALF_EVEN); 
 
         
           letras=nume.Convertir(String.valueOf(bd), true);
           if(jCheckBox3.isSelected()){
-          letras="TOTAL EN LETRAS: "+letras;
+            letras="TOTAL EN LETRAS: "+letras;
           }else{
               letras="";
           }
@@ -1036,8 +1052,30 @@ public void generareportepres(){
             parameters.put("titulo",titulo);
              parameters.put("totalenletra",letras);
              if(cual==2){
+                
                 parameters.put("presnoprevista", jTextField2.getText());
                 parameters.put("tiponp", tiponp);
+                if(jCheckBox4.isSelected())
+               {BigDecimal sub = new BigDecimal("0.00");
+                String selectNP = "SELECT IFNULL(SUM(if(precasu=0, precunit, precasu)*cantidad),0) FROM mppres "
+                                + "WHERE tipo='NP' AND tiponp='"+tiponp+"' AND (mpre_id IN "
+                        + "(SELECT id FROM mpres WHERE mpres_id='"+pres+"') AND nropresupuesto="+jTextField2.getText()+")";  
+                    try {
+                        Statement st = (Statement) conex.createStatement();
+                        ResultSet rst = st.executeQuery(selectNP);
+                        while(rst.next())
+                        {
+                         sub = rst.getBigDecimal(1);   
+                        }
+                    } catch (SQLException ex) {
+                        Logger.getLogger(reportepresupuesto.class.getName()).log(Level.SEVERE, null, ex);
+                    }
+                    BigDecimal impuestoNP=(impuestobase.divide(new BigDecimal("100"))).multiply(sub);
+                   parameters.put("tituloimp", impuestobase.toString()+"% Impuesto:");
+                   parameters.put("imp",impuestoNP );
+                   parameters.put("titulototal", "Total:");
+                   parameters.put("totaltotal", sub.add(impuestoNP));
+               }
            }
            
            if(cual!=3){
@@ -1157,7 +1195,8 @@ public void generareportepres(){
     }//GEN-LAST:event_jTextField3ActionPerformed
 
 private void jButton1ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton1ActionPerformed
-            JFileChooser fileChooser = new JFileChooser();
+        JFileChooser fileChooser = new JFileChooser();
+        
         int seleccion = fileChooser.showSaveDialog(jTextField1);
         
         File fichero = fileChooser.getSelectedFile();
@@ -1166,6 +1205,16 @@ private void jButton1ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRS
     
     // TODO add your handling code here:
 }//GEN-LAST:event_jButton1ActionPerformed
+
+private void jComboBox1ItemStateChanged(java.awt.event.ItemEvent evt) {//GEN-FIRST:event_jComboBox1ItemStateChanged
+    if(jComboBox1.getSelectedItem().equals("Presupuesto Original"))
+        jTextField1.setText("PRESUPUESTO ORIGINAL");
+    if(jComboBox1.getSelectedItem().equals("Presupuesto de Partidas no Previstas"))
+        jTextField1.setText("PRESUPUESTO DE PARTIDAS NO PREVISTAS");
+    if(jComboBox1.getSelectedItem().equals("Presupuesto Modificado"))
+        jTextField1.setText("PRESUPUESTO MODIFICADO");   
+    // TODO add your handling code here:
+}//GEN-LAST:event_jComboBox1ItemStateChanged
     
     private void doClose(int retStatus) {
         returnStatus = retStatus;

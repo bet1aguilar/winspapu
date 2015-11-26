@@ -53,7 +53,7 @@ public class hiloequipos extends Thread{
             ResultSet rst2 = carga2.executeQuery(sql); 
              while(rst2.next()){
 
-                 sql= "INSERT INTO metabs VALUES ('"+mtabu+"',"
+                 sql= "REPLACE INTO metabs VALUES ('"+mtabu+"',"
                                               + "'"+rst2.getString("IDEquipos")+"',"
                                               + "'"+rst2.getString("Descripcion")+"',"
                                               + rst2.getFloat("Depreciacion")+","                                                         

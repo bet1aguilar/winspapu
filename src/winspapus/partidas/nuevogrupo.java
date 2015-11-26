@@ -12,6 +12,7 @@ package winspapus.partidas;
 
 import com.mysql.jdbc.Connection;
 import com.mysql.jdbc.Statement;
+import herramienta.Validacion;
 import java.awt.event.ActionEvent;
 import java.awt.event.KeyEvent;
 import java.sql.ResultSet;
@@ -37,11 +38,13 @@ public class nuevogrupo extends javax.swing.JDialog {
     public static final int RET_OK = 1;
     Connection conex;
     String cant;
+    Validacion val;
     /** Creates new form nuevogruo */
     public nuevogrupo(java.awt.Frame parent, boolean modal, String id, Connection conex) {
         super(parent, modal);
         initComponents();
         this.conex = conex;
+        val = new Validacion(conex);
         jLabel9.setVisible(false);
         jLabel8.setVisible(false);
         try {
@@ -132,7 +135,7 @@ public class nuevogrupo extends javax.swing.JDialog {
         jPanel2.setBorder(javax.swing.BorderFactory.createLineBorder(new java.awt.Color(0, 0, 0)));
 
         jLabel1.setBackground(new java.awt.Color(91, 91, 95));
-        jLabel1.setFont(new java.awt.Font("Tahoma", 1, 11)); // NOI18N
+        jLabel1.setFont(new java.awt.Font("Tahoma", 1, 11));
         jLabel1.setForeground(new java.awt.Color(255, 255, 255));
         jLabel1.setHorizontalAlignment(javax.swing.SwingConstants.CENTER);
         jLabel1.setText("Agregar Grupo de Partidas");
@@ -158,6 +161,12 @@ public class nuevogrupo extends javax.swing.JDialog {
         jTextField1.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
                 jTextField1ActionPerformed(evt);
+            }
+        });
+
+        jTextField2.addKeyListener(new java.awt.event.KeyAdapter() {
+            public void keyTyped(java.awt.event.KeyEvent evt) {
+                jTextField2KeyTyped(evt);
             }
         });
 
@@ -220,7 +229,7 @@ public class nuevogrupo extends javax.swing.JDialog {
                 .addGroup(jPanel1Layout.createSequentialGroup()
                     .addGap(146, 146, 146)
                     .addComponent(jLabel8)
-                    .addContainerGap(86, Short.MAX_VALUE)))
+                    .addContainerGap(89, Short.MAX_VALUE)))
         );
 
         getRootPane().setDefaultButton(okButton);
@@ -281,6 +290,10 @@ public class nuevogrupo extends javax.swing.JDialog {
     private void okButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_okButtonActionPerformed
         // TODO add your handling code here:
     }//GEN-LAST:event_okButtonActionPerformed
+
+    private void jTextField2KeyTyped(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_jTextField2KeyTyped
+val.validaText(evt);        // TODO add your handling code here:
+    }//GEN-LAST:event_jTextField2KeyTyped
     
     private void doClose(int retStatus) {
         returnStatus = retStatus;

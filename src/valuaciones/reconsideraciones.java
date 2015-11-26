@@ -4,7 +4,7 @@
  */
 package valuaciones;
 
-import com.mysql.jdbc.Connection;
+import java.sql.Connection;
 import com.mysql.jdbc.ResultSetMetaData;
 import com.mysql.jdbc.Statement;
 import java.awt.Dimension;
@@ -158,7 +158,6 @@ public class reconsideraciones extends javax.swing.JDialog {
     // <editor-fold defaultstate="collapsed" desc="Generated Code">//GEN-BEGIN:initComponents
     private void initComponents() {
 
-        WinspapusPUEntityManager = java.beans.Beans.isDesignTime() ? null : javax.persistence.Persistence.createEntityManagerFactory("WinspapusPU").createEntityManager();
         jPanel1 = new javax.swing.JPanel();
         jPanel2 = new javax.swing.JPanel();
         jLabel1 = new javax.swing.JLabel();
@@ -226,7 +225,7 @@ public class reconsideraciones extends javax.swing.JDialog {
         jPanel2.setBackground(new java.awt.Color(100, 100, 100));
 
         jLabel1.setBackground(new java.awt.Color(91, 91, 95));
-        jLabel1.setFont(new java.awt.Font("Tahoma", 1, 11)); // NOI18N
+        jLabel1.setFont(new java.awt.Font("Tahoma", 1, 11));
         jLabel1.setForeground(new java.awt.Color(255, 255, 255));
         jLabel1.setHorizontalAlignment(javax.swing.SwingConstants.CENTER);
         jLabel1.setText("Reconsideración de Precios");
@@ -785,6 +784,7 @@ public class reconsideraciones extends javax.swing.JDialog {
     }// </editor-fold>//GEN-END:initComponents
     
     private void cancelButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_cancelButtonActionPerformed
+        
         doClose(RET_CANCEL);
     }//GEN-LAST:event_cancelButtonActionPerformed
 
@@ -809,20 +809,22 @@ public class reconsideraciones extends javax.swing.JDialog {
         
          totalrecons=0;
 
-       String deltas="IF((IF(m.precasu=0,m.precunit,m.precasu)-(SELECT mp.precunit FROM "
+       String deltas="IF((IF(m.precasu=0,m.precunit,m.precasu)- "
+               + "(SELECT IF(mp.precasu=0,mp.precunit, mp.precasu) FROM "
                 + "mppres as mp WHERE (mp.mpre_id='"+mpres+"' OR mp.mpre_id IN "
                 + " (SELECT id FROM mpres WHERE mpres_id='"+mpres+"')) AND mp.numero=m.mppre_id))<0,0,"
-                + "IF(m.precasu=0,m.precunit,m.precasu)-(SELECT mp.precunit FROM "
+                + "IF(m.precasu=0,m.precunit,m.precasu)-(SELECT IF(mp.precasu=0,mp.precunit,mp.precasu) FROM "
                 + "mppres as mp WHERE (mp.mpre_id='"+mpres+"' OR mp.mpre_id IN "
                 + " (SELECT id FROM mpres WHERE mpres_id='"+mpres+"')) AND mp.numero=m.mppre_id))";
        
-        String sql = "SELECT m.id, m.numegrup, m.cantidad, IF(m.precasu=0,m.precunit,m.precasu), (SELECT mp.precunit FROM "
+        String sql = "SELECT m.id, m.numegrup, m.cantidad, IF(m.precasu=0,m.precunit,m.precasu), "
+                + "(SELECT IF(mp.precasu=0, mp.precunit, mp.precasu) FROM "
                 + "mppres as mp WHERE (mp.mpre_id='"+mpres+"' OR mp.mpre_id IN "
                 + "(SELECT id FROM mpres WHERE mpres_id='"+mpres+"')) AND mp.numero=m.mppre_id) as precunitario,"
-                + "IF((IF(m.precasu=0,m.precunit,m.precasu)-(SELECT mp.precunit FROM "
+                + "IF((IF(m.precasu=0,m.precunit,m.precasu)-(SELECT IF(mp.precasu=0,mp.precunit, mp.precasu) FROM "
                 + "mppres as mp WHERE (mp.mpre_id='"+mpres+"' OR mp.mpre_id IN "
                 + " (SELECT id FROM mpres WHERE mpres_id='"+mpres+"')) AND mp.numero=m.mppre_id))<0,0,"
-                + "IF(m.precasu=0,m.precunit,m.precasu)-(SELECT mp.precunit FROM "
+                + "IF(m.precasu=0,m.precunit,m.precasu)-(SELECT IF(mp.precasu=0,mp.precunit,mp.precasu)  FROM "
                 + "mppres as mp WHERE (mp.mpre_id='"+mpres+"' OR mp.mpre_id IN "
                 + " (SELECT id FROM mpres WHERE mpres_id='"+mpres+"')) AND mp.numero=m.mppre_id)) as delta"
                 + ", m.tiporec,"
@@ -873,8 +875,8 @@ public class reconsideraciones extends javax.swing.JDialog {
                 
                 while (rs.next()) {
                     
-                    Object[] filas = new Object[cantidadColumnas];
-                   for (int i = 0; i < cantidadColumnas; i++) {
+                   Object[] filas = new Object[cantidadColumnas];
+                   for(int i = 0; i < cantidadColumnas; i++) {
                        if(i==7){
                            totalrecons+=rs.getDouble(i+1);
                        }
@@ -1302,7 +1304,7 @@ public class reconsideraciones extends javax.swing.JDialog {
                     nume = rstpart.getObject("numero").toString();                   
                 }
                 
-                String update= "UPDATE mppres SET cantidad = "+cantidad+", precio="+precio+" WHERE numero="+nume+" "
+                String update= "UPDATE mppres SET cantidad = "+cantidad+", precunit="+precio+" WHERE numero="+nume+" "
                         + "AND mpre_id='"+mpres+"' OR mpre_id IN (SELECT id FROM mpres WHERE mpres_id='"+mpres+"')";
                 Statement st = (Statement) conex.createStatement();
                 st.execute(update);
@@ -1419,6 +1421,7 @@ public class reconsideraciones extends javax.swing.JDialog {
 
     private void jButton4ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton4ActionPerformed
     ver();
+    
     }//GEN-LAST:event_jButton4ActionPerformed
 
     private void jTextField2KeyTyped(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_jTextField2KeyTyped
@@ -1481,7 +1484,9 @@ public class reconsideraciones extends javax.swing.JDialog {
                 stpresNP.execute(borrarNP);
                 JOptionPane.showMessageDialog(this, "La reconsideración ha sido eliminada!!");
                 buscacuadro();
-               }
+                pres.buscapartida();
+                doClose(RET_OK);
+              }
             // TODO add your handling code here:
             catch (SQLException ex) {
                 Logger.getLogger(Presupuesto.class.getName()).log(Level.SEVERE, null, ex);
@@ -1494,10 +1499,7 @@ public class reconsideraciones extends javax.swing.JDialog {
         if(op==JOptionPane.YES_OPTION){
             String presrecon = jTextField8.getText();
             borrarpres(presrecon);
-        }
-        
-        
-        
+        }       
         // TODO add your handling code here:
     }//GEN-LAST:event_jButton10ActionPerformed
 
@@ -1755,18 +1757,25 @@ private void jButton13ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIR
      {
          String parti=jTable1.getValueAt(filapart, 1).toString();
          codnuevopres= mpres+" VP-"+nrocuadro;
-            Partida part = new Partida(prin, true, conex,codnuevopres, prin, 1, 0, codicove, parti, pres,"0");
-        int x = (prin.getWidth()/2)-390;
-        int y = (prin.getHeight()/2)-300;
+         Partida part = new Partida(prin, true, conex,codnuevopres, prin, 1, 0, codicove, parti, pres,"0",this);
+            int x = (prin.getWidth()/2)-390;
+            int y = (prin.getHeight()/2)-300;
         
         part.setBounds(x, y, 770, 520);
         part.setVisible(true);
+        
         buscacuadro();
     }
      
     private void doClose(int retStatus) {
         returnStatus = retStatus;
         setVisible(false);
+        pres.numPartidas();
+        try {
+            pres.buscapartida();
+        } catch (SQLException ex) {
+            Logger.getLogger(reconsideraciones.class.getName()).log(Level.SEVERE, null, ex);
+        }
         dispose();
     }
 
@@ -1775,7 +1784,6 @@ private void jButton13ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIR
      */
  
     // Variables declaration - do not modify//GEN-BEGIN:variables
-    private javax.persistence.EntityManager WinspapusPUEntityManager;
     private javax.swing.JButton cancelButton;
     private javax.swing.JButton jButton1;
     private javax.swing.JButton jButton10;

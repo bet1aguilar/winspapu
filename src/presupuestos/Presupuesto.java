@@ -11,13 +11,18 @@
  */
 package presupuestos;
 
-import com.mysql.jdbc.Connection;
+
 import com.mysql.jdbc.ResultSetMetaData;
 import com.mysql.jdbc.Statement;
+import config.Redondeo;
+import herramienta.Validacion;
 import java.awt.Dimension;
 import java.awt.Rectangle;
 import java.awt.event.KeyAdapter;
 import java.awt.event.KeyEvent;
+import java.math.BigDecimal;
+import java.math.BigInteger;
+import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.text.NumberFormat;
@@ -43,6 +48,7 @@ import valuaciones.parametrorecon;
 import valuaciones.reconsideraciones;
 import valuaciones.valuacion;
 import winspapus.Principal;
+import winspapus.herramienta.presupuesto.RespaldarPresupuesto;
 
 /**
  *
@@ -52,29 +58,34 @@ public class Presupuesto extends javax.swing.JInternalFrame {
 
     /** Creates new form Presupuesto */
     int focuslost=0;
+     SimpleDateFormat format = new SimpleDateFormat("dd/MM/yyyy");
     String numero="";
     int inicio=0;
+    Redondeo redondear= new Redondeo();
     String [] partidas;
     String auxid="";
     int insertar=0;
-    public double subtotal1 = 0,  subtotal=0,impuesto=0, total=0;
+    public BigDecimal subtotal1 = new BigDecimal("0.00"),  subtotal=new BigDecimal("0.00"),impuesto=new BigDecimal("0.00"), total=new BigDecimal("0.00");
     int contsel=0;
     String  codicove="";
     private Connection conex;
     DefaultTableModel metabs;
+    Validacion val;
     int x, y, auxcont=0;
       int nuevo = 0, cuentan=0, entra=0,nuevonumegrup;
-    float contequipo=0, contmat=0, contmano=0, contototal=0;
+    BigDecimal contequipo=new BigDecimal("0.00"), contmat=new BigDecimal("0.00"), contmano=new BigDecimal("0.00"), contototal=new BigDecimal("0.00");
     String [] auxpart;
     String obradicional = "";
     int filapartida=0;
    DefaultTableModel mptabs;
-   float porcgad=0,porcpre=0,porcutil=0;
+   public BigDecimal porcgad=new BigDecimal("0.00"),porcpre=new BigDecimal("0.00"),porcutil=new BigDecimal("0.00");
+   public BigDecimal porcgadpres=new BigDecimal("0.00"),porcprepres=new BigDecimal("0.00"),porcutilpres=new BigDecimal("0.00");
     int adicional=0;
-    public float presta=0, admin=0, finan=0, impart=0, util=0, impgen=0;
+    public BigDecimal presta= new BigDecimal("0.00"), admin= new BigDecimal("0.00"), finan= new BigDecimal("0.00"), impart= new BigDecimal("0.00"), util= new BigDecimal("0.00"), impgen= new BigDecimal("0.00");
      String id, nombre, partidanueva, tabu;
     Principal prin;
     int entrarafocus15=1;
+    int partidaActual = 0;    
     String rendimi, mbdat, nuevonum, numpartida, precasu, precunit, redondeo;
     int pos;
     int partida;
@@ -83,14 +94,14 @@ public class Presupuesto extends javax.swing.JInternalFrame {
         this.conex = conex;
         prin = p;
         initComponents();
-        
+        val = new Validacion(conex);
         try {
             
             buscartab();
         } catch (SQLException ex) {
             Logger.getLogger(Presupuesto.class.getName()).log(Level.SEVERE, null, ex);
         }
-        jTable1.setOpaque(true);
+    jTable1.setOpaque(true);
     jTable1.setShowHorizontalLines(true);
     jButton24.setVisible(false);
     jTable1.setShowVerticalLines(false);
@@ -105,7 +116,23 @@ public class Presupuesto extends javax.swing.JInternalFrame {
     jTable2.setRowHeight(25);
     }
 
-    
+    public final void numPartidas()
+    {
+        int num=0;
+        String sql = "SELECT COUNT(*) FROM mppres WHERE (mpre_id='"+id+"' OR mpre_id IN (SELECT id FROM mpres WHERE "
+                + "mpres_id='"+id+"'))";
+        try {
+            Statement st = (Statement) conex.createStatement();
+            ResultSet rst = st.executeQuery(sql);
+            while(rst.next())
+            {
+                num=rst.getInt(1);
+            }
+        } catch (SQLException ex) {
+            Logger.getLogger(Presupuesto.class.getName()).log(Level.SEVERE, null, ex);
+        }
+        jLabel34.setText(String.valueOf(num));
+    }
     public void settabu(String tab){
         this.tabu = tab;
         jLabel2.setText("Agregar Partidas del Tabulador "+tabu);
@@ -128,14 +155,53 @@ public class Presupuesto extends javax.swing.JInternalFrame {
             Logger.getLogger(Presupuesto.class.getName()).log(Level.SEVERE, null, ex);
         }
     }
+    /**
+     * Asigna presupuesto
+     * @param presu 
+     */
     public void setid (String presu){
         this.id = presu;
         idpartida = id;
         String select = "UPDATE seleccionado=1 FROM mppres WHERE id='"+id+"'" ;
         prin.setpres(presu);
+        numPartidas();
         
     }
-    public double settotal(){
+    public String getFechaCon()
+    {
+       String fecini=null;
+        String sql = "SELECT DATE_FORMAT(feccon,'%d/%m/%Y') FROM mpres WHERE id='"+id+"' OR id "
+                     + "IN (SELECT id FROM mpres WHERE mpres_id='"+id+"')";
+        try {
+            Statement st = (Statement) conex.createStatement();
+            ResultSet rst = st.executeQuery(sql);
+            while(rst.next())
+            {
+                fecini = rst.getString(1);
+            }
+        } catch (SQLException ex) {
+            Logger.getLogger(Presupuesto.class.getName()).log(Level.SEVERE, null, ex);
+        }
+        return  fecini;
+    }
+    public String getFechaIni()
+    {
+        String fecini=null;
+        String sql = "SELECT DATE_FORMAT(fecini,'%d/%m/%Y') FROM mpres WHERE id='"+id+"' OR id "
+                     + "IN (SELECT id FROM mpres WHERE mpres_id='"+id+"')";
+        try {
+            Statement st = (Statement) conex.createStatement();
+            ResultSet rst = st.executeQuery(sql);
+            while(rst.next())
+            {
+                fecini = rst.getString(1);
+            }
+        } catch (SQLException ex) {
+            Logger.getLogger(Presupuesto.class.getName()).log(Level.SEVERE, null, ex);
+        }
+        return fecini;
+    }
+    public BigDecimal settotal(){
         return total;
     }
     public final void buscartab() throws SQLException{
@@ -167,9 +233,7 @@ public class Presupuesto extends javax.swing.JInternalFrame {
                 }
                cont.addRow(filas);
                 
-            }
-                 
-                 
+            }             
                 for (int i = 0; i < cont.getRowCount(); i++) {
                     jComboBox1.addItem(cont.getValueAt(i, 0).toString());
                 }
@@ -288,8 +352,8 @@ public class Presupuesto extends javax.swing.JInternalFrame {
         jButton35 = new javax.swing.JButton();
         jButton23 = new javax.swing.JButton();
         jButton25 = new javax.swing.JButton();
-        jButton31 = new javax.swing.JButton();
         jButton37 = new javax.swing.JButton();
+        jButton31 = new javax.swing.JButton();
         jScrollPane3 = new javax.swing.JScrollPane();
         jPanel1 = new javax.swing.JPanel();
         jPanel2 = new javax.swing.JPanel();
@@ -330,6 +394,10 @@ public class Presupuesto extends javax.swing.JInternalFrame {
         jButton29 = new javax.swing.JButton();
         jButton30 = new javax.swing.JButton();
         jButton32 = new javax.swing.JButton();
+        jButton38 = new javax.swing.JButton();
+        jLabel32 = new javax.swing.JLabel();
+        jLabel33 = new javax.swing.JLabel();
+        jLabel34 = new javax.swing.JLabel();
         jPanel5 = new javax.swing.JPanel();
         jPanel7 = new javax.swing.JPanel();
         jLabel2 = new javax.swing.JLabel();
@@ -340,6 +408,7 @@ public class Presupuesto extends javax.swing.JInternalFrame {
         jButton3 = new javax.swing.JButton();
         jButton20 = new javax.swing.JButton();
         jButton24 = new javax.swing.JButton();
+        jButton13 = new javax.swing.JButton();
         jScrollPane1 = new javax.swing.JScrollPane();
         jTable1 = new javax.swing.JTable();
         jPanel6 = new javax.swing.JPanel();
@@ -384,6 +453,8 @@ public class Presupuesto extends javax.swing.JInternalFrame {
         jTextField9 = new javax.swing.JTextField();
         jLabel14 = new javax.swing.JLabel();
         jTextField10 = new javax.swing.JTextField();
+        jScrollPane2 = new javax.swing.JScrollPane();
+        jTextArea1 = new javax.swing.JTextArea();
 
         setClosable(true);
         setIconifiable(true);
@@ -391,20 +462,20 @@ public class Presupuesto extends javax.swing.JInternalFrame {
         setResizable(true);
         setTitle("Gestionar Presupuesto de Obra");
         setNextFocusableComponent(jTable2);
-        setPreferredSize(new java.awt.Dimension(1100, 645));
+        setPreferredSize(new java.awt.Dimension(1200, 645));
         addInternalFrameListener(new javax.swing.event.InternalFrameListener() {
-            public void internalFrameActivated(javax.swing.event.InternalFrameEvent evt) {
-            }
-            public void internalFrameClosed(javax.swing.event.InternalFrameEvent evt) {
-                formInternalFrameClosed(evt);
-            }
-            public void internalFrameClosing(javax.swing.event.InternalFrameEvent evt) {
+            public void internalFrameIconified(javax.swing.event.InternalFrameEvent evt) {
             }
             public void internalFrameDeactivated(javax.swing.event.InternalFrameEvent evt) {
             }
             public void internalFrameDeiconified(javax.swing.event.InternalFrameEvent evt) {
             }
-            public void internalFrameIconified(javax.swing.event.InternalFrameEvent evt) {
+            public void internalFrameActivated(javax.swing.event.InternalFrameEvent evt) {
+            }
+            public void internalFrameClosing(javax.swing.event.InternalFrameEvent evt) {
+            }
+            public void internalFrameClosed(javax.swing.event.InternalFrameEvent evt) {
+                formInternalFrameClosed(evt);
             }
             public void internalFrameOpened(javax.swing.event.InternalFrameEvent evt) {
             }
@@ -559,18 +630,6 @@ public class Presupuesto extends javax.swing.JInternalFrame {
         });
         jToolBar1.add(jButton25);
 
-        jButton31.setIcon(new javax.swing.ImageIcon(getClass().getResource("/winspapus/imagenes/eliminar.png"))); // NOI18N
-        jButton31.setToolTipText("Cerrar Presupuesto");
-        jButton31.setFocusable(false);
-        jButton31.setHorizontalTextPosition(javax.swing.SwingConstants.CENTER);
-        jButton31.setVerticalTextPosition(javax.swing.SwingConstants.BOTTOM);
-        jButton31.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
-                jButton31ActionPerformed(evt);
-            }
-        });
-        jToolBar1.add(jButton31);
-
         jButton37.setIcon(new javax.swing.ImageIcon(getClass().getResource("/winspapus/imagenes/imprimir.png"))); // NOI18N
         jButton37.setToolTipText("Reporte de Presupuesto");
         jButton37.setFocusable(false);
@@ -583,13 +642,25 @@ public class Presupuesto extends javax.swing.JInternalFrame {
         });
         jToolBar1.add(jButton37);
 
+        jButton31.setIcon(new javax.swing.ImageIcon(getClass().getResource("/winspapus/imagenes/eliminar.png"))); // NOI18N
+        jButton31.setToolTipText("Cerrar Ventana de Presupuesto");
+        jButton31.setFocusable(false);
+        jButton31.setHorizontalTextPosition(javax.swing.SwingConstants.CENTER);
+        jButton31.setVerticalTextPosition(javax.swing.SwingConstants.BOTTOM);
+        jButton31.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jButton31ActionPerformed(evt);
+            }
+        });
+        jToolBar1.add(jButton31);
+
         jScrollPane3.setBorder(null);
         jScrollPane3.setAutoscrolls(true);
-        jScrollPane3.setPreferredSize(new java.awt.Dimension(950, 600));
+        jScrollPane3.setPreferredSize(new java.awt.Dimension(1254, 600));
 
-        jPanel1.setPreferredSize(new java.awt.Dimension(1000, 450));
+        jPanel1.setPreferredSize(new java.awt.Dimension(1257, 450));
 
-        jPanel2.setPreferredSize(new java.awt.Dimension(950, 550));
+        jPanel2.setPreferredSize(new java.awt.Dimension(1257, 550));
 
         jPanel3.setBorder(javax.swing.BorderFactory.createLineBorder(new java.awt.Color(102, 102, 102)));
 
@@ -607,7 +678,7 @@ public class Presupuesto extends javax.swing.JInternalFrame {
         jPanel8.setLayout(jPanel8Layout);
         jPanel8Layout.setHorizontalGroup(
             jPanel8Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addComponent(jLabel3, javax.swing.GroupLayout.DEFAULT_SIZE, 595, Short.MAX_VALUE)
+            .addComponent(jLabel3, javax.swing.GroupLayout.DEFAULT_SIZE, 646, Short.MAX_VALUE)
         );
         jPanel8Layout.setVerticalGroup(
             jPanel8Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
@@ -650,19 +721,19 @@ public class Presupuesto extends javax.swing.JInternalFrame {
             }
         });
         jTextField14.addFocusListener(new java.awt.event.FocusAdapter() {
-            public void focusGained(java.awt.event.FocusEvent evt) {
-                jTextField14FocusGained(evt);
-            }
             public void focusLost(java.awt.event.FocusEvent evt) {
                 jTextField14FocusLost(evt);
             }
+            public void focusGained(java.awt.event.FocusEvent evt) {
+                jTextField14FocusGained(evt);
+            }
         });
         jTextField14.addKeyListener(new java.awt.event.KeyAdapter() {
-            public void keyPressed(java.awt.event.KeyEvent evt) {
-                jTextField14KeyPressed(evt);
-            }
             public void keyTyped(java.awt.event.KeyEvent evt) {
                 jTextField14KeyTyped(evt);
+            }
+            public void keyPressed(java.awt.event.KeyEvent evt) {
+                jTextField14KeyPressed(evt);
             }
         });
 
@@ -683,11 +754,11 @@ public class Presupuesto extends javax.swing.JInternalFrame {
         jTextField18.setHorizontalAlignment(javax.swing.JTextField.RIGHT);
         jTextField18.setText("0.00");
         jTextField18.addFocusListener(new java.awt.event.FocusAdapter() {
-            public void focusGained(java.awt.event.FocusEvent evt) {
-                jTextField18FocusGained(evt);
-            }
             public void focusLost(java.awt.event.FocusEvent evt) {
                 jTextField18FocusLost(evt);
+            }
+            public void focusGained(java.awt.event.FocusEvent evt) {
+                jTextField18FocusGained(evt);
             }
         });
         jTextField18.addKeyListener(new java.awt.event.KeyAdapter() {
@@ -789,31 +860,31 @@ public class Presupuesto extends javax.swing.JInternalFrame {
                                     .addComponent(jLabel20)
                                     .addGroup(jPanel14Layout.createSequentialGroup()
                                         .addComponent(jTextField14, javax.swing.GroupLayout.PREFERRED_SIZE, 70, javax.swing.GroupLayout.PREFERRED_SIZE)
-                                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 126, Short.MAX_VALUE)
+                                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 150, Short.MAX_VALUE)
                                         .addComponent(jLabel19)))
                                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                                 .addGroup(jPanel14Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                                    .addComponent(jTextField15, javax.swing.GroupLayout.DEFAULT_SIZE, 99, Short.MAX_VALUE)
-                                    .addComponent(jTextField16, javax.swing.GroupLayout.DEFAULT_SIZE, 99, Short.MAX_VALUE)))
+                                    .addComponent(jTextField15, javax.swing.GroupLayout.DEFAULT_SIZE, 126, Short.MAX_VALUE)
+                                    .addComponent(jTextField16, javax.swing.GroupLayout.DEFAULT_SIZE, 126, Short.MAX_VALUE)))
                             .addGroup(jPanel14Layout.createSequentialGroup()
                                 .addComponent(jLabel21)
                                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
-                                .addComponent(jTextField17, javax.swing.GroupLayout.DEFAULT_SIZE, 93, Short.MAX_VALUE)
+                                .addComponent(jTextField17, javax.swing.GroupLayout.DEFAULT_SIZE, 106, Short.MAX_VALUE)
                                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                                 .addComponent(jLabel22)
                                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                                .addComponent(jTextField18, javax.swing.GroupLayout.DEFAULT_SIZE, 94, Short.MAX_VALUE)
+                                .addComponent(jTextField18, javax.swing.GroupLayout.DEFAULT_SIZE, 107, Short.MAX_VALUE)
                                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                                 .addComponent(jLabel23)
                                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                                .addComponent(jTextField19, javax.swing.GroupLayout.DEFAULT_SIZE, 92, Short.MAX_VALUE)
+                                .addComponent(jTextField19, javax.swing.GroupLayout.DEFAULT_SIZE, 106, Short.MAX_VALUE)
                                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
                                 .addComponent(jLabel24)
                                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                                .addComponent(jTextField20, javax.swing.GroupLayout.DEFAULT_SIZE, 93, Short.MAX_VALUE)))))
+                                .addComponent(jTextField20, javax.swing.GroupLayout.DEFAULT_SIZE, 104, Short.MAX_VALUE)))))
                 .addGap(10, 10, 10))
             .addGroup(jPanel14Layout.createSequentialGroup()
-                .addComponent(jScrollPane5, javax.swing.GroupLayout.DEFAULT_SIZE, 567, Short.MAX_VALUE)
+                .addComponent(jScrollPane5, javax.swing.GroupLayout.DEFAULT_SIZE, 618, Short.MAX_VALUE)
                 .addContainerGap())
         );
         jPanel14Layout.setVerticalGroup(
@@ -936,12 +1007,22 @@ public class Presupuesto extends javax.swing.JInternalFrame {
             }
         });
 
+        jButton38.setIcon(new javax.swing.ImageIcon(getClass().getResource("/winspapus/imagenes/imprimitodo.fw.png"))); // NOI18N
+        jButton38.setToolTipText("Imprimir Todos los APUS");
+        jButton38.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jButton38ActionPerformed(evt);
+            }
+        });
+
         javax.swing.GroupLayout jPanel13Layout = new javax.swing.GroupLayout(jPanel13);
         jPanel13.setLayout(jPanel13Layout);
         jPanel13Layout.setHorizontalGroup(
             jPanel13Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, jPanel13Layout.createSequentialGroup()
                 .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                .addComponent(jButton38, javax.swing.GroupLayout.PREFERRED_SIZE, 30, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addComponent(jButton32, javax.swing.GroupLayout.PREFERRED_SIZE, 30, javax.swing.GroupLayout.PREFERRED_SIZE)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addComponent(jButton26, javax.swing.GroupLayout.PREFERRED_SIZE, 30, javax.swing.GroupLayout.PREFERRED_SIZE)
@@ -979,36 +1060,56 @@ public class Presupuesto extends javax.swing.JInternalFrame {
                     .addComponent(jButton29, javax.swing.GroupLayout.PREFERRED_SIZE, 30, javax.swing.GroupLayout.PREFERRED_SIZE)
                     .addComponent(jButton27, javax.swing.GroupLayout.PREFERRED_SIZE, 30, javax.swing.GroupLayout.PREFERRED_SIZE)
                     .addComponent(jButton11, javax.swing.GroupLayout.PREFERRED_SIZE, 30, javax.swing.GroupLayout.PREFERRED_SIZE)
-                    .addComponent(jButton32, javax.swing.GroupLayout.PREFERRED_SIZE, 30, javax.swing.GroupLayout.PREFERRED_SIZE))
+                    .addComponent(jButton32, javax.swing.GroupLayout.PREFERRED_SIZE, 30, javax.swing.GroupLayout.PREFERRED_SIZE)
+                    .addComponent(jButton38, javax.swing.GroupLayout.PREFERRED_SIZE, 30, javax.swing.GroupLayout.PREFERRED_SIZE))
                 .addContainerGap())
         );
+
+        jLabel32.setFont(new java.awt.Font("Tahoma", 1, 11));
+        jLabel32.setText("Inserte Partidas al Presupuesto:");
+
+        jLabel33.setText("Nro. de Partidas: ");
 
         javax.swing.GroupLayout jPanel3Layout = new javax.swing.GroupLayout(jPanel3);
         jPanel3.setLayout(jPanel3Layout);
         jPanel3Layout.setHorizontalGroup(
             jPanel3Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, jPanel3Layout.createSequentialGroup()
+            .addComponent(jPanel8, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+            .addGroup(jPanel3Layout.createSequentialGroup()
                 .addContainerGap()
                 .addComponent(jPanel14, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
                 .addContainerGap())
             .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, jPanel3Layout.createSequentialGroup()
                 .addContainerGap()
                 .addGroup(jPanel3Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
-                    .addComponent(jPanel13, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                    .addComponent(jScrollPane4, javax.swing.GroupLayout.DEFAULT_SIZE, 577, Short.MAX_VALUE))
+                    .addGroup(jPanel3Layout.createSequentialGroup()
+                        .addComponent(jLabel33)
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                        .addComponent(jLabel34, javax.swing.GroupLayout.PREFERRED_SIZE, 48, javax.swing.GroupLayout.PREFERRED_SIZE)
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                        .addComponent(jPanel13, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
+                    .addComponent(jScrollPane4, javax.swing.GroupLayout.DEFAULT_SIZE, 628, Short.MAX_VALUE))
                 .addContainerGap())
-            .addComponent(jPanel8, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+            .addGroup(jPanel3Layout.createSequentialGroup()
+                .addGap(19, 19, 19)
+                .addComponent(jLabel32, javax.swing.GroupLayout.PREFERRED_SIZE, 195, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addContainerGap(434, Short.MAX_VALUE))
         );
         jPanel3Layout.setVerticalGroup(
             jPanel3Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(jPanel3Layout.createSequentialGroup()
                 .addComponent(jPanel8, javax.swing.GroupLayout.PREFERRED_SIZE, 45, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addGap(17, 17, 17)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                .addComponent(jLabel32)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addComponent(jPanel14, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addGap(1, 1, 1)
-                .addComponent(jScrollPane4, javax.swing.GroupLayout.DEFAULT_SIZE, 281, Short.MAX_VALUE)
+                .addGap(0, 0, 0)
+                .addComponent(jScrollPane4, javax.swing.GroupLayout.DEFAULT_SIZE, 267, Short.MAX_VALUE)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
-                .addComponent(jPanel13, javax.swing.GroupLayout.PREFERRED_SIZE, 29, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addGroup(jPanel3Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                    .addComponent(jLabel34, javax.swing.GroupLayout.Alignment.CENTER, javax.swing.GroupLayout.PREFERRED_SIZE, 29, javax.swing.GroupLayout.PREFERRED_SIZE)
+                    .addComponent(jLabel33, javax.swing.GroupLayout.Alignment.CENTER, javax.swing.GroupLayout.PREFERRED_SIZE, 29, javax.swing.GroupLayout.PREFERRED_SIZE)
+                    .addComponent(jPanel13, javax.swing.GroupLayout.PREFERRED_SIZE, 29, javax.swing.GroupLayout.PREFERRED_SIZE))
                 .addContainerGap())
         );
 
@@ -1018,7 +1119,7 @@ public class Presupuesto extends javax.swing.JInternalFrame {
         jPanel7.setBorder(javax.swing.BorderFactory.createLineBorder(new java.awt.Color(100, 100, 100)));
 
         jLabel2.setBackground(new java.awt.Color(100, 100, 100));
-        jLabel2.setFont(new java.awt.Font("Tahoma", 1, 12)); // NOI18N
+        jLabel2.setFont(new java.awt.Font("Tahoma", 1, 12));
         jLabel2.setForeground(new java.awt.Color(255, 255, 255));
         jLabel2.setHorizontalAlignment(javax.swing.SwingConstants.CENTER);
         jLabel2.setText("Seleccionar Partidas para Presupuesto del Tabulador");
@@ -1028,11 +1129,11 @@ public class Presupuesto extends javax.swing.JInternalFrame {
         jPanel7.setLayout(jPanel7Layout);
         jPanel7Layout.setHorizontalGroup(
             jPanel7Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addComponent(jLabel2, javax.swing.GroupLayout.DEFAULT_SIZE, 480, Short.MAX_VALUE)
+            .addComponent(jLabel2, javax.swing.GroupLayout.DEFAULT_SIZE, 591, Short.MAX_VALUE)
         );
         jPanel7Layout.setVerticalGroup(
             jPanel7Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addComponent(jLabel2, javax.swing.GroupLayout.DEFAULT_SIZE, 43, Short.MAX_VALUE)
+            .addComponent(jLabel2, javax.swing.GroupLayout.PREFERRED_SIZE, 43, javax.swing.GroupLayout.PREFERRED_SIZE)
         );
 
         jButton6.setIcon(new javax.swing.ImageIcon(getClass().getResource("/winspapus/imagenes/añade1.fw.png"))); // NOI18N
@@ -1083,12 +1184,22 @@ public class Presupuesto extends javax.swing.JInternalFrame {
             }
         });
 
+        jButton13.setIcon(new javax.swing.ImageIcon(getClass().getResource("/winspapus/imagenes/respaldo.fw.png"))); // NOI18N
+        jButton13.setToolTipText("Respaldo de Presupuesto");
+        jButton13.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jButton13ActionPerformed(evt);
+            }
+        });
+
         javax.swing.GroupLayout jPanel12Layout = new javax.swing.GroupLayout(jPanel12);
         jPanel12.setLayout(jPanel12Layout);
         jPanel12Layout.setHorizontalGroup(
             jPanel12Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, jPanel12Layout.createSequentialGroup()
-                .addContainerGap(242, Short.MAX_VALUE)
+                .addContainerGap(317, Short.MAX_VALUE)
+                .addComponent(jButton13, javax.swing.GroupLayout.PREFERRED_SIZE, 30, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addComponent(jButton20, javax.swing.GroupLayout.PREFERRED_SIZE, 30, javax.swing.GroupLayout.PREFERRED_SIZE)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addComponent(jButton6, javax.swing.GroupLayout.PREFERRED_SIZE, 30, javax.swing.GroupLayout.PREFERRED_SIZE)
@@ -1112,7 +1223,8 @@ public class Presupuesto extends javax.swing.JInternalFrame {
                     .addComponent(jButton2, javax.swing.GroupLayout.PREFERRED_SIZE, 30, javax.swing.GroupLayout.PREFERRED_SIZE)
                     .addComponent(jButton7, javax.swing.GroupLayout.PREFERRED_SIZE, 30, javax.swing.GroupLayout.PREFERRED_SIZE)
                     .addComponent(jButton6, javax.swing.GroupLayout.PREFERRED_SIZE, 30, javax.swing.GroupLayout.PREFERRED_SIZE)
-                    .addComponent(jButton20, javax.swing.GroupLayout.PREFERRED_SIZE, 30, javax.swing.GroupLayout.PREFERRED_SIZE))
+                    .addComponent(jButton20, javax.swing.GroupLayout.PREFERRED_SIZE, 30, javax.swing.GroupLayout.PREFERRED_SIZE)
+                    .addComponent(jButton13, javax.swing.GroupLayout.PREFERRED_SIZE, 30, javax.swing.GroupLayout.PREFERRED_SIZE))
                 .addContainerGap())
         );
 
@@ -1127,6 +1239,11 @@ public class Presupuesto extends javax.swing.JInternalFrame {
         jScrollPane1.setViewportView(jTable1);
 
         jTextField1.setPreferredSize(new java.awt.Dimension(20, 20));
+        jTextField1.addKeyListener(new java.awt.event.KeyAdapter() {
+            public void keyTyped(java.awt.event.KeyEvent evt) {
+                jTextField1KeyTyped(evt);
+            }
+        });
 
         jLabel4.setText("Buscar:");
 
@@ -1183,26 +1300,26 @@ public class Presupuesto extends javax.swing.JInternalFrame {
                 .addComponent(jTextField1, javax.swing.GroupLayout.PREFERRED_SIZE, 144, javax.swing.GroupLayout.PREFERRED_SIZE)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addComponent(jButton1, javax.swing.GroupLayout.PREFERRED_SIZE, 30, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                .addComponent(jButton4, javax.swing.GroupLayout.PREFERRED_SIZE, 30, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                .addComponent(jButton5, javax.swing.GroupLayout.PREFERRED_SIZE, 30, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                .addComponent(jButton12, javax.swing.GroupLayout.PREFERRED_SIZE, 30, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                .addGap(2, 2, 2)
                 .addComponent(jButton36, javax.swing.GroupLayout.PREFERRED_SIZE, 30, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addContainerGap(87, Short.MAX_VALUE))
+                .addGap(2, 2, 2)
+                .addComponent(jButton5, javax.swing.GroupLayout.PREFERRED_SIZE, 30, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addGap(2, 2, 2)
+                .addComponent(jButton12, javax.swing.GroupLayout.PREFERRED_SIZE, 30, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addGap(2, 2, 2)
+                .addComponent(jButton4, javax.swing.GroupLayout.PREFERRED_SIZE, 30, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addContainerGap(214, Short.MAX_VALUE))
         );
         jPanel6Layout.setVerticalGroup(
             jPanel6Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(jPanel6Layout.createSequentialGroup()
                 .addGroup(jPanel6Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                     .addGroup(jPanel6Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.CENTER)
-                        .addComponent(jButton36, javax.swing.GroupLayout.PREFERRED_SIZE, 30, javax.swing.GroupLayout.PREFERRED_SIZE)
                         .addComponent(jButton12, javax.swing.GroupLayout.PREFERRED_SIZE, 30, javax.swing.GroupLayout.PREFERRED_SIZE)
+                        .addComponent(jButton1, javax.swing.GroupLayout.PREFERRED_SIZE, 30, javax.swing.GroupLayout.PREFERRED_SIZE)
+                        .addComponent(jButton36, javax.swing.GroupLayout.PREFERRED_SIZE, 30, javax.swing.GroupLayout.PREFERRED_SIZE)
                         .addComponent(jButton5, javax.swing.GroupLayout.PREFERRED_SIZE, 30, javax.swing.GroupLayout.PREFERRED_SIZE)
-                        .addComponent(jButton4, javax.swing.GroupLayout.PREFERRED_SIZE, 30, javax.swing.GroupLayout.PREFERRED_SIZE)
-                        .addComponent(jButton1, javax.swing.GroupLayout.PREFERRED_SIZE, 30, javax.swing.GroupLayout.PREFERRED_SIZE))
+                        .addComponent(jButton4, javax.swing.GroupLayout.PREFERRED_SIZE, 30, javax.swing.GroupLayout.PREFERRED_SIZE))
                     .addComponent(jTextField1, javax.swing.GroupLayout.DEFAULT_SIZE, 30, Short.MAX_VALUE)
                     .addGroup(jPanel6Layout.createSequentialGroup()
                         .addGap(8, 8, 8)
@@ -1238,23 +1355,23 @@ public class Presupuesto extends javax.swing.JInternalFrame {
                 .addContainerGap()
                 .addComponent(jLabel1)
                 .addGap(18, 18, 18)
-                .addComponent(jLabel29, javax.swing.GroupLayout.DEFAULT_SIZE, 31, Short.MAX_VALUE)
+                .addComponent(jLabel29, javax.swing.GroupLayout.DEFAULT_SIZE, 56, Short.MAX_VALUE)
                 .addGap(18, 18, 18)
                 .addComponent(jLabel5)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
-                .addComponent(jLabel27, javax.swing.GroupLayout.DEFAULT_SIZE, 33, Short.MAX_VALUE)
+                .addComponent(jLabel27, javax.swing.GroupLayout.DEFAULT_SIZE, 57, Short.MAX_VALUE)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
-                .addComponent(jLabel8, javax.swing.GroupLayout.DEFAULT_SIZE, 40, Short.MAX_VALUE)
+                .addComponent(jLabel8, javax.swing.GroupLayout.DEFAULT_SIZE, 60, Short.MAX_VALUE)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                .addComponent(jLabel28, javax.swing.GroupLayout.DEFAULT_SIZE, 53, Short.MAX_VALUE)
+                .addComponent(jLabel28, javax.swing.GroupLayout.DEFAULT_SIZE, 62, Short.MAX_VALUE)
                 .addGap(18, 18, 18)
                 .addComponent(jLabel7)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                .addComponent(jLabel30, javax.swing.GroupLayout.DEFAULT_SIZE, 34, Short.MAX_VALUE)
+                .addComponent(jLabel30, javax.swing.GroupLayout.DEFAULT_SIZE, 60, Short.MAX_VALUE)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
                 .addComponent(jLabel26)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                .addComponent(jLabel31, javax.swing.GroupLayout.DEFAULT_SIZE, 54, Short.MAX_VALUE))
+                .addComponent(jLabel31, javax.swing.GroupLayout.DEFAULT_SIZE, 61, Short.MAX_VALUE))
         );
         jPanel4Layout.setVerticalGroup(
             jPanel4Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
@@ -1306,16 +1423,15 @@ public class Presupuesto extends javax.swing.JInternalFrame {
             .addGroup(jPanel11Layout.createSequentialGroup()
                 .addContainerGap()
                 .addGroup(jPanel11Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
-                    .addGroup(javax.swing.GroupLayout.Alignment.LEADING, jPanel11Layout.createSequentialGroup()
-                        .addGap(4, 4, 4)
-                        .addComponent(jLabel15, javax.swing.GroupLayout.DEFAULT_SIZE, 69, Short.MAX_VALUE))
-                    .addComponent(jLabel16, javax.swing.GroupLayout.Alignment.LEADING, javax.swing.GroupLayout.DEFAULT_SIZE, 73, Short.MAX_VALUE)
-                    .addComponent(jLabel17, javax.swing.GroupLayout.DEFAULT_SIZE, 73, Short.MAX_VALUE))
+                    .addComponent(jLabel15, javax.swing.GroupLayout.PREFERRED_SIZE, 53, javax.swing.GroupLayout.PREFERRED_SIZE)
+                    .addGroup(jPanel11Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
+                        .addComponent(jLabel17, javax.swing.GroupLayout.Alignment.TRAILING, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                        .addComponent(jLabel16, javax.swing.GroupLayout.Alignment.TRAILING)))
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addGroup(jPanel11Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
-                    .addComponent(jTextField13, javax.swing.GroupLayout.DEFAULT_SIZE, 84, Short.MAX_VALUE)
-                    .addComponent(jTextField12, javax.swing.GroupLayout.Alignment.LEADING, javax.swing.GroupLayout.DEFAULT_SIZE, 84, Short.MAX_VALUE)
-                    .addComponent(jTextField11, javax.swing.GroupLayout.Alignment.LEADING, javax.swing.GroupLayout.DEFAULT_SIZE, 84, Short.MAX_VALUE))
+                    .addComponent(jTextField13, javax.swing.GroupLayout.DEFAULT_SIZE, 133, Short.MAX_VALUE)
+                    .addComponent(jTextField12, javax.swing.GroupLayout.Alignment.LEADING, javax.swing.GroupLayout.DEFAULT_SIZE, 133, Short.MAX_VALUE)
+                    .addComponent(jTextField11, javax.swing.GroupLayout.DEFAULT_SIZE, 133, Short.MAX_VALUE))
                 .addContainerGap())
         );
         jPanel11Layout.setVerticalGroup(
@@ -1331,9 +1447,9 @@ public class Presupuesto extends javax.swing.JInternalFrame {
                     .addComponent(jLabel16))
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addGroup(jPanel11Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.CENTER)
-                    .addComponent(jLabel17)
-                    .addComponent(jTextField13, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
-                .addContainerGap(8, Short.MAX_VALUE))
+                    .addComponent(jTextField13, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                    .addComponent(jLabel17))
+                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
         );
 
         jPanel10.setBorder(new javax.swing.border.LineBorder(new java.awt.Color(102, 102, 102), 1, true));
@@ -1343,6 +1459,14 @@ public class Presupuesto extends javax.swing.JInternalFrame {
         jLabel9.setText("% Prest. Soc.:");
 
         jTextField5.setHorizontalAlignment(javax.swing.JTextField.RIGHT);
+        jTextField5.addFocusListener(new java.awt.event.FocusAdapter() {
+            public void focusLost(java.awt.event.FocusEvent evt) {
+                jTextField5FocusLost(evt);
+            }
+            public void focusGained(java.awt.event.FocusEvent evt) {
+                jTextField5FocusGained(evt);
+            }
+        });
         jTextField5.addKeyListener(new java.awt.event.KeyAdapter() {
             public void keyTyped(java.awt.event.KeyEvent evt) {
                 jTextField5KeyTyped(evt);
@@ -1354,6 +1478,14 @@ public class Presupuesto extends javax.swing.JInternalFrame {
         jLabel10.setText("% Admón.:");
 
         jTextField6.setHorizontalAlignment(javax.swing.JTextField.RIGHT);
+        jTextField6.addFocusListener(new java.awt.event.FocusAdapter() {
+            public void focusLost(java.awt.event.FocusEvent evt) {
+                jTextField6FocusLost(evt);
+            }
+            public void focusGained(java.awt.event.FocusEvent evt) {
+                jTextField6FocusGained(evt);
+            }
+        });
         jTextField6.addKeyListener(new java.awt.event.KeyAdapter() {
             public void keyTyped(java.awt.event.KeyEvent evt) {
                 jTextField6KeyTyped(evt);
@@ -1365,6 +1497,14 @@ public class Presupuesto extends javax.swing.JInternalFrame {
         jLabel11.setText("% Utilidad.:");
 
         jTextField7.setHorizontalAlignment(javax.swing.JTextField.RIGHT);
+        jTextField7.addFocusListener(new java.awt.event.FocusAdapter() {
+            public void focusLost(java.awt.event.FocusEvent evt) {
+                jTextField7FocusLost(evt);
+            }
+            public void focusGained(java.awt.event.FocusEvent evt) {
+                jTextField7FocusGained(evt);
+            }
+        });
         jTextField7.addKeyListener(new java.awt.event.KeyAdapter() {
             public void keyTyped(java.awt.event.KeyEvent evt) {
                 jTextField7KeyTyped(evt);
@@ -1376,6 +1516,14 @@ public class Presupuesto extends javax.swing.JInternalFrame {
         jLabel12.setText("% Financ.:");
 
         jTextField8.setHorizontalAlignment(javax.swing.JTextField.RIGHT);
+        jTextField8.addFocusListener(new java.awt.event.FocusAdapter() {
+            public void focusLost(java.awt.event.FocusEvent evt) {
+                jTextField8FocusLost(evt);
+            }
+            public void focusGained(java.awt.event.FocusEvent evt) {
+                jTextField8FocusGained(evt);
+            }
+        });
         jTextField8.addKeyListener(new java.awt.event.KeyAdapter() {
             public void keyTyped(java.awt.event.KeyEvent evt) {
                 jTextField8KeyTyped(evt);
@@ -1387,6 +1535,14 @@ public class Presupuesto extends javax.swing.JInternalFrame {
         jLabel13.setText("% Imp. Part.:");
 
         jTextField9.setHorizontalAlignment(javax.swing.JTextField.RIGHT);
+        jTextField9.addFocusListener(new java.awt.event.FocusAdapter() {
+            public void focusLost(java.awt.event.FocusEvent evt) {
+                jTextField9FocusLost(evt);
+            }
+            public void focusGained(java.awt.event.FocusEvent evt) {
+                jTextField9FocusGained(evt);
+            }
+        });
         jTextField9.addKeyListener(new java.awt.event.KeyAdapter() {
             public void keyTyped(java.awt.event.KeyEvent evt) {
                 jTextField9KeyTyped(evt);
@@ -1398,6 +1554,14 @@ public class Presupuesto extends javax.swing.JInternalFrame {
         jLabel14.setText("%Imp. Gen.:");
 
         jTextField10.setHorizontalAlignment(javax.swing.JTextField.RIGHT);
+        jTextField10.addFocusListener(new java.awt.event.FocusAdapter() {
+            public void focusLost(java.awt.event.FocusEvent evt) {
+                jTextField10FocusLost(evt);
+            }
+            public void focusGained(java.awt.event.FocusEvent evt) {
+                jTextField10FocusGained(evt);
+            }
+        });
         jTextField10.addKeyListener(new java.awt.event.KeyAdapter() {
             public void keyTyped(java.awt.event.KeyEvent evt) {
                 jTextField10KeyTyped(evt);
@@ -1408,39 +1572,32 @@ public class Presupuesto extends javax.swing.JInternalFrame {
         jPanel10.setLayout(jPanel10Layout);
         jPanel10Layout.setHorizontalGroup(
             jPanel10Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGroup(jPanel10Layout.createSequentialGroup()
+            .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, jPanel10Layout.createSequentialGroup()
+                .addGap(16, 16, 16)
                 .addGroup(jPanel10Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
+                    .addComponent(jLabel11, javax.swing.GroupLayout.PREFERRED_SIZE, 63, javax.swing.GroupLayout.PREFERRED_SIZE)
+                    .addGroup(jPanel10Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING, false)
+                        .addComponent(jLabel10, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                        .addComponent(jLabel9)))
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                .addGroup(jPanel10Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
+                    .addComponent(jTextField7)
+                    .addComponent(jTextField6)
+                    .addComponent(jTextField5, javax.swing.GroupLayout.PREFERRED_SIZE, 97, javax.swing.GroupLayout.PREFERRED_SIZE))
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                .addGroup(jPanel10Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                     .addGroup(jPanel10Layout.createSequentialGroup()
-                        .addGap(12, 12, 12)
-                        .addComponent(jLabel11, javax.swing.GroupLayout.DEFAULT_SIZE, 63, Short.MAX_VALUE)
-                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                        .addComponent(jTextField7, javax.swing.GroupLayout.DEFAULT_SIZE, 37, Short.MAX_VALUE))
-                    .addGroup(jPanel10Layout.createSequentialGroup()
-                        .addGroup(jPanel10Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
-                            .addGroup(jPanel10Layout.createSequentialGroup()
-                                .addGap(12, 12, 12)
-                                .addComponent(jLabel10, javax.swing.GroupLayout.DEFAULT_SIZE, 63, Short.MAX_VALUE))
-                            .addComponent(jLabel9, javax.swing.GroupLayout.DEFAULT_SIZE, 75, Short.MAX_VALUE))
+                        .addGroup(jPanel10Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING, false)
+                            .addComponent(jLabel14, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                            .addComponent(jLabel12, javax.swing.GroupLayout.Alignment.LEADING, javax.swing.GroupLayout.PREFERRED_SIZE, 61, javax.swing.GroupLayout.PREFERRED_SIZE))
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                         .addGroup(jPanel10Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                            .addComponent(jTextField5, javax.swing.GroupLayout.DEFAULT_SIZE, 37, Short.MAX_VALUE)
-                            .addComponent(jTextField6, javax.swing.GroupLayout.DEFAULT_SIZE, 37, Short.MAX_VALUE))))
-                .addGroup(jPanel10Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
+                            .addComponent(jTextField10, javax.swing.GroupLayout.DEFAULT_SIZE, 86, Short.MAX_VALUE)
+                            .addComponent(jTextField8, javax.swing.GroupLayout.DEFAULT_SIZE, 86, Short.MAX_VALUE)))
                     .addGroup(jPanel10Layout.createSequentialGroup()
-                        .addGap(3, 3, 3)
-                        .addComponent(jLabel14, javax.swing.GroupLayout.DEFAULT_SIZE, 68, Short.MAX_VALUE)
+                        .addComponent(jLabel13)
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                        .addComponent(jTextField10, javax.swing.GroupLayout.DEFAULT_SIZE, 38, Short.MAX_VALUE))
-                    .addGroup(jPanel10Layout.createSequentialGroup()
-                        .addGroup(jPanel10Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
-                            .addComponent(jLabel13, javax.swing.GroupLayout.DEFAULT_SIZE, 71, Short.MAX_VALUE)
-                            .addGroup(jPanel10Layout.createSequentialGroup()
-                                .addGap(12, 12, 12)
-                                .addComponent(jLabel12, javax.swing.GroupLayout.DEFAULT_SIZE, 59, Short.MAX_VALUE)))
-                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                        .addGroup(jPanel10Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                            .addComponent(jTextField8, javax.swing.GroupLayout.DEFAULT_SIZE, 38, Short.MAX_VALUE)
-                            .addComponent(jTextField9, javax.swing.GroupLayout.DEFAULT_SIZE, 38, Short.MAX_VALUE))))
+                        .addComponent(jTextField9, javax.swing.GroupLayout.DEFAULT_SIZE, 85, Short.MAX_VALUE)))
                 .addContainerGap())
         );
         jPanel10Layout.setVerticalGroup(
@@ -1456,88 +1613,101 @@ public class Presupuesto extends javax.swing.JInternalFrame {
                 .addGroup(jPanel10Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.CENTER)
                     .addComponent(jTextField9, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                     .addComponent(jLabel13)
-                    .addComponent(jLabel10)
-                    .addComponent(jTextField6, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
+                    .addComponent(jTextField6, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                    .addComponent(jLabel10))
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addGroup(jPanel10Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.CENTER)
-                    .addComponent(jTextField10, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                     .addComponent(jLabel14)
                     .addComponent(jTextField7, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                    .addComponent(jLabel11))
-                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+                    .addComponent(jLabel11)
+                    .addComponent(jTextField10, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
+                .addContainerGap(14, Short.MAX_VALUE))
         );
 
         javax.swing.GroupLayout jPanel9Layout = new javax.swing.GroupLayout(jPanel9);
         jPanel9.setLayout(jPanel9Layout);
         jPanel9Layout.setHorizontalGroup(
             jPanel9Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, jPanel9Layout.createSequentialGroup()
-                .addContainerGap()
-                .addComponent(jPanel10, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                .addComponent(jPanel11, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                .addContainerGap())
+            .addGroup(jPanel9Layout.createSequentialGroup()
+                .addComponent(jPanel10, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addGap(0, 0, 0)
+                .addComponent(jPanel11, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
         );
         jPanel9Layout.setVerticalGroup(
             jPanel9Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, jPanel9Layout.createSequentialGroup()
-                .addGroup(jPanel9Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
-                    .addComponent(jPanel11, javax.swing.GroupLayout.Alignment.LEADING, javax.swing.GroupLayout.DEFAULT_SIZE, 96, Short.MAX_VALUE)
-                    .addComponent(jPanel10, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
-                .addGap(0, 0, 0))
+            .addGroup(jPanel9Layout.createSequentialGroup()
+                .addGroup(jPanel9Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                    .addComponent(jPanel10, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                    .addComponent(jPanel11, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+                .addContainerGap())
         );
+
+        jTextArea1.setColumns(20);
+        jTextArea1.setEditable(false);
+        jTextArea1.setFont(new java.awt.Font("Monospaced", 0, 11));
+        jTextArea1.setLineWrap(true);
+        jTextArea1.setRows(1);
+        jTextArea1.setToolTipText("Descripción de Partida");
+        jTextArea1.setWrapStyleWord(true);
+        jScrollPane2.setViewportView(jTextArea1);
 
         javax.swing.GroupLayout jPanel5Layout = new javax.swing.GroupLayout(jPanel5);
         jPanel5.setLayout(jPanel5Layout);
         jPanel5Layout.setHorizontalGroup(
             jPanel5Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, jPanel5Layout.createSequentialGroup()
-                .addGroup(jPanel5Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
-                    .addGroup(javax.swing.GroupLayout.Alignment.LEADING, jPanel5Layout.createSequentialGroup()
-                        .addContainerGap()
-                        .addGroup(jPanel5Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                            .addGroup(jPanel5Layout.createSequentialGroup()
-                                .addComponent(jLabel25)
-                                .addGap(22, 22, 22)
-                                .addComponent(jComboBox1, javax.swing.GroupLayout.PREFERRED_SIZE, 163, javax.swing.GroupLayout.PREFERRED_SIZE))
-                            .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, jPanel5Layout.createSequentialGroup()
-                                .addGroup(jPanel5Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
-                                    .addComponent(jPanel6, javax.swing.GroupLayout.Alignment.LEADING, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                                    .addComponent(jPanel4, javax.swing.GroupLayout.DEFAULT_SIZE, 461, Short.MAX_VALUE))
-                                .addGap(6, 6, 6)))
-                        .addGap(5, 5, 5))
-                    .addComponent(jPanel7, javax.swing.GroupLayout.Alignment.LEADING, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+                .addComponent(jPanel7, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
                 .addGap(0, 0, 0))
             .addGroup(jPanel5Layout.createSequentialGroup()
                 .addContainerGap()
-                .addComponent(jPanel9, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                .addContainerGap())
-            .addGroup(jPanel5Layout.createSequentialGroup()
-                .addContainerGap()
-                .addComponent(jScrollPane1, javax.swing.GroupLayout.DEFAULT_SIZE, 462, Short.MAX_VALUE)
-                .addContainerGap())
-            .addGroup(jPanel5Layout.createSequentialGroup()
-                .addContainerGap()
                 .addComponent(jPanel12, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                .addContainerGap())
+            .addGroup(jPanel5Layout.createSequentialGroup()
+                .addContainerGap()
+                .addComponent(jLabel25)
+                .addGap(22, 22, 22)
+                .addComponent(jComboBox1, javax.swing.GroupLayout.PREFERRED_SIZE, 163, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addContainerGap(293, Short.MAX_VALUE))
+            .addGroup(jPanel5Layout.createSequentialGroup()
+                .addContainerGap()
+                .addComponent(jPanel4, javax.swing.GroupLayout.DEFAULT_SIZE, 572, Short.MAX_VALUE)
+                .addGap(11, 11, 11))
+            .addGroup(jPanel5Layout.createSequentialGroup()
+                .addContainerGap()
+                .addComponent(jPanel6, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                .addGap(11, 11, 11))
+            .addGroup(jPanel5Layout.createSequentialGroup()
+                .addContainerGap()
+                .addComponent(jScrollPane1, javax.swing.GroupLayout.DEFAULT_SIZE, 573, Short.MAX_VALUE)
+                .addContainerGap())
+            .addGroup(jPanel5Layout.createSequentialGroup()
+                .addContainerGap()
+                .addComponent(jScrollPane2, javax.swing.GroupLayout.DEFAULT_SIZE, 573, Short.MAX_VALUE)
+                .addContainerGap())
+            .addGroup(jPanel5Layout.createSequentialGroup()
+                .addContainerGap()
+                .addComponent(jPanel9, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
                 .addContainerGap())
         );
         jPanel5Layout.setVerticalGroup(
             jPanel5Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(jPanel5Layout.createSequentialGroup()
                 .addComponent(jPanel7, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addGap(28, 28, 28)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addGroup(jPanel5Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.CENTER)
                     .addComponent(jLabel25)
                     .addComponent(jComboBox1, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                .addGap(0, 0, 0)
                 .addComponent(jPanel4, javax.swing.GroupLayout.PREFERRED_SIZE, 22, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                .addGap(0, 0, 0)
                 .addComponent(jPanel6, javax.swing.GroupLayout.PREFERRED_SIZE, 31, javax.swing.GroupLayout.PREFERRED_SIZE)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                .addComponent(jScrollPane1, javax.swing.GroupLayout.DEFAULT_SIZE, 205, Short.MAX_VALUE)
+                .addComponent(jScrollPane2, javax.swing.GroupLayout.PREFERRED_SIZE, 51, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addGap(0, 0, 0)
+                .addComponent(jScrollPane1, javax.swing.GroupLayout.DEFAULT_SIZE, 178, Short.MAX_VALUE)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addComponent(jPanel9, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                .addGap(0, 0, 0)
                 .addComponent(jPanel12, javax.swing.GroupLayout.PREFERRED_SIZE, 29, javax.swing.GroupLayout.PREFERRED_SIZE)
                 .addContainerGap())
         );
@@ -1546,10 +1716,12 @@ public class Presupuesto extends javax.swing.JInternalFrame {
         jPanel2.setLayout(jPanel2Layout);
         jPanel2Layout.setHorizontalGroup(
             jPanel2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGroup(jPanel2Layout.createSequentialGroup()
+            .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, jPanel2Layout.createSequentialGroup()
+                .addGap(0, 0, 0)
                 .addComponent(jPanel5, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                .addGap(1, 1, 1)
-                .addComponent(jPanel3, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+                .addGap(0, 0, 0)
+                .addComponent(jPanel3, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                .addGap(12, 12, 12))
         );
         jPanel2Layout.setVerticalGroup(
             jPanel2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
@@ -1564,25 +1736,22 @@ public class Presupuesto extends javax.swing.JInternalFrame {
         jPanel1.setLayout(jPanel1Layout);
         jPanel1Layout.setHorizontalGroup(
             jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGroup(jPanel1Layout.createSequentialGroup()
-                .addComponent(jPanel2, javax.swing.GroupLayout.DEFAULT_SIZE, 1084, Short.MAX_VALUE)
-                .addGap(0, 0, 0))
+            .addComponent(jPanel2, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
         );
         jPanel1Layout.setVerticalGroup(
             jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGroup(jPanel1Layout.createSequentialGroup()
-                .addComponent(jPanel2, javax.swing.GroupLayout.DEFAULT_SIZE, 557, Short.MAX_VALUE)
-                .addContainerGap())
+            .addComponent(jPanel2, javax.swing.GroupLayout.DEFAULT_SIZE, 551, Short.MAX_VALUE)
         );
 
         jScrollPane3.setViewportView(jPanel1);
+        jPanel1.getAccessibleContext().setAccessibleName("");
 
         javax.swing.GroupLayout layout = new javax.swing.GroupLayout(getContentPane());
         getContentPane().setLayout(layout);
         layout.setHorizontalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addComponent(jScrollPane3, javax.swing.GroupLayout.DEFAULT_SIZE, 1084, Short.MAX_VALUE)
-            .addComponent(jToolBar1, javax.swing.GroupLayout.DEFAULT_SIZE, 1084, Short.MAX_VALUE)
+            .addComponent(jToolBar1, javax.swing.GroupLayout.DEFAULT_SIZE, 1241, Short.MAX_VALUE)
+            .addComponent(jScrollPane3, javax.swing.GroupLayout.DEFAULT_SIZE, 1241, Short.MAX_VALUE)
         );
         layout.setVerticalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
@@ -1619,18 +1788,18 @@ public class Presupuesto extends javax.swing.JInternalFrame {
         String sql="SELECT codpro, codcon, porpre, poruti, porgam, porcfi, porimp, poripa FROM mpres WHERE id='"+id+"'";
         ResultSet rs = stmt.executeQuery(sql);
         while(rs.next()){
-            
             jTextField5.setText(rs.getObject(3).toString());
             jTextField7.setText(rs.getObject(4).toString());
             jTextField6.setText(rs.getObject(5).toString());
             jTextField8.setText(rs.getObject(6).toString());
             jTextField10.setText(rs.getObject(7).toString());
             jTextField9.setText(rs.getObject(8).toString());
-            
         }
+        porcprepres = new BigDecimal(jTextField5.getText());
+        porcgadpres = new BigDecimal(jTextField6.getText());
+        porcutilpres = new BigDecimal(jTextField7.getText());
         jComboBox1.setSelectedItem(tabu);
         buscapartida();
-        
     }
     
     public void settitulo(String titulo){
@@ -1638,7 +1807,7 @@ public class Presupuesto extends javax.swing.JInternalFrame {
     }
     
     public void cargartotal(){
-        subtotal=0;
+        subtotal=new BigDecimal("0.00");
        jTextField11.setText("0.00");
        jTextField12.setText("0.00"); 
        jTextField13.setText("0.00");
@@ -1652,28 +1821,25 @@ public class Presupuesto extends javax.swing.JInternalFrame {
             
             while (rst1.next()){
                 if(rst1.getObject(1)!=null) {
-                    subtotal = rst1.getDouble(1);
-                     System.out.println("subtotal bd: "+rst1.getDouble(1));
+                    subtotal = rst1.getBigDecimal(1);
+                     System.out.println("subtotal bd: "+rst1.getBigDecimal(1));
                 }
             }
            System.out.println("subtotal: "+subtotal);
-            impuesto = Float.valueOf(jTextField10.getText().toString());
+            impuesto = new BigDecimal(jTextField10.getText().toString());
             
           
-            impuesto = subtotal*(impuesto/100);
+            impuesto = subtotal.multiply(impuesto.divide(new BigDecimal("100")));
            
-            total = subtotal+impuesto;
+            total = subtotal.add(impuesto);
             System.out.println("total pres "+total);
-            
-          
-         
             NumberFormat formatoNumero = NumberFormat.getNumberInstance();
             formatoNumero.setMaximumFractionDigits(2);
             formatoNumero.setMinimumFractionDigits(2);
             jTextField11.setText(String.valueOf(formatoNumero.format(subtotal)));
             jTextField12.setText(String.valueOf(formatoNumero.format(impuesto)));
             jTextField13.setText(String.valueOf(formatoNumero.format(total))); 
-            total = Math.rint(total*100)/100;
+            total = redondear.redondearDosDecimales(total);
          } catch (SQLException ex) {
             Logger.getLogger(Presupuesto.class.getName()).log(Level.SEVERE, null, ex);
         }
@@ -1763,13 +1929,13 @@ public class Presupuesto extends javax.swing.JInternalFrame {
     public void buscapartida() throws SQLException{
         int cont=0;
         Statement st = (Statement) conex.createStatement();
-        
-        ResultSet rs = st.executeQuery("SELECT numero, numegrup, id, descri, IF(tipo='NP',tiponp,tipo) as tipo, idband "
+        String sql = "SELECT numero, numegrup, id, descri, IF(tipo='NP',tiponp,tipo) as tipo, idband "
                 + "FROM "
                 + "mppres WHERE "
                 + "(mpre_id='"+id+"' OR (mpre_id IN "
                 + "(SELECT id from mpres where mpres_id ='"+id+"' GROUP BY id))) "
-                + "ORDER BY numegrup");
+                + "ORDER BY numegrup";
+        ResultSet rs = st.executeQuery(sql);
         ResultSetMetaData rsMd = (ResultSetMetaData) rs.getMetaData();
        
         mptabs = new DefaultTableModel(){
@@ -1833,10 +1999,6 @@ public class Presupuesto extends javax.swing.JInternalFrame {
         }
             
              int filas = jTable2.getRowCount()-1;
-             jTable2.getSelectionModel().setSelectionInterval(filas, filas);
-             Rectangle r = jTable2.getCellRect(jTable2.getSelectedRow(),jTable2.getSelectedColumn(), false);
-             jTable2.scrollRectToVisible(r);
-             filapartida=filas;
              if(filapartida>=0){
              cargapartida();
              cargartotal();
@@ -1872,11 +2034,15 @@ private void formInternalFrameClosed(javax.swing.event.InternalFrameEvent evt) {
 }//GEN-LAST:event_formInternalFrameClosed
 
     private void jButton6ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton6ActionPerformed
-       
+        vaciarcampos();
         Nuevo s = new Nuevo(prin, true, this, conex);
         s.setBounds((this.getWidth()/2)-450, (this.getHeight()/2)-275, 900, 600);
         s.setVisible(true);
-        vaciacampos();
+       try {
+            buscapartida();
+        } catch (SQLException ex) {
+            Logger.getLogger(Presupuesto.class.getName()).log(Level.SEVERE, null, ex);
+        }
        
     }//GEN-LAST:event_jButton6ActionPerformed
 
@@ -1949,15 +2115,15 @@ private void formInternalFrameClosed(javax.swing.event.InternalFrameEvent evt) {
         }
     }
     private void jButton10ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton10ActionPerformed
-borrar();
-       
+    borrar();
+    numPartidas();
     }//GEN-LAST:event_jButton10ActionPerformed
 
     
     public void cargapartida(){
         jButton11.setEnabled(true);
-        int redondear=0;
-        double total2=0;
+        int redondea=0;
+        BigDecimal total2=new BigDecimal("0.00");
        int idband = 0;
        String tiponp=null;
        String tipo="";
@@ -1966,11 +2132,13 @@ borrar();
         if(filapartida>cantfilas-1){
             filapartida=cantfilas-1;
         }
+        if(jTable2.getRowCount()>0&&filapartida>=0)
+        {
         numpartida = jTable2.getValueAt(filapartida, 1).toString();
         idpartida = jTable2.getValueAt(filapartida, 2).toString();
-        String mtabs = null, mpre = "", descri = null, unidad = null, cantidad = null, precuni = null, padyga = null, pcosfin = null, pimpue = null, pprest = null, putild = null, numegrup = null;       
+        String mpre = "", descri = null, unidad = null, cantidad = null, precuni = null, padyga = null, pcosfin = null, pimpue = null, pprest = null, putild = null, numegrup = null;       
         String numeropres = null,nrocuadro=null;
-        String sql = "SELECT mpre_id, descri, unidad,cantidad, redondeo,"
+        String sql = "SELECT mpre_id, descri, unidad,IFNULL(cantidad,0) as cantidad, IFNULL(redondeo,0) as redondeo, "
                 + " ROUND(IFNULL(IF(precasu=0,precunit, precasu),0),2) as precunit, "
                 + "ROUND(cantidad*IFNULL(IF(precasu=0,precunit, precasu),0),2) "
                 + "as total,"
@@ -1986,8 +2154,6 @@ borrar();
             Statement tabus = (Statement) conex.createStatement();  
             Statement ptabs = (Statement) conex.createStatement();           
             
-            
-            
             while (resultado.next()){
                 tiponp = resultado.getString("tiponp");
                 idband = resultado.getInt("idband");
@@ -1997,20 +2163,12 @@ borrar();
                 descri = resultado.getObject("descri").toString();
                 unidad = resultado.getObject("unidad").toString();
                 cantidad = resultado.getObject("cantidad").toString();
-                redondear = resultado.getInt("redondeo");
+                redondea = resultado.getInt("redondeo");
                 tipo = resultado.getString("tipo");
-                total2=resultado.getDouble("total");
-               
-                    precuni = resultado.getObject("precunit").toString();
-               
-                
-                
-                    
+                total2=resultado.getBigDecimal("total");
+                precuni = resultado.getObject("precunit").toString();   
                 codicove = resultado.getObject("id").toString();
-            
             }
-          
-            
             auxid=id;
             if(!mpre.equals(id) && tipo.equals("NP")){
                 adicional = 1;     
@@ -2067,7 +2225,7 @@ borrar();
                 }
                 
                 if(tiponp!=null){
-                                jCheckBox1.setSelected(true);
+                              
                                 if(tiponp.equals("OA")){
                                 jComboBox2.setSelectedItem("Obra Adicional");
                                 }
@@ -2123,14 +2281,10 @@ borrar();
             jTextField15.setText(codicove);
             jTextArea2.setText(descri);
             jTextField17.setText(unidad);
-            
-           
-           
-         
              NumberFormat formatoNumero = NumberFormat.getNumberInstance();
             formatoNumero.setMaximumFractionDigits(2);
             formatoNumero.setMinimumFractionDigits(2);
-            double cant = Math.rint(Float.valueOf(cantidad)*100)/100;
+            BigDecimal cant = new BigDecimal(cantidad).setScale(2, BigDecimal.ROUND_HALF_UP);
              jTextField18.setText(String.valueOf(cant));
             jTextField19.setText(String.valueOf(precuni));
             jTextField20.setText(formatoNumero.format((total2)));
@@ -2140,8 +2294,10 @@ borrar();
         } catch (SQLException ex) {
             Logger.getLogger(Presupuesto.class.getName()).log(Level.SEVERE, null, ex);
         }
-        
+        }
     }
+    
+    
     private void jTable2MouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_jTable2MouseClicked
          filapartida = jTable2.rowAtPoint(evt.getPoint());
          jButton27.setEnabled(true);
@@ -2206,11 +2362,29 @@ borrar();
         }
         
     }
+    
+    public void vaciarcampos()
+    {
+        jTextField14.setText("");
+        jTextField15.setText("");
+        jTextField16.setText("");
+        jTextArea2.setText("");
+        jTextField17.setText("");
+        jTextField18.setText("");
+        jTextField19.setText("0.00");
+        jTextField20.setText("0.00");
+        jCheckBox1.setSelected(false);
+    }
     private void jButton2ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton2ActionPerformed
-         Nuevo s = new Nuevo(prin, true, this, conex, 1, id);
+        vaciarcampos();
+        Nuevo s = new Nuevo(prin, true, this, conex, 1, id);
         s.setBounds((this.getWidth()/2)-450, (this.getHeight()/2)-275, 900, 550);
         s.setVisible(true);
-        
+         try {
+            buscapartida();
+        } catch (SQLException ex) {
+            Logger.getLogger(Presupuesto.class.getName()).log(Level.SEVERE, null, ex);
+        }
         
     }//GEN-LAST:event_jButton2ActionPerformed
 
@@ -2219,6 +2393,8 @@ private void jTable1MouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:eve
     String part =jTable1.getValueAt(partida, 3).toString();
     Object obj;
        Boolean bol;
+       jTable1.setToolTipText(jTable1.getValueAt(partida, 2).toString());
+       jTextArea1.setText(jTable1.getValueAt(partida, 2).toString());
         obj = jTable1.getValueAt(partida, 0);
                 if (obj instanceof Boolean) {
                     bol = (Boolean) obj;
@@ -2267,8 +2443,7 @@ public void agrega(){
         String codicoves="";
             try {
             Statement st= null;
-            String sql;
-            
+            String sql;            
             jTextField1.setText("");
             busca();
             try {
@@ -2329,9 +2504,9 @@ public void agrega(){
                     status = rstmt.getObject(6).toString();
                     numero = rstmt.getObject(8).toString();
                     codicoves = rstmt.getString(9);
-                    porcpre=rstmt.getFloat("porcpre");
-                    porcgad = rstmt.getFloat("porcgad");
-                    porcutil=rstmt.getFloat("porcutil");
+                    porcpre=rstmt.getBigDecimal("porcpre");
+                    porcgad = rstmt.getBigDecimal("porcgad");
+                    porcutil=rstmt.getBigDecimal("porcutil");
                 }
                 
                 String existe = 
@@ -2347,6 +2522,9 @@ public void agrega(){
                  cuenta = Integer.parseInt(rstexiste.getObject(1).toString());   
                 }
                 auxid= id;
+                porcpre = new BigDecimal(jTextField5.getText());
+                porcgad = new BigDecimal(jTextField6.getText());
+                porcutil = new BigDecimal(jTextField7.getText());
                 if(cuenta==0){
                     if(tiponp==null){
                         
@@ -2406,7 +2584,7 @@ public void agrega(){
                 agregamano(0);
                 id=auxid;
                 calculapartida(String.valueOf(nuevo), id, 0);
-                
+                numPartidas();
                 
             }else{
                     entrar=1;
@@ -2463,12 +2641,12 @@ public void agrega(){
          String sql;
          modificaparametro mp;
          String auxid1 = id;
-            presta = Float.valueOf(jTextField5.getText().toString());
-            admin = Float.valueOf(jTextField6.getText().toString());
-            util = Float.valueOf(jTextField7.getText().toString());
-            finan = Float.valueOf(jTextField8.getText().toString());
-            impart = Float.valueOf(jTextField9.getText().toString());
-            impgen = Float.valueOf(jTextField10.getText().toString());
+            presta = new BigDecimal(jTextField5.getText().toString());
+            admin = new BigDecimal(jTextField6.getText().toString());
+            util = new BigDecimal(jTextField7.getText().toString());
+            finan = new BigDecimal(jTextField8.getText().toString());
+            impart = new BigDecimal(jTextField9.getText().toString());
+            impgen = new BigDecimal(jTextField10.getText().toString());
           
         
         jTable2.setRowSelectionInterval(0, 0);
@@ -2486,8 +2664,9 @@ public void agrega(){
         try {
             Statement stmt1 = (Statement) conex.createStatement();
             stmt1.execute(sql);
-           /* mp = new modificaparametro(conex, this, id, presta, admin, finan, util, impart, impgen);
-            mp.start();*/
+          
+          mp = new modificaparametro(conex, this, id, presta, admin, finan, util, impart, impgen);
+            mp.start();
             id=auxid1;
             if(adicional==1) {
                 JOptionPane.showMessageDialog(this, "Se ha modificado el presupuesto adicional "+obradicional);
@@ -2518,12 +2697,14 @@ public void agrega(){
 
     private void jButton9ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton9ActionPerformed
         Partida part = new Partida(prin, true, conex, id, prin,this,jTextField13.getText().toString());
-        x = (prin.getWidth()/2)-390;
-        y = (prin.getHeight()/2)-350;
-        part.setBounds(x, y, 750, 520);
+        x = (prin.getWidth()/2)-400;
+        y = (prin.getHeight()/2)-300;
+        part.setBounds(x, y, 800, 600);
         part.setVisible(true);
+       
         try {
             buscapartida();
+             numPartidas();
         } catch (SQLException ex) {
             Logger.getLogger(Presupuesto.class.getName()).log(Level.SEVERE, null, ex);
         }
@@ -2532,7 +2713,7 @@ public void agrega(){
 
     private void jButton14ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton14ActionPerformed
         ver(); 
-        
+        numPartidas();
         
     }//GEN-LAST:event_jButton14ActionPerformed
 
@@ -2602,9 +2783,9 @@ public void agrega(){
                     rs = stmt.executeQuery(sql);
 
                     while(rs.next()){
-                        porcgad = rs.getFloat("porcgad");
-                         porcpre= rs.getFloat("porcpre");
-                         porcutil = rs.getFloat("porcutil");
+                        porcgad = rs.getBigDecimal("porcgad");
+                         porcpre= rs.getBigDecimal("porcpre");
+                         porcutil = rs.getBigDecimal("porcutil");
                         jTextField15.setText(rs.getObject(1).toString());
                         jTextArea2.setText(rs.getObject(2).toString());
                         jTextField17.setText(rs.getObject(3).toString());
@@ -2689,9 +2870,9 @@ public void agrega(){
                     rs = stmt.executeQuery(sql);
                     
                     while(rs.next()){
-                         porcgad = rs.getFloat("porcgad");
-                         porcpre= rs.getFloat("porcpre");
-                         porcutil = rs.getFloat("porcutil");
+                         porcgad = rs.getBigDecimal("porcgad");
+                         porcpre= rs.getBigDecimal("porcpre");
+                         porcutil = rs.getBigDecimal("porcutil");
                         jTextField15.setText(rs.getObject(1).toString());
                         jTextArea2.setText(rs.getObject(2).toString());
                         jTextField17.setText(rs.getObject(3).toString());
@@ -2949,7 +3130,7 @@ public void agrega(){
             inserta.execute(sqlpartida);
             JOptionPane.showMessageDialog(this, "Se ha insertado la partida");
             insertar=1;
-            contmat=contequipo=contmano=0;
+            contmat=contequipo=contmano=new BigDecimal("0.00");
             numero = jTextField14.getText();
             String sql = "SELECT numero FROM mptabs WHERE numegrup="+numero+" AND mtabus_id='"+tabu+"'";
             Statement st = (Statement) conex.createStatement();
@@ -2978,13 +3159,13 @@ public void agrega(){
             
         } catch (SQLException ex) {
           
-            JOptionPane.showMessageDialog(this, "No Se ha insertado la partida");
+            JOptionPane.showMessageDialog(this, "No Se ha insertado la partida "+ex.getMessage());
 
             Logger.getLogger(Presupuesto.class.getName()).log(Level.SEVERE, null, ex);
         }
         focuslost=0;
         }
-
+        numPartidas();
     }//GEN-LAST:event_jTextField20FocusLost
 
     private void jCheckBox1ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jCheckBox1ActionPerformed
@@ -2999,10 +3180,8 @@ public void agrega(){
         if(jTextField18.getText().equals("")){
             jTextField18.setText("0.00");
         }
-        
         float cantidad;
         float precio, total1;
-
         cantidad = Float.valueOf(jTextField18.getText().toString());
         precio = Float.valueOf(jTextField19.getText().toString());
         total1 = cantidad * precio;
@@ -3010,8 +3189,6 @@ public void agrega(){
             formatoNumero.setMaximumFractionDigits(2);
             formatoNumero.setMinimumFractionDigits(2);
             jTextField20.setText(String.valueOf(formatoNumero.format(total1)));
-       
-
     }//GEN-LAST:event_jTextField18FocusLost
 
     private void jTextField19FocusLost(java.awt.event.FocusEvent evt) {//GEN-FIRST:event_jTextField19FocusLost
@@ -3035,7 +3212,6 @@ public void agrega(){
         if(jTextField14.getText().toString().equals("")|| entrarafocus15 == 0){
             vacio=1;
         }else{
-            
             entrarafocus15=0;
             focuslost = 1;
             Statement stmt = null, st1=null, st2=null, ext = null;
@@ -3112,9 +3288,9 @@ public void agrega(){
                    ResultSet rs = otro.executeQuery(sql);
                     String covenin="";
                     while(rs.next()){
-                         porcgad = rs.getFloat("porcgad");
-                         porcpre= rs.getFloat("porcpre");
-                         porcutil = rs.getFloat("porcutil");
+                         porcgad = rs.getBigDecimal("porcgad");
+                         porcpre= rs.getBigDecimal("porcpre");
+                         porcutil = rs.getBigDecimal("porcutil");
                         jTextField15.setText(rs.getObject(1).toString());
                         covenin=jTextField15.getText();
                         jTextArea2.setText(rs.getObject(2).toString());
@@ -3175,18 +3351,14 @@ public void agrega(){
 //                            JOptionPane.showMessageDialog(rootPane, tiponp);
                             if(tiponp!=null){
                                 jCheckBox1.setSelected(true);
-                                if(tiponp.equals("OA")){
+                                if(tiponp.equals("OA"))
                                 jComboBox2.setSelectedItem("Obra Adicional");
-                                }
-                                if(tiponp.equals("OE")){
+                                if(tiponp.equals("OE"))
                                 jComboBox2.setSelectedItem("Obra Extra");
-                                }
-                                if(tiponp.equals("OC")){
-                                jComboBox2.setSelectedItem("Obra C");
-                                }
-                                if(tiponp.equals("NP")){
+                                if(tiponp.equals("OC"))
+                                jComboBox2.setSelectedItem("Obra Complementaria");
+                                if(tiponp.equals("NP"))
                                     jComboBox2.setSelectedItem("No Prevista");
-                                }
                                 jTextField16.setEnabled(true);
                                 jTextField16.setText(nropresupuesto);
                             }
@@ -3242,11 +3414,11 @@ public void agrega(){
 
     private void jButton15ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton15ActionPerformed
 
-        valuacion val = new valuacion(prin, true, conex, id);
+        valuacion valu = new valuacion(prin, true, conex, id, this);
         int xv = (prin.getWidth()/2)-375;
         int yv = (prin.getHeight()/2)-700/2;
-        val.setBounds(xv, yv, 850, 700);
-        val.setVisible(true);
+        valu.setBounds(xv, yv, 850, 700);
+        valu.setVisible(true);
         
     }//GEN-LAST:event_jButton15ActionPerformed
 
@@ -3254,15 +3426,15 @@ public void agrega(){
     public String getpres(){
         return id;
     }
-    public double gettotal(){
+    public BigDecimal gettotal(){
         return total;
     }
     private void jButton16ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton16ActionPerformed
 
         aumentosdismi aumento = new aumentosdismi(prin, closable, id, conex, total);
-        int xi = (this.getWidth()/2)-1200/2;
-        int yi = (this.getHeight()/2)-750/2;
-        aumento.setBounds(xi, yi, 1250, 750);
+        int xi = (this.getWidth()/2)-950/2;
+        int yi = (this.getHeight()/2)-650/2;
+        aumento.setBounds(xi, yi, 950, 700);
         aumento.setVisible(true);
     }//GEN-LAST:event_jButton16ActionPerformed
 
@@ -3437,7 +3609,9 @@ public void agrega(){
     
   
     private void jTextField14FocusGained(java.awt.event.FocusEvent evt) {//GEN-FIRST:event_jTextField14FocusGained
-jTextArea2.setEditable(true);
+    vaciacampos();
+    entrarafocus15=1;
+        jTextArea2.setEditable(true);
 String consulta = "SELECT tipo, nropresupuesto FROM mppres WHERE (mpre_id='"+id+"' OR mpre_id IN (SELECT id "
                 + "FROM mpres WHERE mpres_id = '"+id+"')) ORDER BY numero DESC LIMIT 1";
 String tipo ="",nro ="";
@@ -3466,11 +3640,7 @@ String tipo ="",nro ="";
     private void jTextField14KeyTyped(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_jTextField14KeyTyped
        
         int code = evt.getKeyCode();
-        char car = evt.getKeyChar();
-        if ((car<'0' || car>'9')) {
-            System.out.println("Entra el estupidonsqui");
-            evt.consume();
-        }
+        val.validaInt(evt); 
         if(code==38 || code==40){
             filapartida = jTable2.getSelectedRow();           
             cargapartida();                  
@@ -3478,14 +3648,7 @@ String tipo ="",nro ="";
     }//GEN-LAST:event_jTextField14KeyTyped
 
     private void jTextField18KeyTyped(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_jTextField18KeyTyped
-        char car = evt.getKeyChar();
-        int repite = new StringTokenizer(jTextField18.getText().toString(),".").countTokens() - 1;
-        if ((car<'0' || car>'9') && car!='.') {            
-            evt.consume();
-        }
-        if(car=='.'&& repite==1){
-             evt.consume();
-        }
+val.validaFloat(jTextField18.getText(), evt);
         
     }//GEN-LAST:event_jTextField18KeyTyped
 
@@ -3499,76 +3662,32 @@ String tipo ="",nro ="";
     }//GEN-LAST:event_jTextField16KeyTyped
 
     private void jTextField5KeyTyped(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_jTextField5KeyTyped
- char car = evt.getKeyChar();
-        int repite = new StringTokenizer(jTextField5.getText().toString(),".").countTokens() - 1;
-        if ((car<'0' || car>'9') && car!='.') {            
-            evt.consume();
-        }
-        if(car=='.'&& repite==1){
-             evt.consume();
-        }
+val.validaFloat(jTextField5.getText(), evt);
         
         
         
     }//GEN-LAST:event_jTextField5KeyTyped
 
     private void jTextField8KeyTyped(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_jTextField8KeyTyped
- char car = evt.getKeyChar();
-        int repite = new StringTokenizer(jTextField8.getText().toString(),".").countTokens() - 1;
-        if ((car<'0' || car>'9') && car!='.') {            
-            evt.consume();
-        }
-        if(car=='.'&& repite==1){
-             evt.consume();
-        }
-        
+val.validaFloat(jTextField8.getText(), evt);
     }//GEN-LAST:event_jTextField8KeyTyped
 
     private void jTextField9KeyTyped(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_jTextField9KeyTyped
- char car = evt.getKeyChar();
-        int repite = new StringTokenizer(jTextField9.getText().toString(),".").countTokens() - 1;
-        if ((car<'0' || car>'9') && car!='.') {            
-            evt.consume();
-        }
-        if(car=='.'&& repite==1){
-             evt.consume();
-        }
+val.validaFloat(jTextField9.getText(), evt);
         
     }//GEN-LAST:event_jTextField9KeyTyped
 
     private void jTextField6KeyTyped(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_jTextField6KeyTyped
- char car = evt.getKeyChar();
-        int repite = new StringTokenizer(jTextField6.getText().toString(),".").countTokens() - 1;
-        if ((car<'0' || car>'9') && car!='.') {            
-            evt.consume();
-        }
-        if(car=='.'&& repite==1){
-             evt.consume();
-        }
-        
+val.validaFloat(jTextField6.getText(), evt);
     }//GEN-LAST:event_jTextField6KeyTyped
 
     private void jTextField7KeyTyped(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_jTextField7KeyTyped
- char car = evt.getKeyChar();
-        int repite = new StringTokenizer(jTextField7.getText().toString(),".").countTokens() - 1;
-        if ((car<'0' || car>'9') && car!='.') {            
-            evt.consume();
-        }
-        if(car=='.'&& repite==1){
-             evt.consume();
-        }
+val.validaFloat(jTextField7.getText(), evt);
         
     }//GEN-LAST:event_jTextField7KeyTyped
 
     private void jTextField10KeyTyped(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_jTextField10KeyTyped
- char car = evt.getKeyChar();
-        int repite = new StringTokenizer(jTextField10.getText().toString(),".").countTokens() - 1;
-        if ((car<'0' || car>'9') && car!='.') {            
-            evt.consume();
-        }
-        if(car=='.'&& repite==1){
-             evt.consume();
-        }
+val.validaFloat(jTextField10.getText(), evt);
         
     }//GEN-LAST:event_jTextField10KeyTyped
 
@@ -3589,11 +3708,11 @@ String tipo ="",nro ="";
     }//GEN-LAST:event_jTable2KeyReleased
 
     private void jButton18ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton18ActionPerformed
-       float total1 = Float.valueOf(contototal);
+       BigDecimal total1 =contototal;
         diagrama cron = new diagrama(prin, true,conex,id,total1);
-        int xi = (this.getWidth()/2)-1150/2;
-        int yi = (this.getHeight()/2)-720/2;
-        cron.setBounds(xi, yi,1200, 720);
+        int xi = (this.getWidth()/2)-1200/2;
+        int yi = (this.getHeight()/2)-650/2;
+        cron.setBounds(xi, yi,1200, 700);
         cron.setVisible(true);
     }//GEN-LAST:event_jButton18ActionPerformed
 
@@ -3726,16 +3845,17 @@ private void jTextField18FocusGained(java.awt.event.FocusEvent evt) {//GEN-FIRST
 
     private void jButton26ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton26ActionPerformed
         String numegrup = jTable2.getValueAt(filapartida, 1).toString();
-        String numero1="";
-        String consultanum = "SELECT numero FROM mppres WHERE numegrup="+numegrup+" AND "
+        String numero1="", tipo="";
+        String consultanum = "SELECT numero, tipo FROM mppres WHERE numegrup="+numegrup+" AND "
                 + "(mpre_id='"+id+"' OR mpre_id IN (SELECT id FROM mpres WHERE mpres_id='"+id+"'))";
-        String tipos = "Org";
+        String tipos = "Org", tiponp=null;
        String actualiza="";
         try {
             Statement st = (Statement) conex.createStatement();
             ResultSet rst = st.executeQuery(consultanum);
             while(rst.next()){
                 numero1=rst.getString(1);
+                tipos = rst.getString(2);
             }
             int op = JOptionPane.showConfirmDialog(null, "¿Desea Modificar Valores de la Partida? Si/No" , "Modificar Partida", JOptionPane.YES_NO_OPTION);
             if(op==JOptionPane.YES_OPTION){
@@ -3748,9 +3868,22 @@ private void jTextField18FocusGained(java.awt.event.FocusEvent evt) {//GEN-FIRST
                 unidad = jTextField17.getText();
                  cantidad = jTextField18.getText();
                  if(np.equals("1")){
+                     String seleccionadonp=jComboBox2.getSelectedItem().toString();
+                     if(seleccionadonp.equals("No Prevista")){
+                         tiponp="NP";
+                     }
+                     if(seleccionadonp.equals("Obra Extra")){
+                         tiponp="OE";
+                     }
+                     if(seleccionadonp.equals("Obra Adicional")){
+                         tiponp="OA";
+                     }
+                     if(seleccionadonp.equals("Obra Complementaria")){
+                         tiponp="OC";
+                     }
                      tipos = "NP";
                       int cuenta=0;
-                     String select="Select count(*) FROM mpres WHERE id ='"+pres+"'";
+                     String select="SELECT COUNT(*) FROM mpres WHERE id ='"+pres+"'";
                      Statement stselect = (Statement) conex.createStatement();
                      ResultSet rstselect = stselect.executeQuery(select);
                      while(rstselect.next()){
@@ -3773,7 +3906,7 @@ private void jTextField18FocusGained(java.awt.event.FocusEvent evt) {//GEN-FIRST
                     insert.execute(insertare);
                      }
                     actualiza = "UPDATE mppres SET descri='"+descri+"', unidad='"+unidad+"', "
-                                 + "nropresupuesto='"+pres+"', tipo ='"+tipos+"', "
+                                 + "nropresupuesto='"+pres+"', tipo ='"+tipos+"', tiponp='"+tiponp+"',"
                          + "cantidad="+cantidad+", mpre_id='"+pres+"' WHERE numegrup="+numegrup+" AND "
                                  + "(mpre_id='"+id+"' OR mpre_id IN (SELECT id FROM mpres WHERE mpres_id='"+id+"'))";
                  }else{
@@ -4029,7 +4162,7 @@ private void jTextField18FocusGained(java.awt.event.FocusEvent evt) {//GEN-FIRST
                 String borrarpartidas = "DELETE FROM mppres WHERE mpre_id='"+id+"' OR mpre_id IN (SELECT id FROM mpres WHERE mpres_id='"+id+"')";
                 String borrarmats = "DELETE FROM deppres WHERE mpre_id='"+id+"' OR mpre_id IN (SELECT id FROM mpres WHERE  mpres_id='"+id+"')";
                 String borrarequips = "DELETE FROM dmpres WHERE mpre_id='"+id+"' OR mpre_id IN (SELECT id FROM mpres WHERE  mpres_id='"+id+"')";
-                String borrarmano = "DELETE FROM deppres WHERE mpre_id='"+id+"' OR mpre_id IN (SELECT id FROM mpres WHERE  mpres_id='"+id+"')";
+                String borrarmano = "DELETE FROM dmoppres WHERE mpre_id='"+id+"' OR mpre_id IN (SELECT id FROM mpres WHERE  mpres_id='"+id+"')";
                 String borrarmates = "DELETE FROM mmpres WHERE mpre_id='"+id+"' OR mpre_id IN (SELECT id FROM mpres WHERE  mpres_id='"+id+"')";
                 String borrarequipos = "DELETE FROM mepres WHERE mpre_id='"+id+"' OR mpre_id IN (SELECT id FROM mpres WHERE  mpres_id='"+id+"')";
                 String borrarmanos = "DELETE FROM mmopres WHERE mpre_id='"+id+"' OR mpre_id IN (SELECT id FROM mpres WHERE  mpres_id='"+id+"')";
@@ -4041,9 +4174,6 @@ private void jTextField18FocusGained(java.awt.event.FocusEvent evt) {//GEN-FIRST
                 String borrarNP =  "DELETE FROM mpres WHERE mpres_id='"+id+"'";
                 Statement stpres = (Statement) conex.createStatement();
                 Statement stppres = (Statement) conex.createStatement();
-                Statement stmats= (Statement) conex.createStatement();
-                Statement stequipo = (Statement) conex.createStatement();
-                Statement stmano = (Statement) conex.createStatement();
                 Statement stpresNP = (Statement) conex.createStatement();
                 stppres.execute(borrarpartidas);
                 stppres.execute(borrarmats);
@@ -4061,6 +4191,9 @@ private void jTextField18FocusGained(java.awt.event.FocusEvent evt) {//GEN-FIRST
                 JOptionPane.showMessageDialog(this, "Las partidas del presupuesto han sido borradas");
                 buscapartida();
                 cargartotal();
+                vaciarcampos();
+                vaciacampos();     
+                numPartidas();
                }
             catch (SQLException ex) {
                 Logger.getLogger(Presupuesto.class.getName()).log(Level.SEVERE, null, ex);
@@ -4200,7 +4333,7 @@ String nume=jTable2.getValueAt(filapartida, 1).toString();
     }//GEN-LAST:event_jButton32ActionPerformed
 
     private void jButton37ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton37ActionPerformed
-        double totalpres = this.gettotal();
+        BigDecimal totalpres = this.gettotal();
         reportepresupuesto report = new reportepresupuesto(prin, false, conex, id,totalpres);
          int xi = (this.getWidth()/2)-700/2;
         int yi = (this.getHeight()/2)-450/2;
@@ -4208,6 +4341,79 @@ String nume=jTable2.getValueAt(filapartida, 1).toString();
         report.setVisible(true);
         // TODO add your handling code here:
     }//GEN-LAST:event_jButton37ActionPerformed
+
+    private void jButton38ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton38ActionPerformed
+         reporteapu2 report = new reporteapu2((java.awt.Frame)prin, false, conex,id);
+         int xi = (this.getWidth()/2)-500/2;
+        int yi = (this.getHeight()/2)-300/2;
+         report.setBounds(xi, yi, 500, 300);
+        report.setVisible(true);  
+        
+        // TODO add your handling code here:
+    }//GEN-LAST:event_jButton38ActionPerformed
+
+    private void jButton13ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton13ActionPerformed
+    RespaldarPresupuesto respaldar = new RespaldarPresupuesto(prin, true, conex, id);
+    int xi= (this.getWidth()/2)-500/2;
+    int yi= (this.getHeight()/2)-350/2;
+    respaldar.setBounds(xi, yi, 500, 350);
+    respaldar.setVisible(true);  
+        
+        // TODO add your handling code here:
+    }//GEN-LAST:event_jButton13ActionPerformed
+
+private void jTextField1KeyTyped(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_jTextField1KeyTyped
+
+    val.validaText(evt);
+}//GEN-LAST:event_jTextField1KeyTyped
+
+private void jTextField5FocusGained(java.awt.event.FocusEvent evt) {//GEN-FIRST:event_jTextField5FocusGained
+    val.focusGained(jTextField5);
+}//GEN-LAST:event_jTextField5FocusGained
+
+private void jTextField5FocusLost(java.awt.event.FocusEvent evt) {//GEN-FIRST:event_jTextField5FocusLost
+val.focusLost(jTextField5);
+}//GEN-LAST:event_jTextField5FocusLost
+
+private void jTextField6FocusGained(java.awt.event.FocusEvent evt) {//GEN-FIRST:event_jTextField6FocusGained
+val.focusGained(jTextField6);
+}//GEN-LAST:event_jTextField6FocusGained
+
+private void jTextField6FocusLost(java.awt.event.FocusEvent evt) {//GEN-FIRST:event_jTextField6FocusLost
+val.focusLost(jTextField6);
+}//GEN-LAST:event_jTextField6FocusLost
+
+private void jTextField7FocusGained(java.awt.event.FocusEvent evt) {//GEN-FIRST:event_jTextField7FocusGained
+val.focusGained(jTextField7);
+}//GEN-LAST:event_jTextField7FocusGained
+
+private void jTextField7FocusLost(java.awt.event.FocusEvent evt) {//GEN-FIRST:event_jTextField7FocusLost
+val.focusLost(jTextField7);
+}//GEN-LAST:event_jTextField7FocusLost
+
+private void jTextField8FocusGained(java.awt.event.FocusEvent evt) {//GEN-FIRST:event_jTextField8FocusGained
+val.focusGained(jTextField8);
+}//GEN-LAST:event_jTextField8FocusGained
+
+private void jTextField8FocusLost(java.awt.event.FocusEvent evt) {//GEN-FIRST:event_jTextField8FocusLost
+val.focusLost(jTextField8);
+}//GEN-LAST:event_jTextField8FocusLost
+
+private void jTextField9FocusGained(java.awt.event.FocusEvent evt) {//GEN-FIRST:event_jTextField9FocusGained
+val.focusGained(jTextField9);
+}//GEN-LAST:event_jTextField9FocusGained
+
+private void jTextField9FocusLost(java.awt.event.FocusEvent evt) {//GEN-FIRST:event_jTextField9FocusLost
+val.focusLost(jTextField9);
+}//GEN-LAST:event_jTextField9FocusLost
+
+private void jTextField10FocusGained(java.awt.event.FocusEvent evt) {//GEN-FIRST:event_jTextField10FocusGained
+val.focusGained(jTextField10);
+}//GEN-LAST:event_jTextField10FocusGained
+
+private void jTextField10FocusLost(java.awt.event.FocusEvent evt) {//GEN-FIRST:event_jTextField10FocusLost
+val.focusLost(jTextField10);
+}//GEN-LAST:event_jTextField10FocusLost
     public void vaciacampospres()
     {
         jTextField5.setText("");
@@ -4231,7 +4437,7 @@ String nume=jTable2.getValueAt(filapartida, 1).toString();
                 mpre = rsts.getObject(1).toString();
                 }
             }
-            if(mpre!=null){
+            if(mpre!=null && !mpre.equals("")){
                 id = mpre;
             }
         } catch (SQLException ex) {
@@ -4255,7 +4461,7 @@ String nume=jTable2.getValueAt(filapartida, 1).toString();
         Partida part = new Partida(prin, true, conex, id, prin,1, contar, idpartida, numpartida, this, jTextField13.getText().toString());
         x = (prin.getWidth()/2)-400;
         y = (prin.getHeight()/2)-300;
-        part.setBounds(x, y, 800, 520);
+        part.setBounds(x, y, 800, 600);
         part.setVisible(true);
         cargartotal();
         try {
@@ -4341,36 +4547,37 @@ String nume=jTable2.getValueAt(filapartida, 1).toString();
     }
         
     public void calculapartida(String nume, String presupuesto, int edita){
-        float auxcontotal;
-        float admini=porcgad;
-        float utili=porcutil;
-        float financiero= Float.valueOf(jTextField8.getText().toString());
-        float impuestos = Float.valueOf(jTextField9.getText().toString());
-        float redondeado;
+        BigDecimal auxcontotal;
+        BigDecimal admini=porcgad;
+        BigDecimal utili=porcutil;
+        BigDecimal financiero = new BigDecimal (jTextField8.getText().toString());
+        BigDecimal impuestos = new BigDecimal(jTextField9.getText().toString());
+        BigDecimal redondeado;
         
-        contototal = contmat+contequipo+contmano;
+        contototal = contmat.add(contequipo).add(contmano);
         System.out.println("contotal "+contototal);
         auxcontotal = contototal;
         
-        admini = auxcontotal * admini/100;
+        admini = redondear.redondearDosDecimales((auxcontotal.multiply(admini.divide(new BigDecimal("100")))));
         System.out.println("admin "+admini);
-        utili = (auxcontotal+admini) * utili/100;
+        utili = redondear.redondearDosDecimales((auxcontotal.add(admini)).multiply(utili.divide(new BigDecimal("100"))));
         System.out.println("util "+utili);
-        auxcontotal = contototal + admini + utili;
+        auxcontotal = contototal.add(admini).add(utili);
         System.out.println("sumado "+auxcontotal);
-        financiero = auxcontotal * financiero/100;
-        impuestos = auxcontotal * impuestos/100;
+        financiero = redondear.redondearDosDecimales(auxcontotal.multiply(financiero.divide(new BigDecimal("100"))));
+        impuestos = redondear.redondearDosDecimales(auxcontotal.multiply(impuestos.divide(new BigDecimal("100"))));
         System.out.println("financiero "+financiero);
         System.out.println("impuesto "+impuestos);
-        contototal = auxcontotal + impuestos + financiero;
+        contototal = auxcontotal.add(impuestos).add(financiero);
         System.out.println("contotal impu fin "+contototal);
-        auxcontotal = (float) (Math.rint((contototal+0.000001)*100)/100);
-        redondeado = (float) Math.rint(auxcontotal);
+        auxcontotal = contototal;
+        redondeado =(auxcontotal).setScale(2, BigDecimal.ROUND_HALF_UP);
         
         jTextField19.setText(String.valueOf(redondeado));
         if(insertar==1){ 
-        String consulta = "UPDATE mppres SET precunit="+auxcontotal+", precasu="+redondeado+" WHERE numero='"+nume+"' "
+        String consulta = "UPDATE mppres SET precunit="+auxcontotal+", precasu=0 WHERE numero='"+nume+"' "
                 + "AND (mpre_id='"+presupuesto+"' OR mpre_id IN (SELECT id FROM mpres WHERE mpres_id='"+presupuesto+"'))";
+        System.out.println("consulta para saber cual es NAN "+consulta);
         try {
             Statement stmt = (Statement) conex.createStatement();
             stmt.execute(consulta);
@@ -4380,9 +4587,9 @@ String nume=jTable2.getValueAt(filapartida, 1).toString();
         }
     }
     public void agregaequipo (int edita){
-            String cantidad, precio;
+            BigDecimal cantidad = new BigDecimal("0.00"), precio= new BigDecimal("0.00");
             int cuantos=0;
-            float valor=0;
+            BigDecimal valor= new BigDecimal("0.00");
             String codiequipo, mtabu = "", descri, deprecia;
             String sql = "Select me.descri, me.deprecia, me.precio, me.status,"
                 + " me.id, me.precio, dm.cantidad, mp.codicove as codicove"
@@ -4396,16 +4603,16 @@ String nume=jTable2.getValueAt(filapartida, 1).toString();
             ResultSet rst = st.executeQuery(sql);
             
             while(rst.next()){
-                cantidad = rst.getObject(7).toString();
-                precio = rst.getObject(3).toString();
-                 codiequipo = rst.getObject(5).toString();
-               descri = rst.getObject(1).toString();
-               deprecia = rst.getObject(2).toString();
+                cantidad = rst.getBigDecimal(7);
+                precio = rst.getBigDecimal(3);
+                 codiequipo = rst.getString(5);
+               descri = rst.getString(1);
+               deprecia = rst.getString(2);
                jTextField15.setText(rst.getString("codicove"));
                if(Float.valueOf(deprecia)!=0){
-                valor += Float.valueOf(precio)*Float.valueOf(cantidad)* Float.valueOf(deprecia);
+                valor = redondear.redondearDosDecimales(valor.add(precio.multiply(cantidad).multiply(new BigDecimal(deprecia))));
                }else{
-                   valor += Float.valueOf(precio)*Float.valueOf(cantidad);
+                   valor = redondear.redondearDosDecimales(valor.add(precio.multiply(cantidad)));
                }
                 Statement inserta = (Statement) conex.createStatement();
                 String sqlinsert;
@@ -4443,9 +4650,10 @@ String nume=jTable2.getValueAt(filapartida, 1).toString();
             }
             contequipo = valor;
             System.out.println("contaquipo "+contequipo);
-            contequipo = valor / Float.valueOf(rendimi);
-            contequipo = (float) (Math.rint((contequipo+0.000001)*100)/100);
-            
+            if(Double.valueOf(rendimi)==0)
+                rendimi="1";
+            contequipo = valor.divide(new BigDecimal(rendimi),2, BigDecimal.ROUND_HALF_UP);
+            contequipo = redondear.redondearDosDecimales(contequipo);            
             System.out.println("contequipo con rendimi "+contequipo);
         } catch (SQLException ex) {
             Logger.getLogger(Presupuesto.class.getName()).log(Level.SEVERE, null, ex);
@@ -4454,10 +4662,10 @@ String nume=jTable2.getValueAt(filapartida, 1).toString();
     
 //*********************************************************************************    
         public void agregamano (int edita){
-           String cantidad, salario , bono ="", subsidi = "";
-           int cuantos=0, cantidades=0;
-           float prestaciones = porcpre;
-           float valor = 0, bonos , subsid;
+           BigDecimal cantidad, salario , bono =new BigDecimal("0.00"), subsidi = new BigDecimal("0.00");
+           BigDecimal cuantos=new BigDecimal("0.00"), cantidades=new BigDecimal("0.00");
+           BigDecimal prestaciones = porcpre;
+           BigDecimal valor = new BigDecimal("0.00"), bonos=new BigDecimal("0.00"), subsid=new BigDecimal("0.00");
            String codimano, mtabu = "", descri, deprecia = "";
            
       
@@ -4473,15 +4681,15 @@ String nume=jTable2.getValueAt(filapartida, 1).toString();
             ResultSet rst = st.executeQuery(sql);
             
             while(rst.next()){
-                cantidad = rst.getObject(8).toString();
-                salario = rst.getObject(2).toString();
-                 codimano = rst.getObject(6).toString();
-               descri = rst.getObject(1).toString();
-               bono = rst.getObject(3).toString();
-               subsidi = rst.getObject(4).toString(); 
+                cantidad = rst.getBigDecimal(8);
+                salario = rst.getBigDecimal(2);
+                 codimano = rst.getString(6);
+               descri = rst.getString(1);
+               bono = rst.getBigDecimal(3);
+               subsidi = rst.getBigDecimal(4); 
                jTextField15.setText(rst.getString(9));
-               cantidades += Float.valueOf(cantidad);
-               valor += Float.valueOf(cantidad)*Float.valueOf(salario);
+               cantidades = cantidades.add(cantidad);
+               valor = valor.add(redondear.redondearDosDecimales(cantidad.multiply(salario)));
                
                 Statement inserta = (Statement) conex.createStatement();
                 String sqlinsert;
@@ -4502,10 +4710,10 @@ String nume=jTable2.getValueAt(filapartida, 1).toString();
                 String sqlcuenta = "SELECT count(id) FROM mmopres WHERE mpre_id='"+id+"' AND id='"+codimano+"'";
                 ResultSet rscuenta = cuenta.executeQuery(sqlcuenta);
                 while(rscuenta.next()){
-                    cuantos = Integer.parseInt(rscuenta.getObject(1).toString());
+                    cuantos = rscuenta.getBigDecimal(1);
                     
                 }
-                if(cuantos==0){
+                if(cuantos.intValue()==0){
                     Statement mano = (Statement) conex.createStatement();
                     String insertmano= "INSERT INTO mmopres (mpre_id, id, descri, salario, bono, subsid,"
                             + " status)"
@@ -4517,23 +4725,25 @@ String nume=jTable2.getValueAt(filapartida, 1).toString();
             }
             contmano = valor;
            
-            prestaciones = valor * prestaciones/100;
+            prestaciones = redondear.redondearDosDecimales(valor.multiply(prestaciones.divide(new BigDecimal("100"))));
+               
             System.out.println("valormano "+contmano);
-            if(bono!=null && !"".equals(bono)) {
-                bonos = Float.valueOf(cantidades) * Float.valueOf(bono);
+            if(bono!=new BigDecimal("0.00")) {
+                bonos = redondear.redondearDosDecimales(cantidades.multiply(bono));
             }
             else {
-                bonos=0;
+                bonos=new BigDecimal("0.00");
             }
-            if(subsidi!=null && !"".equals(subsidi)) {
-                subsid = Float.valueOf(cantidades) * Float.valueOf(subsidi);
+            if(subsidi!=new BigDecimal("0.00")) {
+                subsid = redondear.redondearDosDecimales(cantidades.multiply(subsidi)); 
             }
             else {
-                subsid=0;
+                subsid=new BigDecimal("0.00");
             }
-            valor = contmano + prestaciones + bonos +subsid;
+            valor = contmano.add(prestaciones).add(subsid).add(bonos);
             System.out.println("prestaciones "+prestaciones+" bonos "+bonos+" subsid "+subsid);
-            contmano = valor/Float.valueOf(rendimi);
+            contmano = redondear.redondearDosDecimales(valor.divide(new BigDecimal(rendimi),2,BigDecimal.ROUND_HALF_UP));
+             
             System.out.println("contmanofinal "+contmano);
             
         } catch (SQLException ex) {
@@ -4542,15 +4752,16 @@ String nume=jTable2.getValueAt(filapartida, 1).toString();
         }
 //******************************************************************************  
         public void agregarmat(int edita){
-           String cantidad, precio ;
+           BigDecimal cantidad, precio ;
            int cuantos=0;
-           float valor=0;
-           String codimate, mtabu = "", descri, desperdi, unidad;
+           BigDecimal valor=new BigDecimal("0.00"), desperdi;
+           String codimate, mtabu = "", descri, unidad;
         
         
           
         String sql = "Select mm.descri, mm.desperdi, mm.precio, mm.unidad, mm.status,"
-                + " mm.id, mm.precio, dm.cantidad,mp.codicove FROM mmtabs as mm,"
+                + " mm.id, mm.precio, dm.cantidad,mp.codicove, "
+                + "ROUND(((mm.precio+(mm.precio*(mm.desperdi/100)))*dm.cantidad),2) as total FROM mmtabs as mm,"
                 + " dmtabs as dm, mptabs as mp "
                 + "WHERE dm.mtabus_id='"+tabu+"' AND mm.mtabus_id=dm.mtabus_id AND mp.mtabus_id=mm.mtabus_id "
                 + "AND dm.numepart=mp.numero"
@@ -4561,17 +4772,17 @@ String nume=jTable2.getValueAt(filapartida, 1).toString();
             ResultSet rst = st.executeQuery(sql);
             
             while(rst.next()){
-                cantidad = rst.getObject(8).toString();
-                precio = rst.getObject(3).toString();
+                cantidad = rst.getBigDecimal(8);
+                precio = rst.getBigDecimal(3);
                  codimate = rst.getObject(6).toString();
                descri = rst.getObject(1).toString();
-               desperdi = rst.getObject(2).toString();
+               desperdi = rst.getBigDecimal(2);
                unidad = rst.getObject(4).toString();
                jTextField15.setText(rst.getString(9)); //codicove
                 Statement inserta = (Statement) conex.createStatement();
                String sqlinsert;
 
-               valor += (Float.valueOf(precio)+(Float.valueOf(precio)* (Float.valueOf(desperdi)/100)))* Float.valueOf(cantidad);
+               valor = valor.add(rst.getBigDecimal("total"));
                
                if(insertar==1){
                if(edita==0) {
@@ -4618,6 +4829,7 @@ String nume=jTable2.getValueAt(filapartida, 1).toString();
     private javax.swing.JButton jButton10;
     private javax.swing.JButton jButton11;
     private javax.swing.JButton jButton12;
+    private javax.swing.JButton jButton13;
     private javax.swing.JButton jButton14;
     private javax.swing.JButton jButton15;
     private javax.swing.JButton jButton16;
@@ -4644,6 +4856,7 @@ String nume=jTable2.getValueAt(filapartida, 1).toString();
     private javax.swing.JButton jButton35;
     private javax.swing.JButton jButton36;
     private javax.swing.JButton jButton37;
+    private javax.swing.JButton jButton38;
     private javax.swing.JButton jButton4;
     private javax.swing.JButton jButton5;
     private javax.swing.JButton jButton6;
@@ -4678,6 +4891,9 @@ String nume=jTable2.getValueAt(filapartida, 1).toString();
     private javax.swing.JLabel jLabel3;
     private javax.swing.JLabel jLabel30;
     private javax.swing.JLabel jLabel31;
+    private javax.swing.JLabel jLabel32;
+    private javax.swing.JLabel jLabel33;
+    private javax.swing.JLabel jLabel34;
     private javax.swing.JLabel jLabel4;
     private javax.swing.JLabel jLabel5;
     private javax.swing.JLabel jLabel6;
@@ -4699,11 +4915,13 @@ String nume=jTable2.getValueAt(filapartida, 1).toString();
     private javax.swing.JPanel jPanel8;
     private javax.swing.JPanel jPanel9;
     private javax.swing.JScrollPane jScrollPane1;
+    private javax.swing.JScrollPane jScrollPane2;
     private javax.swing.JScrollPane jScrollPane3;
     private javax.swing.JScrollPane jScrollPane4;
     private javax.swing.JScrollPane jScrollPane5;
     private javax.swing.JTable jTable1;
     private javax.swing.JTable jTable2;
+    private javax.swing.JTextArea jTextArea1;
     private javax.swing.JTextArea jTextArea2;
     private javax.swing.JTextField jTextField1;
     private javax.swing.JTextField jTextField10;

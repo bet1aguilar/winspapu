@@ -12,6 +12,7 @@ package winspapus.partidas;
 
 import com.mysql.jdbc.Connection;
 import com.mysql.jdbc.Statement;
+import herramienta.Validacion;
 import java.awt.event.ActionEvent;
 import java.awt.event.KeyEvent;
 import java.sql.ResultSet;
@@ -38,6 +39,8 @@ public class copiar extends javax.swing.JDialog {
     public static final int RET_OK = 1;
     private String numero,mtabu, num, codi, num2;
     private int  entero;
+    Validacion val;
+    public final String tableName= "mptabs";
     private Connection conex;
     /** Creates new form copiar */
     public copiar(java.awt.Frame parent, boolean modal, String num, String tab, Connection conex, String codigo, String num2) throws SQLException {
@@ -51,7 +54,7 @@ public class copiar extends javax.swing.JDialog {
         jTextField2.setText(num2);
         this.conex = conex;
         contar();
-        
+        val = new Validacion(conex);
         jLabel9.setVisible(false);
         jLabel8.setVisible(false);
         // Close the dialog when Esc is pressed
@@ -107,7 +110,7 @@ public class copiar extends javax.swing.JDialog {
         jPanel2.setBackground(new java.awt.Color(100, 100, 100));
 
         jLabel1.setBackground(new java.awt.Color(91, 91, 95));
-        jLabel1.setFont(new java.awt.Font("Tahoma", 1, 11)); // NOI18N
+        jLabel1.setFont(new java.awt.Font("Tahoma", 1, 11));
         jLabel1.setForeground(new java.awt.Color(255, 255, 255));
         jLabel1.setHorizontalAlignment(javax.swing.SwingConstants.CENTER);
         jLabel1.setText("Copiar Partida del Tabulador");
@@ -135,6 +138,12 @@ public class copiar extends javax.swing.JDialog {
         jLabel4.setText("Código Covenin de Partida Nueva:");
 
         jLabel5.setText("Número Partida Nueva:");
+
+        jTextField3.addKeyListener(new java.awt.event.KeyAdapter() {
+            public void keyTyped(java.awt.event.KeyEvent evt) {
+                jTextField3KeyTyped(evt);
+            }
+        });
 
         jTextField4.setEditable(false);
 
@@ -352,9 +361,11 @@ public class copiar extends javax.swing.JDialog {
       private void insertapartida() throws SQLException{
           Statement st = (Statement) conex.createStatement();
           Statement s = (Statement) conex.createStatement();
-          ResultSet rst = st.executeQuery("SELECT codicove, descri,refere, porcgad, porcpre, porcutil, mbdat_id, precasu, precunit, rendimi, unidad, redondeo, status, cantidad FROM mptabs WHERE mtabus_id='"+mtabu+"' AND numero="+num);
+          ResultSet rst = st.executeQuery("SELECT codicove, descri,IFNULL(refere,''), "
+                  + "porcgad, porcpre, porcutil, mbdat_id, precasu, precunit, rendimi, "
+                  + "unidad, redondeo, status, cantidad, capitulo, IFNULL(numenletra,'') FROM mptabs WHERE mtabus_id='"+mtabu+"' AND numero="+num);
           String codicove, descri, refere, porcgad, porcpre, porcutil, mbdat_id, precasu, precunit, rendimi, unidad, redondeo, status, cantidad, sql="";
-          
+          String capitulo, numenletra;
             while(rst.next()){
                 codicove = rst.getObject(1).toString();
                 descri =  rst.getObject(2).toString();
@@ -370,8 +381,12 @@ public class copiar extends javax.swing.JDialog {
                  redondeo = rst.getObject(12).toString();
                  status = rst.getObject(13).toString();
                  cantidad = rst.getObject(14).toString();
+                 capitulo = rst.getString(15);
+                 numenletra = rst.getString(16);
                  
-        sql = "INSERT INTO Mptabs VALUES ('"+jTextField3.getText().toString()+"', "+numero+", " + 
+        sql = "INSERT INTO Mptabs (codicove, numero, numegrup, descri, refere, mbdat_id, porcgad, porcpre, porcutil, precasu,"
+                + "precunit, rendimi, unidad, redondeo, status, mtabus_id, cantidad, capitulo, numenletra)"
+                + " VALUES ('"+jTextField3.getText().toString()+"', "+numero+", " + 
 
                                                         ""+numero+"," + 
                                                         
@@ -401,7 +416,8 @@ public class copiar extends javax.swing.JDialog {
                                                         
                                                        "'"+mtabu+"',"+
                                                        
-                                                       ""+cantidad+");";
+                                                       ""+cantidad+","
+                + ""+capitulo+", '"+numenletra+"');";
         
         
          try {
@@ -459,10 +475,12 @@ public class copiar extends javax.swing.JDialog {
                 insertamat();
                 insertaequip();
                 insertamano();
+                 JOptionPane.showMessageDialog(null, "Se ha copiado la Partida del Tabulador");
             } catch (SQLException ex) {
+                 JOptionPane.showMessageDialog(null, "No se ha copiado la Partida del Tabulador "+ex.getMessage());
                 Logger.getLogger(copiar.class.getName()).log(Level.SEVERE, null, ex);
             }
-            JOptionPane.showMessageDialog(null, "Se ha copiado la Partida del Tabulador");
+           
             doClose(RET_OK);
             }else{
                 if(yaesta==0){
@@ -475,6 +493,12 @@ public class copiar extends javax.swing.JDialog {
                 }
             }        // TODO add your handling code here:
     }//GEN-LAST:event_okButtonMouseClicked
+
+    private void jTextField3KeyTyped(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_jTextField3KeyTyped
+        val.validaText(evt);
+        val.sizeField("codicove", tableName, evt, jTextField3.getText());
+        // TODO add your handling code here:
+    }//GEN-LAST:event_jTextField3KeyTyped
     
     private void doClose(int retStatus) {
         returnStatus = retStatus;

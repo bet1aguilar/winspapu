@@ -6,6 +6,7 @@ import winspapus.equipos.guardaeq;
 import winspapus.materiales.guardamat;
 import com.mysql.jdbc.Connection;
 import com.mysql.jdbc.Statement;
+import herramienta.Validacion;
 import java.awt.event.ActionEvent;
 import java.awt.event.KeyEvent;
 import java.sql.DriverManager;
@@ -33,6 +34,7 @@ public class copia extends javax.swing.JDialog {
     /** A return status code - returned if OK button has been pressed */
    public static final int RET_OK = 1;
    private String mtabuid="", descri="", tabnuevo="", descrinuevo="";
+   Validacion val ;
    protected Statement stmt = null;
    private Connection conexion=null;
    private String codicove="", numero, numegrup, refere,mbdat_id, porcgad, porcpre, porcutil;
@@ -42,6 +44,7 @@ public class copia extends javax.swing.JDialog {
    JProgressBar barra;
    private guardaeq equip;
    private guardamat req;
+   public final String tableName = "mtabus";
    private guardaman mano;
    private consulta partida;
     JLabel etiqueta;
@@ -57,6 +60,7 @@ public class copia extends javax.swing.JDialog {
         jTextField1.setText(mtabu);
         jTextField2.setText(descri);
        conexion=conex;
+       val = new Validacion(conex);
        jLabel6.setVisible(false);
        jLabel7.setVisible(false);
        jLabel8.setVisible(false);
@@ -84,12 +88,13 @@ public class copia extends javax.swing.JDialog {
         return returnStatus;
     }
     private void insertatab() throws SQLException{
-        int cont=0;
+       
          Statement s = (Statement) conexion.createStatement();
        Statement st = (Statement) conexion.createStatement();
-        ResultSet rst = st.executeQuery("SELECT vigencia, pprest, padyga, putild, pcosfin, pimpue FROM Mtabus WHERE id='"+mtabuid+"'");
-        String vigencia="", adm="", prest="", util="", costo="", impu="";
-        
+        ResultSet rst = st.executeQuery("SELECT vigencia, pprest, padyga, putild, pcosfin, pimpue, mcont, mprop"
+                + ", oficial, bloqueado FROM Mtabus WHERE id='"+mtabuid+"'");
+        String vigencia="", adm="", prest="", util="", costo="", impu="", mcont="", mprop="";
+        int oficial = 0, bloqueado=0;
            
         String sqls="";
         while (rst.next()) {
@@ -98,30 +103,40 @@ public class copia extends javax.swing.JDialog {
                  prest = rst.getObject(3).toString();
                  util = rst.getObject(4).toString();
                  costo = rst.getObject(5).toString();
-                 impu = rst.getObject(6).toString();                   
+                 impu = rst.getObject(6).toString();
+                 mcont = rst.getString("mcont");
+                 mprop = rst.getString("mprop");
+                 oficial = rst.getInt("oficial");
+                 bloqueado = rst.getInt("bloqueado");
+                         
         }
         rst.close();
-        sqls = "INSERT INTO Mtabus VALUES "
+        sqls = "INSERT INTO Mtabus "
+                + "(id, descri, vigencia, padyga, pcosfin, pimpue, pprest, putild, status, seleccionado, "
+                + "mcont, mprop, oficial, bloqueado) "
+                + "VALUES "
                 + "('"+tabnuevo+"', '"+descrinuevo+"', " + 
 
-                                                        "'"+vigencia+"'," + 
-                                                        
-                                                        ""+prest+", " +                                                        
+                "'"+vigencia+"'," + 
 
-                                                        ""+costo+", " +
+                ""+prest+", " +                                                        
 
-                                                        ""+impu+", " + 
-                                                        
-                                                        ""+adm+", " + 
-                                                        
-                                                        ""+util+", " +
-                
-                                                        "1,0);";
+                ""+costo+", " +
+
+                ""+impu+", " + 
+
+                ""+adm+", " + 
+
+                ""+util+", " +
+
+                "1,0, "
+                + "'"+mcont+"', '"+mprop+"', '"+oficial+"','"+bloqueado+"');";
         
         
         try {
                 s.execute(sqls);
             } catch (SQLException ex) {
+                
                 Logger.getLogger(tab.class.getName()).log(Level.SEVERE, null, ex);
             }
         s.close();
@@ -421,17 +436,13 @@ public class copia extends javax.swing.JDialog {
     }//GEN-LAST:event_okButtonMouseClicked
 
 private void jTextField3KeyTyped(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_jTextField3KeyTyped
- Character c = evt.getKeyChar();
-                if(Character.isLetter(c)) {
-                    evt.setKeyChar(Character.toUpperCase(c));
-                }// TODO add your handling code here:
+    val.validaText(evt);
+    val.sizeField("id", tableName, evt, jTextField3.getText());
 }//GEN-LAST:event_jTextField3KeyTyped
 
 private void jTextField4KeyTyped(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_jTextField4KeyTyped
- Character c = evt.getKeyChar();
-                if(Character.isLetter(c)) {
-                    evt.setKeyChar(Character.toUpperCase(c));
-                }// TODO add your handling code here:
+    val.validaText(evt);
+    val.sizeField("descri", tableName, evt, jTextField3.getText());
 }//GEN-LAST:event_jTextField4KeyTyped
     
     private void doClose(int retStatus) {

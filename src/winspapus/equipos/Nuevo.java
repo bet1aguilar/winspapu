@@ -12,6 +12,7 @@ package winspapus.equipos;
 
 import com.mysql.jdbc.Connection;
 import com.mysql.jdbc.Statement;
+import herramienta.Validacion;
 import java.awt.Rectangle;
 import java.awt.event.ActionEvent;
 import java.awt.event.KeyEvent;
@@ -37,6 +38,8 @@ public class Nuevo extends javax.swing.JDialog {
     public static final int RET_CANCEL = 0;
     /** A return status code - returned if OK button has been pressed */
     public static final int RET_OK = 1;
+    public final String tableName = "metabs";
+    Validacion val;
     private Connection conex;
     String mtabu;
     int edita=0;
@@ -49,7 +52,7 @@ public class Nuevo extends javax.swing.JDialog {
         initComponents();
         this.mtabu = mtabu;
         this.conex = conex;
-       
+       val = new Validacion(conex);
         nuevo();
         
             jLabel9.setVisible(false);
@@ -75,6 +78,7 @@ public class Nuevo extends javax.swing.JDialog {
         this.mtabu = mtabu;
         this.conex = conex;
         this.codieq = codieq;
+        val = new Validacion(conex);
             jLabel9.setVisible(false);
             jLabel21.setVisible(false);
             edita=1;
@@ -208,7 +212,7 @@ public class Nuevo extends javax.swing.JDialog {
         jPanel2.setBackground(new java.awt.Color(100, 100, 100));
 
         jLabel1.setBackground(new java.awt.Color(91, 91, 95));
-        jLabel1.setFont(new java.awt.Font("Tahoma", 1, 11)); // NOI18N
+        jLabel1.setFont(new java.awt.Font("Tahoma", 1, 11));
         jLabel1.setForeground(new java.awt.Color(255, 255, 255));
         jLabel1.setHorizontalAlignment(javax.swing.SwingConstants.CENTER);
         jLabel1.setText("Agregar Equipo");
@@ -251,7 +255,22 @@ public class Nuevo extends javax.swing.JDialog {
         jLabel4.setFont(new java.awt.Font("Tahoma", 1, 11));
         jLabel4.setText("Descripción:");
 
+        jTextField3.setHorizontalAlignment(javax.swing.JTextField.RIGHT);
+        jTextField3.setText("0.00");
         jTextField3.setToolTipText("Ingrese Depreciación del equipo");
+        jTextField3.addFocusListener(new java.awt.event.FocusAdapter() {
+            public void focusGained(java.awt.event.FocusEvent evt) {
+                jTextField3FocusGained(evt);
+            }
+            public void focusLost(java.awt.event.FocusEvent evt) {
+                jTextField3FocusLost(evt);
+            }
+        });
+        jTextField3.addKeyListener(new java.awt.event.KeyAdapter() {
+            public void keyTyped(java.awt.event.KeyEvent evt) {
+                jTextField3KeyTyped(evt);
+            }
+        });
 
         jLabel12.setFont(new java.awt.Font("Tahoma", 1, 11));
         jLabel12.setText("Precio:");
@@ -264,12 +283,32 @@ public class Nuevo extends javax.swing.JDialog {
         jLabel10.setForeground(new java.awt.Color(255, 0, 0));
         jLabel10.setText("*");
 
+        jTextField9.setHorizontalAlignment(javax.swing.JTextField.RIGHT);
+        jTextField9.setText("0.00");
         jTextField9.setToolTipText("Ingrese Precio del Equipo");
+        jTextField9.addFocusListener(new java.awt.event.FocusAdapter() {
+            public void focusGained(java.awt.event.FocusEvent evt) {
+                jTextField9FocusGained(evt);
+            }
+            public void focusLost(java.awt.event.FocusEvent evt) {
+                jTextField9FocusLost(evt);
+            }
+        });
+        jTextField9.addKeyListener(new java.awt.event.KeyAdapter() {
+            public void keyTyped(java.awt.event.KeyEvent evt) {
+                jTextField9KeyTyped(evt);
+            }
+        });
 
         jSpinner1.setModel(new javax.swing.SpinnerListModel(new String[] {""}));
         jSpinner1.addChangeListener(new javax.swing.event.ChangeListener() {
             public void stateChanged(javax.swing.event.ChangeEvent evt) {
                 jSpinner1StateChanged(evt);
+            }
+        });
+        jSpinner1.addKeyListener(new java.awt.event.KeyAdapter() {
+            public void keyTyped(java.awt.event.KeyEvent evt) {
+                jSpinner1KeyTyped(evt);
             }
         });
 
@@ -420,18 +459,44 @@ public class Nuevo extends javax.swing.JDialog {
     }//GEN-LAST:event_okButtonMouseClicked
 
 private void jTextField1KeyTyped(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_jTextField1KeyTyped
- Character c = evt.getKeyChar();
-                if(Character.isLetter(c)) {
-                    evt.setKeyChar(Character.toUpperCase(c));
-                }// TODO add your handling code here:
+val.validaText(evt);
+val.sizeField("id", tableName, evt, jTextField1.getText());
+// TODO add your handling code here:
 }//GEN-LAST:event_jTextField1KeyTyped
 
 private void jTextField8KeyTyped(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_jTextField8KeyTyped
- Character c = evt.getKeyChar();
-                if(Character.isLetter(c)) {
-                    evt.setKeyChar(Character.toUpperCase(c));
-                }// TODO add your handling code here:
+val.validaText(evt);
+val.sizeField("id", tableName, evt, jTextField8.getText());// TODO add your handling code here:
 }//GEN-LAST:event_jTextField8KeyTyped
+
+private void jTextField3FocusGained(java.awt.event.FocusEvent evt) {//GEN-FIRST:event_jTextField3FocusGained
+    val.focusGained(jTextField3);
+    // TODO add your handling code here:
+}//GEN-LAST:event_jTextField3FocusGained
+
+private void jTextField3FocusLost(java.awt.event.FocusEvent evt) {//GEN-FIRST:event_jTextField3FocusLost
+val.focusLost(jTextField3);    // TODO add your handling code here:
+}//GEN-LAST:event_jTextField3FocusLost
+
+private void jTextField3KeyTyped(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_jTextField3KeyTyped
+val.validaFloat(jTextField3.getText(), evt);    // TODO add your handling code here:
+}//GEN-LAST:event_jTextField3KeyTyped
+
+private void jTextField9FocusGained(java.awt.event.FocusEvent evt) {//GEN-FIRST:event_jTextField9FocusGained
+val.focusGained(jTextField9);    // TODO add your handling code here:
+}//GEN-LAST:event_jTextField9FocusGained
+
+private void jTextField9FocusLost(java.awt.event.FocusEvent evt) {//GEN-FIRST:event_jTextField9FocusLost
+val.focusLost(jTextField9);    // TODO add your handling code here:
+}//GEN-LAST:event_jTextField9FocusLost
+
+private void jTextField9KeyTyped(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_jTextField9KeyTyped
+val.validaFloat(jTextField9.getText(), evt);    // TODO add your handling code here:
+}//GEN-LAST:event_jTextField9KeyTyped
+
+private void jSpinner1KeyTyped(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_jSpinner1KeyTyped
+val.sizeField("id", tableName, evt, jSpinner1.getValue().toString());// TODO add your handling code here:
+}//GEN-LAST:event_jSpinner1KeyTyped
     
     private void doClose(int retStatus) {
         returnStatus = retStatus;

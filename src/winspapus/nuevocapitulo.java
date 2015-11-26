@@ -12,6 +12,7 @@ package winspapus;
 
 import com.mysql.jdbc.Connection;
 import com.mysql.jdbc.Statement;
+import herramienta.Validacion;
 import java.awt.event.ActionEvent;
 import java.awt.event.KeyEvent;
 import java.sql.ResultSet;
@@ -37,6 +38,7 @@ public class nuevocapitulo extends javax.swing.JDialog {
     public static final int RET_OK = 1;
     String mtabus;
     Connection conex;
+    Validacion val;
     int edita=0;
     String capituloid="";
     /** Creates new form nuevocapitulo */
@@ -44,6 +46,7 @@ public class nuevocapitulo extends javax.swing.JDialog {
         super(parent, modal);
         initComponents();
         this.conex = conex;
+        val = new Validacion(conex);
         this.mtabus = mtabus;
         // Close the dialog when Esc is pressed
         String cancelName = "cancel";
@@ -64,6 +67,7 @@ public class nuevocapitulo extends javax.swing.JDialog {
         this.conex = conex;
         this.edita = edita;
         this.mtabus = mtabus;
+        val = new Validacion(conex);
         this.capituloid = capituloid;
         if(this.edita==3){
             jLabel1.setText("Nuevo Subcapitulo");
@@ -319,7 +323,7 @@ String codigo = jTextField1.getText().toUpperCase();
                         + "VALUES ("+id+", '"+descri+"', '"+codigo+"', '"+mtabus+"', "+capituloid+")";
                    mensaje = "El subcapitulo ha sido insertado";
                 }
-                
+                System.out.println(inserta);
                 Statement insert = (Statement) conex.createStatement();
                 insert.execute(inserta);
                 JOptionPane.showMessageDialog(null, mensaje); 
@@ -338,17 +342,13 @@ String codigo = jTextField1.getText().toUpperCase();
     }//GEN-LAST:event_okButtonMouseClicked
 
 private void jTextField1KeyTyped(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_jTextField1KeyTyped
- Character c = evt.getKeyChar();
-                if(Character.isLetter(c)) {
-                    evt.setKeyChar(Character.toUpperCase(c));
-                }// TODO add your handling code here:
+val.sizeField("codigo", "ctabs", evt, jTextField1.getText());
+val.validaText(evt);
 }//GEN-LAST:event_jTextField1KeyTyped
 
 private void jTextArea1KeyTyped(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_jTextArea1KeyTyped
- Character c = evt.getKeyChar();
-                if(Character.isLetter(c)) {
-                    evt.setKeyChar(Character.toUpperCase(c));
-                }// TODO add your handling code here:
+val.sizeField("descri", "ctabs", evt, jTextArea1.getText());
+val.validaText(evt);
 }//GEN-LAST:event_jTextArea1KeyTyped
          
     private void doClose(int retStatus) {

@@ -83,7 +83,7 @@ public class capitulospartidas extends javax.swing.JDialog {
         try {
             Statement st = (Statement) conex.createStatement();
             ResultSet rs = st.executeQuery("SELECT codicove, descri, numero, numegrup  "
-                    + " FROM Mptabs m WHERE m.mtabus_id = '"+tabu+"' AND status=1 AND m.capitulo IS NULL OR capitulo='0' ORDER BY numegrup");
+                    + " FROM Mptabs m WHERE m.mtabus_id = '"+tabu+"' AND status=1 AND (m.capitulo IS NULL OR capitulo='0') ORDER BY numegrup");
             ResultSetMetaData rsMd = (ResultSetMetaData) rs.getMetaData();
             //System.out.println("siii entra en presupuesto");
             metabs = new DefaultTableModel(){@Override
@@ -170,7 +170,8 @@ public class capitulospartidas extends javax.swing.JDialog {
        
         try {
             Statement s = (Statement) conex.createStatement();
-            ResultSet rs = s.executeQuery("SELECT codicove, descri, numero, numegrup FROM Mptabs m WHERE m.mtabus_id = '"+tabu+"' AND status=1 AND m.capitulo IS NULL OR m.capitulo='0'  AND (codicove LIKE'%"+busqueda+"%' || descri LIKE '%"+busqueda+"%') ORDER BY numegrup");
+            ResultSet rs = s.executeQuery("SELECT codicove, descri, numero, numegrup FROM Mptabs WHERE mtabus_id = '"+tabu+"' "
+                    + "AND status=1 AND (capitulo IS NULL OR capitulo='0')  AND (codicove LIKE'%"+busqueda+"%' || descri LIKE '%"+busqueda+"%') ORDER BY numegrup");
             
             ResultSetMetaData rsMd = (ResultSetMetaData) rs.getMetaData();
             int cantidadColumnas = rsMd.getColumnCount()+1;

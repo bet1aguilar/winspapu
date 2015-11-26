@@ -10,7 +10,7 @@
  */
 package presupuestos.capitulos;
 
-import com.mysql.jdbc.Connection;
+import java.sql.Connection;
 import com.mysql.jdbc.ResultSetMetaData;
 import com.mysql.jdbc.Statement;
 import java.awt.Dimension;
@@ -39,7 +39,7 @@ public class capitulos extends javax.swing.JDialog {
     /** A return status code - returned if OK button has been pressed */
     public static final int RET_OK = 1;
     String ids = "";
-    Connection conex;
+    private Connection conex;
     String mpres;
     /** Creates new form capitulos */
     public capitulos(java.awt.Frame parent, boolean modal, Connection conex, String mpres) {

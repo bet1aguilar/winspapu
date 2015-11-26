@@ -52,7 +52,7 @@ public class hilopartida1 extends Thread{
              
                  descri=rst0.getString("Descripcion");
                  descri=descri.replace("'", "º");
-                 sql= "INSERT INTO mptabs VALUES ('"+rst0.getString("CodCovenin")+"',"
+                 sql= "REPLACE INTO mptabs VALUES ('"+rst0.getString("CodCovenin")+"',"
                                               + "'"+grupo+"',"
                                               + "'"+grupo+"',"
                                               + "'"+descri+"',"

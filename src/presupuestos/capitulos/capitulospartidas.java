@@ -9,8 +9,7 @@
  * Created on 13/07/2013, 10:15:53 AM
  */
 package presupuestos.capitulos;
-
-import com.mysql.jdbc.Connection;
+import java.sql.Connection;
 import com.mysql.jdbc.ResultSetMetaData;
 import com.mysql.jdbc.Statement;
 import java.awt.Dimension;
@@ -41,7 +40,7 @@ public class capitulospartidas extends javax.swing.JDialog {
     public static final int RET_CANCEL = 0;
     /** A return status code - returned if OK button has been pressed */
     public static final int RET_OK = 1;
-    Connection conex;
+    private Connection conex;
     String mpres;
     private DefaultTableModel metabs;
     private String[] auxpart;
@@ -85,8 +84,8 @@ public class capitulospartidas extends javax.swing.JDialog {
             ResultSet rs = st.executeQuery("SELECT id, descri, numero, numegrup, IF(tipo='NP',tiponp,tipo) as tipo  "
                     + " FROM Mppres m WHERE (m.mpre_id = '"+mpres+"' OR m.mpre_id IN "
                     + "(SELECT id FROM mpres WHERE mpres_id='"+mpres+"')) "
-                    + "AND status=1 AND m.capitulo IS NULL OR "
-                    + "capitulo='0' ORDER BY numegrup");
+                    + "AND status=1 AND (m.capitulo IS NULL OR "
+                    + "capitulo='0') ORDER BY numegrup");
             ResultSetMetaData rsMd = (ResultSetMetaData) rs.getMetaData();
             //System.out.println("siii entra en presupuesto");
             metabs = new DefaultTableModel(){@Override

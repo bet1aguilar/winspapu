@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <jasperReport xmlns="http://jasperreports.sourceforge.net/jasperreports" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports http://jasperreports.sourceforge.net/xsd/jasperreport.xsd" name="presupuesto" language="groovy" pageWidth="612" pageHeight="792" columnWidth="572" leftMargin="20" rightMargin="20" topMargin="20" bottomMargin="20" isSummaryWithPageHeaderAndFooter="true" isFloatColumnFooter="true" uuid="783eb973-dc35-448c-ace7-a90426bbba54">
-	<property name="ireport.zoom" value="1.1269722013523682"/>
-	<property name="ireport.x" value="0"/>
-	<property name="ireport.y" value="0"/>
+	<property name="ireport.zoom" value="1.9965000000000037"/>
+	<property name="ireport.x" value="492"/>
+	<property name="ireport.y" value="322"/>
 	<parameter name="mpres" class="java.lang.String">
 		<defaultValueExpression><![CDATA[]]></defaultValueExpression>
 	</parameter>
@@ -33,26 +33,24 @@
      mconts.`civins` AS mconts_civins,
      mconts.`repleg` AS mconts_repleg,
      mconts.`cedrep` AS mconts_cedrep,
-IFNULL(mconts.`logo`,"") AS mconts_logo,
-IFNULL(mprops.`logo`,"") AS mprops_logo,
-
+     IFNULL(mconts.`logo`,"") AS mconts_logo,
+     IFNULL(mprops.`logo`,"") AS mprops_logo,
      mconts.`encabe` AS mconts_encabe,
-
      admppres.`aumento` AS mppres_cantidad,
      mppres.`numegrup` AS mppres_numegrup,
      CONCAT(mppres.id,'\n',mppres.`descri`) AS mppres_descri,
      IF(mppres.precasu=0,mppres.`precunit`,mppres.precasu) AS mppres_precunit,
-     IF(mppres.precasu=0,mppres.`precunit`,mppres.precasu)*admppres.`aumento` as total,
+     ROUND(IF(mppres.precasu=0,mppres.`precunit`,mppres.precasu)*ROUND(admppres.`aumento`,2),2) as total,
      mppres.`unidad` AS mppres_unidad,
      mppres.`id` AS mppres_id
 FROM
-     `mconts` mconts INNER JOIN `mpres` mpres ON mconts.`id` = mpres.`codcon`
-     INNER JOIN `mprops` mprops ON mpres.`codpro` = mprops.`id`
+     `mconts` mconts LEFT JOIN `mpres` mpres ON mconts.`id` = mpres.`codcon`
+     LEFT JOIN `mprops` mprops ON mpres.`codpro` = mprops.`id`
      INNER JOIN `admppres` admppres ON mpres.`id` = admppres.`mpre_id`
      INNER JOIN `mppres` mppres ON admppres.`numepart` = mppres.`numero`
-WHERE mpres.id=$P{mpres} AND admppres.payd_id=$P{presaumdis}
+WHERE (mpres.id=$P{mpres} OR mpres.id IN (SELECT id FROM mpres WHERE mpres_id=$P{mpres})) AND admppres.payd_id=$P{presaumdis}
 AND (mppres.mpre_id=mpres.id OR mppres.mpre_id IN (SELECT id FROM mpres WHERE mpres_id=$P{mpres}))
-AND admppres.aumento>0]]>
+AND admppres.aumento>0 ORDER BY mppres.numegrup]]>
 	</queryString>
 	<field name="mpres_nombre" class="java.lang.String"/>
 	<field name="mpres_nrocon" class="java.lang.String"/>
@@ -99,14 +97,14 @@ AND admppres.aumento>0]]>
 	<pageHeader>
 		<band height="159" splitType="Stretch">
 			<textField isStretchWithOverflow="true" evaluationTime="Report">
-				<reportElement uuid="be91b693-0c81-4b38-9c54-64e87e1c889f" x="565" y="11" width="5" height="11"/>
+				<reportElement uuid="be91b693-0c81-4b38-9c54-64e87e1c889f" x="565" y="70" width="8" height="11"/>
 				<textElement textAlignment="Right" verticalAlignment="Middle">
 					<font size="7"/>
 				</textElement>
-				<textFieldExpression><![CDATA[$V{PAGE_NUMBER}]]></textFieldExpression>
+				<textFieldExpression><![CDATA[""+$V{PAGE_NUMBER}]]></textFieldExpression>
 			</textField>
 			<textField>
-				<reportElement uuid="79d3b196-56be-4249-8494-34ed5bf0a2a4" positionType="Float" x="456" y="11" width="109" height="11"/>
+				<reportElement uuid="79d3b196-56be-4249-8494-34ed5bf0a2a4" positionType="Float" x="456" y="70" width="109" height="11"/>
 				<textElement textAlignment="Right" verticalAlignment="Middle">
 					<font size="7"/>
 				</textElement>
@@ -213,7 +211,7 @@ AND admppres.aumento>0]]>
 					<rightPen lineWidth="1.0"/>
 				</box>
 				<textElement verticalAlignment="Middle">
-					<font size="9"/>
+					<font size="6"/>
 				</textElement>
 				<textFieldExpression><![CDATA[$F{mpres_partidapres}]]></textFieldExpression>
 			</textField>
@@ -231,7 +229,7 @@ AND admppres.aumento>0]]>
 				</textElement>
 				<text><![CDATA[Contrato:]]></text>
 			</staticText>
-			<textField>
+			<textField isBlankWhenNull="true">
 				<reportElement uuid="c66238e8-56a9-4fb9-84b3-a402c34e29be" positionType="Float" x="466" y="141" width="105" height="17"/>
 				<box>
 					<pen lineWidth="1.0"/>
@@ -241,27 +239,27 @@ AND admppres.aumento>0]]>
 					<rightPen lineWidth="1.0"/>
 				</box>
 				<textElement verticalAlignment="Middle">
-					<font size="9"/>
+					<font size="6"/>
 				</textElement>
 				<textFieldExpression><![CDATA[$F{mpres_nrocon}]]></textFieldExpression>
 			</textField>
 			<textField isStretchWithOverflow="true" isBlankWhenNull="true">
-				<reportElement uuid="f32e70da-31e3-428a-bc4b-f8b4a6378c0d" stretchType="RelativeToBandHeight" x="100" y="0" width="355" height="82"/>
+				<reportElement uuid="f32e70da-31e3-428a-bc4b-f8b4a6378c0d" stretchType="RelativeToBandHeight" x="175" y="0" width="221" height="82"/>
 				<textElement textAlignment="Center">
 					<font size="8" isBold="true"/>
 				</textElement>
 				<textFieldExpression><![CDATA[$F{mconts_encabe}]]></textFieldExpression>
 			</textField>
 			<image onErrorType="Blank">
-				<reportElement uuid="ac8d3050-513a-4ce8-96ed-375b517834f0" x="0" y="22" width="100" height="60" isRemoveLineWhenBlank="true"/>
+				<reportElement uuid="ac8d3050-513a-4ce8-96ed-375b517834f0" x="0" y="0" width="175" height="60" isRemoveLineWhenBlank="true"/>
 				<imageExpression><![CDATA[JRImageRenderer.getInstance((byte []) $F{mconts_logo})]]></imageExpression>
 			</image>
 			<image hAlign="Right" onErrorType="Blank">
-				<reportElement uuid="c9ca5357-49ea-4e2f-a284-77294fe9376a" x="454" y="22" width="116" height="60" isRemoveLineWhenBlank="true"/>
+				<reportElement uuid="c9ca5357-49ea-4e2f-a284-77294fe9376a" x="396" y="0" width="177" height="60" isRemoveLineWhenBlank="true"/>
 				<imageExpression><![CDATA[JRImageRenderer.getInstance((byte []) $F{mprops_logo})]]></imageExpression>
 			</image>
 			<textField isBlankWhenNull="true">
-				<reportElement uuid="6b9725d6-7171-4eda-aaff-503a22d6385d" x="498" y="1" width="72" height="11"/>
+				<reportElement uuid="6b9725d6-7171-4eda-aaff-503a22d6385d" x="498" y="60" width="72" height="11"/>
 				<box rightPadding="0"/>
 				<textElement textAlignment="Right" verticalAlignment="Top">
 					<font size="7"/>
@@ -350,7 +348,7 @@ AND admppres.aumento>0]]>
 				<text><![CDATA[Prec. Unit.]]></text>
 			</staticText>
 			<staticText>
-				<reportElement uuid="3579d4f7-ac52-4ce4-8173-1ea547786217" x="464" y="0" width="106" height="20"/>
+				<reportElement uuid="3579d4f7-ac52-4ce4-8173-1ea547786217" x="464" y="0" width="107" height="20"/>
 				<box>
 					<pen lineWidth="1.0"/>
 					<topPen lineWidth="1.0"/>
@@ -424,7 +422,7 @@ AND admppres.aumento>0]]>
 				<textFieldExpression><![CDATA[$F{mppres_precunit}]]></textFieldExpression>
 			</textField>
 			<textField pattern="#,##0.00">
-				<reportElement uuid="f6adab72-5824-48eb-a24b-52cb22862ccb" stretchType="RelativeToTallestObject" x="464" y="0" width="106" height="20"/>
+				<reportElement uuid="f6adab72-5824-48eb-a24b-52cb22862ccb" stretchType="RelativeToTallestObject" x="464" y="0" width="107" height="20"/>
 				<box topPadding="5" leftPadding="5" bottomPadding="5" rightPadding="5">
 					<leftPen lineWidth="1.0"/>
 					<rightPen lineWidth="1.0"/>
@@ -452,7 +450,7 @@ AND admppres.aumento>0]]>
 				<reportElement uuid="a4ba44d6-13e8-4e01-95b4-881624c25691" x="0" y="1" width="175" height="52"/>
 			</rectangle>
 			<rectangle>
-				<reportElement uuid="c5bf00d6-a71a-4d48-a09a-bf76c873f841" x="380" y="1" width="190" height="52"/>
+				<reportElement uuid="c5bf00d6-a71a-4d48-a09a-bf76c873f841" x="380" y="1" width="192" height="52"/>
 			</rectangle>
 			<staticText>
 				<reportElement uuid="04c3d8f0-a9bf-49c6-976b-1b9114f0689c" x="2" y="53" width="570" height="10"/>
@@ -466,7 +464,7 @@ AND admppres.aumento>0]]>
 				<textElement textAlignment="Center" verticalAlignment="Middle">
 					<font size="6" isBold="true"/>
 				</textElement>
-				<text><![CDATA[0276-3567564 / 0276-3553158 / 0276-3560071 / 0276-3579562 - www.spapu.com.ve / Facebook: Rhspapu / Twitter: @Spapu]]></text>
+				<text><![CDATA[0276-3567564 / 0276-3553158 / 0276-3560071 / 0276-3579562 - www.spapu.net / Facebook: SPAPU.SISTEMASRH / Twitter: @Spapu]]></text>
 			</staticText>
 			<staticText>
 				<reportElement uuid="f60729a2-1aa2-4743-b4ab-10c9fbd12d04" x="0" y="1" width="64" height="13"/>
@@ -539,7 +537,7 @@ AND admppres.aumento>0]]>
 				</textElement>
 				<text><![CDATA[ING. INSPECTOR:]]></text>
 			</staticText>
-			<textField isStretchWithOverflow="true">
+			<textField isStretchWithOverflow="true" isBlankWhenNull="true">
 				<reportElement uuid="d9b09c55-4450-4c2e-b74e-ac8b19b94596" x="64" y="1" width="111" height="13"/>
 				<box leftPadding="5"/>
 				<textElement verticalAlignment="Bottom">
@@ -547,14 +545,14 @@ AND admppres.aumento>0]]>
 				</textElement>
 				<textFieldExpression><![CDATA[$F{mconts_repleg}]]></textFieldExpression>
 			</textField>
-			<textField>
+			<textField isBlankWhenNull="true">
 				<reportElement uuid="b5412f5c-38dc-4805-906e-062c62cf04be" x="53" y="40" width="100" height="13"/>
 				<textElement>
 					<font size="8"/>
 				</textElement>
 				<textFieldExpression><![CDATA[$F{mconts_cedrep}]]></textFieldExpression>
 			</textField>
-			<textField isStretchWithOverflow="true">
+			<textField isStretchWithOverflow="true" isBlankWhenNull="true">
 				<reportElement uuid="b32cf650-c00d-4230-99f0-bcb36fd34b19" x="254" y="1" width="125" height="13"/>
 				<box leftPadding="5"/>
 				<textElement verticalAlignment="Middle">
@@ -562,21 +560,21 @@ AND admppres.aumento>0]]>
 				</textElement>
 				<textFieldExpression><![CDATA[$F{mconts_ingres}]]></textFieldExpression>
 			</textField>
-			<textField isStretchWithOverflow="true">
+			<textField isStretchWithOverflow="true" isBlankWhenNull="true">
 				<reportElement uuid="9b2a32e6-763e-4b1a-82af-deb0367b7543" x="226" y="27" width="100" height="13"/>
 				<textElement>
 					<font size="8"/>
 				</textElement>
 				<textFieldExpression><![CDATA[$F{mconts_cedres}]]></textFieldExpression>
 			</textField>
-			<textField isStretchWithOverflow="true">
+			<textField isStretchWithOverflow="true" isBlankWhenNull="true">
 				<reportElement uuid="f6e5b2bc-5c4e-49fe-9d27-346ab5dbc386" x="226" y="40" width="100" height="13"/>
 				<textElement>
 					<font size="8"/>
 				</textElement>
 				<textFieldExpression><![CDATA[$F{mconts_civres}]]></textFieldExpression>
 			</textField>
-			<textField isStretchWithOverflow="true">
+			<textField isStretchWithOverflow="true" isBlankWhenNull="true">
 				<reportElement uuid="d0121978-78dd-415f-b51f-2eb8b9a99e45" x="455" y="1" width="115" height="13"/>
 				<box leftPadding="5"/>
 				<textElement verticalAlignment="Bottom">
@@ -584,14 +582,14 @@ AND admppres.aumento>0]]>
 				</textElement>
 				<textFieldExpression><![CDATA[$F{mconts_ingins}]]></textFieldExpression>
 			</textField>
-			<textField isStretchWithOverflow="true">
+			<textField isStretchWithOverflow="true" isBlankWhenNull="true">
 				<reportElement uuid="62482dbb-e85a-4594-ad60-cc64e2c0f063" x="454" y="26" width="116" height="13"/>
 				<textElement>
 					<font size="8"/>
 				</textElement>
 				<textFieldExpression><![CDATA[$F{mconts_cedins}]]></textFieldExpression>
 			</textField>
-			<textField isStretchWithOverflow="true">
+			<textField isStretchWithOverflow="true" isBlankWhenNull="true">
 				<reportElement uuid="e2cd3f11-8240-4010-b80e-81c8c16975f5" x="455" y="39" width="116" height="13"/>
 				<textElement>
 					<font size="8"/>
@@ -603,7 +601,7 @@ AND admppres.aumento>0]]>
 	<summary>
 		<band height="72" splitType="Immediate">
 			<line>
-				<reportElement uuid="5e275fa4-4bd3-4bff-a015-c910d972a5ad" x="0" y="0" width="570" height="1"/>
+				<reportElement uuid="5e275fa4-4bd3-4bff-a015-c910d972a5ad" x="0" y="0" width="572" height="1"/>
 			</line>
 			<staticText>
 				<reportElement uuid="9ed077cc-049c-4d5e-a2dd-fca436f8c2f8" stretchType="RelativeToBandHeight" x="0" y="1" width="464" height="15" isRemoveLineWhenBlank="true"/>
@@ -619,7 +617,7 @@ AND admppres.aumento>0]]>
 				<text><![CDATA[Total General:]]></text>
 			</staticText>
 			<textField pattern="#,##0.00" isBlankWhenNull="true">
-				<reportElement uuid="5384255d-49f2-44bc-8d5a-293390e39d8e" stretchType="RelativeToBandHeight" x="465" y="1" width="105" height="15" isRemoveLineWhenBlank="true"/>
+				<reportElement uuid="5384255d-49f2-44bc-8d5a-293390e39d8e" stretchType="RelativeToBandHeight" x="465" y="1" width="107" height="15" isRemoveLineWhenBlank="true"/>
 				<box rightPadding="5">
 					<topPen lineWidth="0.0"/>
 					<bottomPen lineWidth="0.0"/>
@@ -631,7 +629,7 @@ AND admppres.aumento>0]]>
 				<textFieldExpression><![CDATA[$V{subtotal}]]></textFieldExpression>
 			</textField>
 			<textField isStretchWithOverflow="true" isBlankWhenNull="true">
-				<reportElement uuid="bb696444-d5ee-43ad-bc9f-eea3722fb590" stretchType="RelativeToBandHeight" x="0" y="58" width="570" height="14"/>
+				<reportElement uuid="bb696444-d5ee-43ad-bc9f-eea3722fb590" stretchType="RelativeToBandHeight" x="0" y="58" width="572" height="14"/>
 				<box leftPadding="5">
 					<pen lineWidth="1.0"/>
 					<topPen lineWidth="1.0"/>
@@ -656,7 +654,7 @@ AND admppres.aumento>0]]>
 				<textFieldExpression><![CDATA[$P{tituloimp}]]></textFieldExpression>
 			</textField>
 			<textField pattern="#,##0.00" isBlankWhenNull="true">
-				<reportElement uuid="6aa5b775-8aeb-4f6c-a4e7-d9f1d0cd8a6b" x="465" y="15" width="105" height="15"/>
+				<reportElement uuid="6aa5b775-8aeb-4f6c-a4e7-d9f1d0cd8a6b" x="465" y="15" width="107" height="15"/>
 				<box rightPadding="5">
 					<leftPen lineWidth="0.0"/>
 					<rightPen lineWidth="1.0"/>
@@ -667,7 +665,7 @@ AND admppres.aumento>0]]>
 				<textFieldExpression><![CDATA[$P{imp}]]></textFieldExpression>
 			</textField>
 			<textField pattern="#,##0.00" isBlankWhenNull="true">
-				<reportElement uuid="7c2eb7d8-d505-4f16-bfaa-4a42370b00b6" x="465" y="43" width="105" height="15"/>
+				<reportElement uuid="7c2eb7d8-d505-4f16-bfaa-4a42370b00b6" x="465" y="43" width="107" height="15"/>
 				<box rightPadding="5">
 					<leftPen lineWidth="0.0"/>
 					<rightPen lineWidth="1.0"/>
@@ -700,7 +698,7 @@ AND admppres.aumento>0]]>
 				<textFieldExpression><![CDATA[$P{ajustetitulo}]]></textFieldExpression>
 			</textField>
 			<textField pattern="#,##0.00" isBlankWhenNull="true">
-				<reportElement uuid="12006d4a-39c7-469e-97f2-cd854e31e571" x="465" y="28" width="105" height="15"/>
+				<reportElement uuid="12006d4a-39c7-469e-97f2-cd854e31e571" x="465" y="28" width="107" height="15"/>
 				<box rightPadding="5">
 					<leftPen lineWidth="0.0"/>
 					<rightPen lineWidth="1.0"/>

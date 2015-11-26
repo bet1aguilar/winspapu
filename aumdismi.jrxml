@@ -90,14 +90,14 @@ AND (mppres.mpre_id=mpres.id OR mppres.mpre_id IN (SELECT id FROM mpres WHERE mp
 	<pageHeader>
 		<band height="158" splitType="Stretch">
 			<textField isStretchWithOverflow="true" evaluationTime="Report">
-				<reportElement uuid="be91b693-0c81-4b38-9c54-64e87e1c889f" x="565" y="11" width="5" height="11"/>
+				<reportElement uuid="be91b693-0c81-4b38-9c54-64e87e1c889f" x="565" y="70" width="5" height="11"/>
 				<textElement textAlignment="Right" verticalAlignment="Middle">
 					<font size="7"/>
 				</textElement>
 				<textFieldExpression><![CDATA[$V{PAGE_NUMBER}]]></textFieldExpression>
 			</textField>
 			<textField>
-				<reportElement uuid="79d3b196-56be-4249-8494-34ed5bf0a2a4" positionType="Float" x="456" y="11" width="109" height="11"/>
+				<reportElement uuid="79d3b196-56be-4249-8494-34ed5bf0a2a4" positionType="Float" x="456" y="70" width="109" height="11"/>
 				<textElement textAlignment="Right" verticalAlignment="Middle">
 					<font size="7"/>
 				</textElement>
@@ -237,22 +237,22 @@ AND (mppres.mpre_id=mpres.id OR mppres.mpre_id IN (SELECT id FROM mpres WHERE mp
 				<textFieldExpression><![CDATA[$F{mpres_nrocon}]]></textFieldExpression>
 			</textField>
 			<textField isStretchWithOverflow="true" isBlankWhenNull="true">
-				<reportElement uuid="f32e70da-31e3-428a-bc4b-f8b4a6378c0d" stretchType="RelativeToBandHeight" x="122" y="0" width="333" height="82"/>
+				<reportElement uuid="f32e70da-31e3-428a-bc4b-f8b4a6378c0d" stretchType="RelativeToBandHeight" x="175" y="0" width="217" height="82"/>
 				<textElement textAlignment="Center">
 					<font size="8" isBold="true"/>
 				</textElement>
 				<textFieldExpression><![CDATA[$F{mconts_encabe}]]></textFieldExpression>
 			</textField>
 			<image onErrorType="Blank">
-				<reportElement uuid="ac8d3050-513a-4ce8-96ed-375b517834f0" x="0" y="22" width="122" height="60" isRemoveLineWhenBlank="true"/>
+				<reportElement uuid="ac8d3050-513a-4ce8-96ed-375b517834f0" x="0" y="0" width="175" height="60" isRemoveLineWhenBlank="true"/>
 				<imageExpression><![CDATA[JRImageRenderer.getInstance((byte []) $F{mconts_logo})]]></imageExpression>
 			</image>
 			<image hAlign="Right" onErrorType="Blank">
-				<reportElement uuid="c9ca5357-49ea-4e2f-a284-77294fe9376a" x="455" y="22" width="115" height="60" isRemoveLineWhenBlank="true"/>
+				<reportElement uuid="c9ca5357-49ea-4e2f-a284-77294fe9376a" x="392" y="0" width="180" height="60" isRemoveLineWhenBlank="true"/>
 				<imageExpression><![CDATA[JRImageRenderer.getInstance((byte []) $F{mprops_logo})]]></imageExpression>
 			</image>
 			<textField>
-				<reportElement uuid="6b9725d6-7171-4eda-aaff-503a22d6385d" x="498" y="1" width="72" height="11"/>
+				<reportElement uuid="6b9725d6-7171-4eda-aaff-503a22d6385d" x="498" y="60" width="72" height="11"/>
 				<box rightPadding="0"/>
 				<textElement textAlignment="Right" verticalAlignment="Top">
 					<font size="7"/>
@@ -457,7 +457,7 @@ AND (mppres.mpre_id=mpres.id OR mppres.mpre_id IN (SELECT id FROM mpres WHERE mp
 				<textElement textAlignment="Center" verticalAlignment="Middle">
 					<font size="6" isBold="true"/>
 				</textElement>
-				<text><![CDATA[0276-3567564 / 0276-3553158 / 0276-3560071 / 0276-3579562 - www.spapu.com.ve / Facebook: Rhspapu / Twitter: @Spapu]]></text>
+				<text><![CDATA[0276-3567564 / 0276-3553158 / 0276-3560071 / 0276-3579562 - www.spapu.net / Facebook: SPAPU.SISTEMASRH / Twitter: @Spapu]]></text>
 			</staticText>
 			<staticText>
 				<reportElement uuid="f60729a2-1aa2-4743-b4ab-10c9fbd12d04" x="0" y="1" width="64" height="13"/>

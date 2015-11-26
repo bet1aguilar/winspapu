@@ -3,8 +3,7 @@
  * and open the template in the editor.
  */
 package presupuestos;
-
-import com.mysql.jdbc.Connection;
+import java.sql.Connection;
 import com.mysql.jdbc.Statement;
 import java.sql.SQLException;
 import java.util.logging.Level;
@@ -20,7 +19,7 @@ public class reordena1 extends Thread{
     int i=0;
     int [] numeros;
     String cadena;
-    Connection conexion;
+    private Connection conexion;
    int muestra;
     Presupuesto obj;
     public reordena1(Connection conex, String[] coldata, int[] numeros, String id, Presupuesto pres) {

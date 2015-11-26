@@ -9,8 +9,7 @@
  * Created on 11/08/2014, 12:16:29 PM
  */
 package valuaciones;
-
-import com.mysql.jdbc.Connection;
+import java.sql.Connection;
 import com.mysql.jdbc.Statement;
 import java.awt.event.ActionEvent;
 import java.awt.event.KeyEvent;
@@ -69,11 +68,15 @@ public class reporteinspeccion extends javax.swing.JDialog {
     String fecha;
     String tipovalu;
      SimpleDateFormat format = new SimpleDateFormat("dd/MM/yyyy");
+     Double impuesto;
+     String impu;
     /** Creates new form reporte */
-    public reporteinspeccion(java.awt.Frame parent, boolean modal, Connection conex, String mpres, String mvalu, String tipovalu) {
+    public reporteinspeccion(java.awt.Frame parent, boolean modal, Connection conex, String mpres, String mvalu, String tipovalu, BigDecimal impu, String impuesto) {
         super(parent, false);
         initComponents();
         this.conex=conex;
+        this.impuesto=impu.doubleValue();
+        this.impu = impuesto;
         this.tipovalu=tipovalu;
         this.mpres = mpres;
         this.mvalu = mvalu;
@@ -117,7 +120,7 @@ public class reporteinspeccion extends javax.swing.JDialog {
                       //------------NO Prevista------------------------------------------
                       String cuenta = "SELECT COUNT(*) FROM mppres as mp, dvalus as dv  WHERE dv.mpre_id='"+mpres+"' "
                               + "AND (mp.mpre_id ='"+mpres+"' OR mp.mpre_id IN (SELECT id FROM mpres WHERE mpres_id='"+mpres+"'))"
-                              + " AND mp.numero=dv.numepart AND mp.tipo='NP' AND mp.tiponp='NP'";
+                              + " AND mp.numero=dv.numepart AND mp.tipo='NP' AND mp.tiponp='NP' AND dv.mvalu_id="+mvalu+"";
                       Statement cuantosnp= (Statement) conex.createStatement();
                       ResultSet rscuantosnp = cuantosnp.executeQuery(cuenta);
                       int cuentas=0;
@@ -222,7 +225,7 @@ public class reporteinspeccion extends javax.swing.JDialog {
                       }
                       
                       //-----------VARIACIÓN DE PRECIOS----------------------------------------------
-                      String cuentavp = "SELECT COUNT(*) FROM mppres as mp, dvalus as dv, mvalus as mv "
+               /*       String cuentavp = "SELECT COUNT(*) FROM mppres as mp, dvalus as dv, mvalus as mv "
                               + "WHERE dv.mvalu_id=mv.id AND mv.id = "+mvalu+" AND"
                               + " (mp.mpre_id='"+mpres+"' OR mp.mpre_id IN "
                               + "(SELECT id FROM mpres WHERE mpres_id='"+mpres+"')) AND (dv.mpre_id ='"+mpres+"' OR "
@@ -253,7 +256,7 @@ public class reporteinspeccion extends javax.swing.JDialog {
                                 System.out.println("consulta vp "+consultavp);
                                 Statement obraoc= (Statement) conex.createStatement();
                                 obraoc.execute(consultavp);
-                      }
+                      } */
                 } catch (SQLException ex) {
                     Logger.getLogger(reporteinspeccion.class.getName()).log(Level.SEVERE, null, ex);
                 }
@@ -303,8 +306,10 @@ public class reporteinspeccion extends javax.swing.JDialog {
               if(!tipovalu.equals("VALUACIÓN UNICA")){
                   tipovalu = tipovalu+" "+letras;
               }
-              
+              impu = impu+"% DE IMPUESTO GENERAL Bs.";
               parameters.put("mpres", mpres);
+              parameters.put("descrimpu", impu);
+              parameters.put("impuesto",impuesto);
               parameters.put("mvalu", mvalu);
               parameters.put("fechaletra", tmvalu);
               parameters.put("tmvalu", tipovalu);
@@ -418,7 +423,7 @@ public class reporteinspeccion extends javax.swing.JDialog {
         jPanel3.setBackground(new java.awt.Color(100, 100, 100));
 
         jLabel1.setBackground(new java.awt.Color(91, 91, 95));
-        jLabel1.setFont(new java.awt.Font("Tahoma", 1, 11)); // NOI18N
+        jLabel1.setFont(new java.awt.Font("Tahoma", 1, 11));
         jLabel1.setForeground(new java.awt.Color(255, 255, 255));
         jLabel1.setHorizontalAlignment(javax.swing.SwingConstants.CENTER);
         jLabel1.setText("Reporte Inspección");
@@ -559,7 +564,7 @@ public class reporteinspeccion extends javax.swing.JDialog {
         );
         layout.setVerticalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addComponent(jPanel1, javax.swing.GroupLayout.PREFERRED_SIZE, 249, javax.swing.GroupLayout.PREFERRED_SIZE)
+            .addComponent(jPanel1, javax.swing.GroupLayout.DEFAULT_SIZE, 249, Short.MAX_VALUE)
         );
 
         pack();

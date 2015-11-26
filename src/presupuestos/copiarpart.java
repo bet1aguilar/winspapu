@@ -1,19 +1,10 @@
-/*
- * To change this template, choose Tools | Templates
- * and open the template in the editor.
- */
 
-/*
- * copiar.java
- *
- * Created on 15/09/2012, 11:09:40 PM
- */
 package presupuestos;
 
-import com.mysql.jdbc.Connection;
 import com.mysql.jdbc.Statement;
 import java.awt.event.ActionEvent;
 import java.awt.event.KeyEvent;
+import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.logging.Level;
@@ -53,8 +44,7 @@ public class copiarpart extends javax.swing.JDialog {
         jTextField1.setText(part);
         jTextField2.setText(num);
         this.conex = conex;
-        contar();
-        
+        contar();        
         jLabel9.setVisible(false);
         jLabel8.setVisible(false);
         // Close the dialog when Esc is pressed
@@ -266,18 +256,19 @@ public class copiarpart extends javax.swing.JDialog {
         private void insertamat() throws SQLException{
              Statement s = (Statement) conex.createStatement();
              Statement st = (Statement) conex.createStatement();
-             String sql, cantidad;
+             String sql, cantidad, mpre_id;
       
-        ResultSet rsmat = st.executeQuery("SELECT mmpre_id, cantidad, precio FROM dmpres WHERE mpre_id = '"+pres+"' AND numepart="+num);
+        ResultSet rsmat = st.executeQuery("SELECT mmpre_id, cantidad, precio, mpre_id "
+                + "FROM dmpres WHERE (mpre_id = '"+pres+"' OR mpre_id IN (SELECT id FROM mpres WHERE mpres_id='"+pres+"')) AND numepart="+num);
         String mmpre_id, precio;
              
              while (rsmat.next()) {
                   mmpre_id =rsmat.getObject(1).toString();
                   cantidad = rsmat.getObject(2).toString();
                   precio = rsmat.getObject(3).toString();
-                  
+                  mpre_id=rsmat.getString(4);
                   sql = "INSERT INTO dmpres (mpre_id, mppre_id, mmpre_id, numepart, cantidad, precio, status)"
-                          + " VALUES ('"+pres+"', '"+jTextField3.getText()+"', " + 
+                          + " VALUES ('"+mpre_id+"', '"+jTextField3.getText()+"', " + 
 
                                                         "'"+mmpre_id+"'," + 
 
@@ -301,16 +292,17 @@ public class copiarpart extends javax.swing.JDialog {
              Statement stmt = (Statement) conex.createStatement();
           Statement s = (Statement) conex.createStatement();
           String sql;
-        ResultSet rse = s.executeQuery("SELECT mepre_id, cantidad, precio FROM deppres WHERE mpre_id = '"+pres+"' AND numero="+num);
-        String mepre_id, precio;
+        ResultSet rse = s.executeQuery("SELECT mepre_id, cantidad, precio, mpre_id FROM deppres WHERE "
+                + "(mpre_id = '"+pres+"' OR mpre_id IN (SELECT id FROM mpres WHERE mpres_id='"+pres+"')) AND numero="+num);
+        String mepre_id, precio, mpre_id;
         String cantidad;
              while (rse.next()) {
                   mepre_id =rse.getObject(1).toString();
                   cantidad = rse.getObject(2).toString();
                   precio = rse.getObject(3).toString();
-                  
+                  mpre_id = rse.getString(4);
                   sql = "INSERT INTO deppres (mpre_id, mppre_id, mepre_id, numero, cantidad, precio, status)"
-                          + " VALUES ('"+pres+"', '"+jTextField3.getText().toString()+"', " + 
+                          + " VALUES ('"+mpre_id+"', '"+jTextField3.getText().toString()+"', " + 
 
                                                         "'"+mepre_id+"'," + 
 
@@ -326,23 +318,27 @@ public class copiarpart extends javax.swing.JDialog {
             } catch (SQLException ex) {
                 Logger.getLogger(tab.class.getName()).log(Level.SEVERE, null, ex);
             }
-    }
-    }
+        }
+        }
      
         private void insertamano() throws SQLException{
            Statement s = (Statement) conex.createStatement();
            Statement st = (Statement) conex.createStatement();
-        ResultSet rsma = st.executeQuery("SELECT mmopre_id, cantidad, bono, salario, subsidi FROM dmoppres WHERE mpre_id = '"+pres+"' AND numero="+num);
-        String mmopre_id, bono, salario, subsidi;
+        ResultSet rsma = st.executeQuery("SELECT mmopre_id, cantidad, bono, salario, subsidi FROM dmoppres "
+                + "WHERE (mpre_id = '"+pres+"' OR mpre_id IN (SELECT id FROM mpres WHERE mpres_id='"+pres+"'))"
+                + " AND numero="+num);
+        String mmopre_id, bono, salario, subsidi, mpre_id;
              String sql, cantidad;
              while (rsma.next()) {
+                 
                   mmopre_id =rsma.getObject(1).toString();
                   cantidad = rsma.getObject(2).toString();
                   bono = rsma.getObject(3).toString();
                   salario = rsma.getObject(4).toString();
                   subsidi = rsma.getObject(5).toString();
+                  mpre_id = rsma.getString(6);
                   sql = "INSERT INTO dmoppres (mpre_id, mmopre_id, numero, cantidad, bono, salario, subsidi, status,mppre_id )"
-                                                    + "VALUES ('"+pres+"', " + 
+                                                    + "VALUES ('"+mpre_id+"', " + 
 
                                                         "'"+mmopre_id+"'," + 
 
@@ -369,9 +365,11 @@ public class copiarpart extends javax.swing.JDialog {
           Statement st = (Statement) conex.createStatement();
           Statement s = (Statement) conex.createStatement();
           ResultSet rst = st.executeQuery("SELECT id, descri,refere, porcgad, porcpre, porcutil, idband, precasu, precunit, rendimi, unidad, "
-                  + "redondeo, status, cantidad, tipo FROM mppres WHERE mpre_id='"+pres+"' AND numero="+num);
+                  + "redondeo, status, cantidad, tipo, mpre_id FROM mppres WHERE (mpre_id='"+pres+"' OR "
+                  + "mpre_id IN (SELECT id FROM mpres WHERE mpres_id='"+pres+"')) "
+                  + "AND numero="+num);
           String codicove, descri, refere = null, porcgad = null, porcpre = null, porcutil = null, mbdat_id = null, precasu, precunit, rendimi, unidad, redondeo, status, cantidad, sql="";
-          String tipo ;
+          String tipo, mpre_id;
             while(rst.next()){
                 codicove = rst.getObject(1).toString();
                 descri =  rst.getObject(2).toString();
@@ -393,7 +391,7 @@ public class copiarpart extends javax.swing.JDialog {
                  status = rst.getObject(13).toString();
                  cantidad = rst.getObject(14).toString();
                  tipo = rst.getObject(15).toString();
-                 
+                 mpre_id = rst.getString(16);
                  
         sql = "INSERT INTO mppres (id, numero, numegrup, descri, refere, idband, porcgad, porcpre, porcutil, precasu, precunit,"
                 + "rendimi, unidad, redondeo, status, mpre_id, cantidad, tipo, nropresupuesto)"
@@ -425,7 +423,7 @@ public class copiarpart extends javax.swing.JDialog {
                 
                                                        "'"+status+"',"+
                                                         
-                                                       "'"+pres+"',"+
+                                                       "'"+mpre_id+"',"+
                                                        
                                                        ""+cantidad+","
                                                         + "'"+tipo+"', 0);";

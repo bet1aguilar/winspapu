@@ -55,6 +55,12 @@ public class matrizequipos extends javax.swing.JDialog {
     jTable2.getTableHeader().setPreferredSize(new Dimension(25,30));
     jTable2.setRowHeight(20);
         cargartabus();
+        bloqueaboton(!obj.isbloquedmtabu());
+    }
+    private void bloqueaboton(boolean bloq){
+        jButton1.setEnabled(bloq);
+        jButton2.setEnabled(bloq);
+        jButton4.setEnabled(bloq);
     }
 public final void cargartabus(){
           DefaultTableModel mtabus = new DefaultTableModel() {@Override
@@ -336,12 +342,14 @@ private void cambiarcabecera() {
 
     private void jTable1MouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_jTable1MouseClicked
         // TODO add your handling code here:
-        jButton1.setEnabled(true);
-        jButton2.setEnabled(true);
-        jButton4.setEnabled(true);
+        jButton1.setEnabled(!obj.isbloquedmtabu());
+        jButton2.setEnabled(!obj.isbloquedmtabu());
+        jButton4.setEnabled(!obj.isbloquedmtabu());
         jButton3.setEnabled(true);
+        
         fila = jTable1.rowAtPoint(evt.getPoint());
         coditabu=jTable1.getValueAt(fila, 0).toString();
+        bloqueaboton(!obj.isbloquedmtabu(coditabu));
         try {
             buscarequipo();
         } catch (SQLException ex) {
@@ -360,7 +368,7 @@ private void cambiarcabecera() {
 
     private void jTable2MouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_jTable2MouseClicked
             row = jTable2.rowAtPoint(evt.getPoint());
-        jButton4.setEnabled(true);
+        jButton4.setEnabled(!obj.isbloquedmtabu(coditabu));
             codiequipo = jTable2.getValueAt(row, 0).toString();
             
     }//GEN-LAST:event_jTable2MouseClicked

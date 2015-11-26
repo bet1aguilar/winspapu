@@ -4,11 +4,14 @@
  */
 package valuaciones;
 
-import com.mysql.jdbc.Connection;
+import java.sql.Connection;
 import com.mysql.jdbc.ResultSetMetaData;
+import config.Redondeo;
 import java.awt.Dimension;
 import java.awt.event.ActionEvent;
+import java.awt.event.KeyAdapter;
 import java.awt.event.KeyEvent;
+import java.math.BigDecimal;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
@@ -24,42 +27,47 @@ import javax.swing.ActionMap;
 import javax.swing.InputMap;
 import javax.swing.JComponent;
 import javax.swing.JOptionPane;
+import javax.swing.JTextField;
 import javax.swing.KeyStroke;
 import javax.swing.table.DefaultTableModel;
 import javax.swing.table.JTableHeader;
+import javax.swing.table.TableCellEditor;
 import javax.swing.table.TableColumn;
 import javax.swing.table.TableColumnModel;
+import presupuestos.Presupuesto;
 
 public final class valuacion extends javax.swing.JDialog {
-    float cantidad;
+    BigDecimal cantidad;
+    Redondeo redon = new Redondeo();
     int pierdefoco=0;
+    TableCellEditor editor;
     public static final int RET_CANCEL = 0;
-    double impu, acum, impuesto;
-    double estavalu=0;
+    public BigDecimal impu, acum, impuesto;
+    int busca=0;
+    public BigDecimal estavalu=new BigDecimal("0.00");
     int filapart = 0;
     int lapso=0;
     public static final int RET_OK = 1;
-    Connection conex;
+    private Connection conex;
     String pres;
     String mvalu;
+    Presupuesto mpres;
+    public BigDecimal subtotal, total;
     int numval = 0;
     String imp = "";
     String tipo;
 
-    public valuacion(java.awt.Frame parent, boolean modal, Connection conex, String mpres) {
+    public valuacion(java.awt.Frame parent, boolean modal, Connection conex, String pres, Presupuesto mpres) {
         super(parent,false);
         initComponents();
         buttonGroup1.add(jRadioButton1);
         buttonGroup1.add(jRadioButton2);
-        //jTextField3.setVisible(false);
         jTextField3.setEditable(false);
-        
         mvalu = jSpinner1.getValue().toString();
         jDateChooser1.setDate(new Date());
         jDateChooser2.setDate(new Date());
-        jDateChooser3.setDate(new Date());
-        
-        this.pres = mpres;
+        this.pres = pres;
+        this.mpres = mpres;
         this.conex = conex;
         try {
             cargapresupuesto();
@@ -72,6 +80,7 @@ public final class valuacion extends javax.swing.JDialog {
     jTable1.getTableHeader().setSize(new Dimension(25,40));
     jTable1.getTableHeader().setPreferredSize(new Dimension(30,40));
     jTable1.setRowHeight(25);
+    //jTable1.getColumnModel().getColumn( 5 ).setCellEditor(new TableEditor()); 
         // Close the dialog when Esc is pressed
         String cancelName = "cancel";
         InputMap inputMap = getRootPane().getInputMap(JComponent.WHEN_ANCESTOR_OF_FOCUSED_COMPONENT);
@@ -94,10 +103,10 @@ public final class valuacion extends javax.swing.JDialog {
         
     }
     public void calculacantpart(String partida){
-        float cantval=0;
-       float cantcont=0;  
-       float valdismi=0;
-        String consultar = "SELECT cantidad FROM mppres WHERE numero="+partida+" "
+        BigDecimal cantval=new BigDecimal("0.00");
+       BigDecimal cantcont=new BigDecimal("0.00");  
+       BigDecimal valdismi=new BigDecimal("0.00");
+        String consultar = "SELECT IFNULL(cantidad,0) FROM mppres WHERE numero="+partida+" "
                 + "AND (mpre_id='"+pres+"' OR mpre_id IN "
                 + "(SELECT id FROM mpres WHERE mpres_id='"+pres+"' GROUP BY id))";
         System.out.println(consultar);
@@ -106,62 +115,63 @@ public final class valuacion extends javax.swing.JDialog {
             ResultSet rstconsulta = stconsulta.executeQuery(consultar);
            
             while(rstconsulta.next()){
-                cantcont = rstconsulta.getFloat(1);
+                cantcont = rstconsulta.getBigDecimal(1);
             }
            
         } catch (SQLException ex) {
             Logger.getLogger(valuacion.class.getName()).log(Level.SEVERE, null, ex);
         }
-        String consulte = "SELECT SUM(cantidad) FROM dvalus WHERE numepart = "+partida+" AND "
+        String consulte = "SELECT IFNULL(SUM(cantidad),0) FROM dvalus WHERE numepart = "+partida+" AND "
                 + "mpre_id='"+pres+"'";
          try {
             Statement stconsulta = conex.createStatement();
             ResultSet rstconsulta = stconsulta.executeQuery(consulte);
             
             while(rstconsulta.next()){
-                cantval = rstconsulta.getFloat(1);
+                cantval = rstconsulta.getBigDecimal(1);
             }
            
         } catch (SQLException ex) {
             Logger.getLogger(valuacion.class.getName()).log(Level.SEVERE, null, ex);
         }
-         String disminuciones = "SELECT SUM(disminucion) FROM admppres WHERE mpre_id='"+pres+"' AND numepart="+partida+"";
+         String disminuciones = "SELECT IFNULL(SUM(disminucion),0) FROM admppres WHERE mpre_id='"+pres+"' AND numepart="+partida+"";
         try {
             Statement stdismi = conex.createStatement();
             ResultSet rstdismi = stdismi.executeQuery(disminuciones);
             while(rstdismi.next()){
-                valdismi = rstdismi.getFloat(1);
+                valdismi = rstdismi.getBigDecimal(1);
             }
         } catch (SQLException ex) {
             Logger.getLogger(valuacion.class.getName()).log(Level.SEVERE, null, ex);
         }
-         float cantidisp = cantcont-cantval-valdismi;
+         BigDecimal cantidisp = cantcont.subtract(cantval).subtract(valdismi);
          
-         if(cantidisp>0){
+         if(cantidisp.doubleValue()>0){
              jLabel9.setText("Cantidad Disponible a Valuar:");
              jLabel10.setText(String.valueOf(cantidisp));
          }
-         if(cantidisp==0){
+         if(cantidisp.doubleValue()==0){
              jLabel9.setText("No tiene cantidades disponibles a valuar");
              jLabel10.setText(String.valueOf(""));
          }
-         if(cantidisp<0)
+         if(cantidisp.doubleValue()<0)
          {
              jLabel9.setText("Aumento de:");
-             jLabel10.setText(String.valueOf(cantidisp*-1));
+             jLabel10.setText(String.valueOf(cantidisp.doubleValue()*-1));
          }
     }
             
-    public void cargapresupuesto() throws SQLException {
+    public void cargapresupuesto() throws SQLException 
+    {
         jTextField1.setText(pres);
        
         String sql = "SELECT nombre From mpres WHERE id='" + pres + "'";
         Statement st = (Statement) conex.createStatement();
         ResultSet rst = st.executeQuery(sql);
-        while (rst.next()) {
+        while (rst.next()) 
             jTextArea1.setText(rst.getObject(1).toString());
-        }
-        String cuenta = "SELECT count(id) FROM mvalus WHERE mpre_id='" + pres + "' AND id!=0";
+        
+        String cuenta = "SELECT count(id) FROM mvalus WHERE mpre_id='" + pres + "' AND id!=0 AND status=1";
         Statement stm = (Statement) conex.createStatement();
         ResultSet rstm = stm.executeQuery(cuenta);
         while (rstm.next()) {
@@ -248,8 +258,6 @@ public final class valuacion extends javax.swing.JDialog {
         jScrollPane2 = new javax.swing.JScrollPane();
         jTable1 = new javax.swing.JTable();
         jPanel3 = new javax.swing.JPanel();
-        jDateChooser3 = new com.toedter.calendar.JDateChooser();
-        jLabel12 = new javax.swing.JLabel();
         jPanel6 = new javax.swing.JPanel();
         jButton7 = new javax.swing.JButton();
         jButton8 = new javax.swing.JButton();
@@ -376,15 +384,12 @@ public final class valuacion extends javax.swing.JDialog {
         );
         jPanel2Layout.setVerticalGroup(
             jPanel2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGroup(jPanel2Layout.createSequentialGroup()
-                .addGroup(jPanel2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                    .addComponent(jButton4, javax.swing.GroupLayout.PREFERRED_SIZE, 45, javax.swing.GroupLayout.PREFERRED_SIZE)
-                    .addComponent(jButton3, javax.swing.GroupLayout.PREFERRED_SIZE, 45, javax.swing.GroupLayout.PREFERRED_SIZE)
-                    .addComponent(jButton1, javax.swing.GroupLayout.PREFERRED_SIZE, 45, javax.swing.GroupLayout.PREFERRED_SIZE)
-                    .addComponent(jButton2, javax.swing.GroupLayout.PREFERRED_SIZE, 45, javax.swing.GroupLayout.PREFERRED_SIZE)
-                    .addComponent(cancelButton, javax.swing.GroupLayout.PREFERRED_SIZE, 45, javax.swing.GroupLayout.PREFERRED_SIZE)
-                    .addComponent(okButton, javax.swing.GroupLayout.PREFERRED_SIZE, 45, javax.swing.GroupLayout.PREFERRED_SIZE))
-                .addContainerGap(12, Short.MAX_VALUE))
+            .addComponent(jButton4, javax.swing.GroupLayout.PREFERRED_SIZE, 45, javax.swing.GroupLayout.PREFERRED_SIZE)
+            .addComponent(jButton3, javax.swing.GroupLayout.PREFERRED_SIZE, 45, javax.swing.GroupLayout.PREFERRED_SIZE)
+            .addComponent(jButton1, javax.swing.GroupLayout.PREFERRED_SIZE, 45, javax.swing.GroupLayout.PREFERRED_SIZE)
+            .addComponent(jButton2, javax.swing.GroupLayout.PREFERRED_SIZE, 45, javax.swing.GroupLayout.PREFERRED_SIZE)
+            .addComponent(cancelButton, javax.swing.GroupLayout.PREFERRED_SIZE, 45, javax.swing.GroupLayout.PREFERRED_SIZE)
+            .addComponent(okButton, javax.swing.GroupLayout.PREFERRED_SIZE, 45, javax.swing.GroupLayout.PREFERRED_SIZE)
         );
 
         getRootPane().setDefaultButton(okButton);
@@ -472,6 +477,11 @@ public final class valuacion extends javax.swing.JDialog {
                 jTable1MouseClicked(evt);
             }
         });
+        jTable1.addFocusListener(new java.awt.event.FocusAdapter() {
+            public void focusGained(java.awt.event.FocusEvent evt) {
+                jTable1FocusGained(evt);
+            }
+        });
         jTable1.addKeyListener(new java.awt.event.KeyAdapter() {
             public void keyPressed(java.awt.event.KeyEvent evt) {
                 jTable1KeyPressed(evt);
@@ -484,10 +494,6 @@ public final class valuacion extends javax.swing.JDialog {
             }
         });
         jScrollPane2.setViewportView(jTable1);
-
-        jDateChooser3.setDateFormatString("dd-MM-yyyy");
-
-        jLabel12.setText("Fecha:");
 
         jButton7.setText("Liquidación");
         jButton7.addActionListener(new java.awt.event.ActionListener() {
@@ -550,22 +556,13 @@ public final class valuacion extends javax.swing.JDialog {
         jPanel3Layout.setHorizontalGroup(
             jPanel3Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(jPanel3Layout.createSequentialGroup()
-                .addGap(44, 44, 44)
-                .addComponent(jLabel12)
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                .addComponent(jDateChooser3, javax.swing.GroupLayout.PREFERRED_SIZE, 175, javax.swing.GroupLayout.PREFERRED_SIZE))
-            .addGroup(jPanel3Layout.createSequentialGroup()
                 .addContainerGap()
                 .addComponent(jPanel6, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
         );
         jPanel3Layout.setVerticalGroup(
             jPanel3Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGroup(jPanel3Layout.createSequentialGroup()
+            .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, jPanel3Layout.createSequentialGroup()
                 .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                .addGroup(jPanel3Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.CENTER)
-                    .addComponent(jLabel12)
-                    .addComponent(jDateChooser3, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addComponent(jPanel6, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                 .addGap(37, 37, 37))
         );
@@ -619,22 +616,20 @@ public final class valuacion extends javax.swing.JDialog {
             .addGroup(jPanel5Layout.createSequentialGroup()
                 .addContainerGap()
                 .addGroup(jPanel5Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.CENTER)
-                    .addGroup(jPanel5Layout.createSequentialGroup()
-                        .addComponent(jTextField4, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                        .addGap(6, 6, 6)
-                        .addComponent(jTextField5, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                        .addGap(6, 6, 6)
-                        .addComponent(jTextField6, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                        .addGap(6, 6, 6)
-                        .addComponent(jTextField7, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
-                    .addGroup(jPanel5Layout.createSequentialGroup()
-                        .addComponent(jLabel13)
-                        .addGap(12, 12, 12)
-                        .addComponent(jLabel14)
-                        .addGap(12, 12, 12)
-                        .addComponent(jLabel15)
-                        .addGap(12, 12, 12)
-                        .addComponent(jLabel16)))
+                    .addComponent(jLabel13)
+                    .addComponent(jTextField4, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
+                .addGap(6, 6, 6)
+                .addGroup(jPanel5Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.CENTER)
+                    .addComponent(jLabel14)
+                    .addComponent(jTextField5, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
+                .addGap(6, 6, 6)
+                .addGroup(jPanel5Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.CENTER)
+                    .addComponent(jLabel15)
+                    .addComponent(jTextField6, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
+                .addGap(6, 6, 6)
+                .addGroup(jPanel5Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.CENTER)
+                    .addComponent(jLabel16)
+                    .addComponent(jTextField7, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
                 .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
         );
 
@@ -741,7 +736,6 @@ public final class valuacion extends javax.swing.JDialog {
             .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, jPanel1Layout.createSequentialGroup()
                 .addContainerGap()
                 .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
-                    .addComponent(jScrollPane2, javax.swing.GroupLayout.Alignment.LEADING, javax.swing.GroupLayout.DEFAULT_SIZE, 744, Short.MAX_VALUE)
                     .addGroup(javax.swing.GroupLayout.Alignment.LEADING, jPanel1Layout.createSequentialGroup()
                         .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
                             .addComponent(jLabel6)
@@ -782,7 +776,8 @@ public final class valuacion extends javax.swing.JDialog {
                             .addComponent(jPanel3, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
                         .addGap(106, 106, 106)
                         .addComponent(jPanel5, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
-                    .addComponent(jPanel7, javax.swing.GroupLayout.Alignment.LEADING, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+                    .addComponent(jPanel7, javax.swing.GroupLayout.Alignment.LEADING, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                    .addComponent(jScrollPane2, javax.swing.GroupLayout.DEFAULT_SIZE, 744, Short.MAX_VALUE))
                 .addGap(14, 14, 14))
             .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, jPanel1Layout.createSequentialGroup()
                 .addContainerGap(430, Short.MAX_VALUE)
@@ -818,7 +813,7 @@ public final class valuacion extends javax.swing.JDialog {
                     .addComponent(jTextField3, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addComponent(jScrollPane2, javax.swing.GroupLayout.PREFERRED_SIZE, 189, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addGap(0, 0, 0)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addComponent(jPanel7, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING, false)
@@ -831,7 +826,7 @@ public final class valuacion extends javax.swing.JDialog {
                         .addGap(27, 27, 27)))
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addComponent(jPanel2, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addGap(29, 29, 29))
+                .addGap(12, 12, 12))
         );
 
         javax.swing.GroupLayout layout = new javax.swing.GroupLayout(getContentPane());
@@ -842,7 +837,7 @@ public final class valuacion extends javax.swing.JDialog {
         );
         layout.setVerticalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addComponent(jPanel1, javax.swing.GroupLayout.DEFAULT_SIZE, 597, Short.MAX_VALUE)
+            .addComponent(jPanel1, javax.swing.GroupLayout.DEFAULT_SIZE, 606, Short.MAX_VALUE)
         );
 
         pack();
@@ -878,7 +873,6 @@ public final class valuacion extends javax.swing.JDialog {
         }
         jDateChooser1.setDate(null);
         jDateChooser2.setDate(null);
-        jDateChooser3.setDate(null);
         DefaultTableModel metabs = new DefaultTableModel() {
 
             @Override
@@ -895,7 +889,7 @@ public final class valuacion extends javax.swing.JDialog {
                 if (columna == 0) {
                     return Integer.class;
                 }
-
+                
                 return Object.class;
             }
         };
@@ -922,7 +916,7 @@ public final class valuacion extends javax.swing.JDialog {
         }
         jTable1.setModel(metabs);
         jTextField4.setText("0.00");
-        estavalu=0;
+        estavalu=new BigDecimal("0.00");
         jTextField5.setText("0.00");
         jTextField6.setText("0.00");
         jTextField8.setText("");
@@ -940,7 +934,7 @@ public final class valuacion extends javax.swing.JDialog {
     }//GEN-LAST:event_jButton4ActionPerformed
 
     private void jSpinner1StateChanged(javax.swing.event.ChangeEvent evt) {//GEN-FIRST:event_jSpinner1StateChanged
-        acum=0;
+        acum=new BigDecimal("0.00");
         mvalu = jSpinner1.getValue().toString();
         int cont = 0;
         System.out.println("mvalu " + mvalu);
@@ -962,58 +956,71 @@ public final class valuacion extends javax.swing.JDialog {
     }//GEN-LAST:event_jSpinner1StateChanged
 
     private void jTable1MouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_jTable1MouseClicked
-        filapart = jTable1.rowAtPoint(evt.getPoint());
-        jButton3.setEnabled(true);
-    }//GEN-LAST:event_jTable1MouseClicked
+jButton3.setEnabled(true);
 
-    private void jTable1KeyPressed(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_jTable1KeyPressed
-        String codigopart, sql;
-        float original, cantidad1;
         if (!jTable1.isEditing() && jTable1.editCellAt(jTable1.getSelectedRow(),
                 jTable1.getSelectedColumn())) {
-            jTable1.getEditorComponent().requestFocusInWindow();  // obligamos que la celda reciba el foco
-            System.out.println("TECLAS: " + evt.getKeyCode());
-            char car = evt.getKeyChar();
-            if((car<'0'||car>'9')&& evt.getKeyCode()!=10 &&evt.getKeyCode() !=9 ){
-                evt.consume();
-                
-            }else{
-            if (evt.getKeyCode() == 9 || evt.getKeyCode() == 10) {
-                    try {
+            
+            
+            JTextField field = ((JTextField)jTable1.getEditorComponent());
+            field.requestFocusInWindow();
+            if(jTable1.getCellEditor()!=null)
+                editor = jTable1.getCellEditor();
+            else
+            {
+                jTable1.setCellEditor(editor);
+            }
+            field.selectAll();
+            field.addKeyListener(
+                    new KeyAdapter() {
+                    @Override
+                    public void keyPressed(KeyEvent evt)
+                    {
+                        filapart = jTable1.getSelectedRow();
+                        String codigopart, sql;
+                        BigDecimal original, cantidad1; 
+                        char car = evt.getKeyChar();
+                        if((car<'0'||car>'9')&& evt.getKeyCode()!=10 &&evt.getKeyCode() !=9 ){
+                            evt.consume(); 
+                        }else{
+                        if (evt.getKeyCode() == 9 || evt.getKeyCode() == 10) {
+                            try {
+                                
+                       if(jTable1.getCellEditor()!=null)
+                        jTable1.getCellEditor().stopCellEditing();
+                       
                         codigopart = jTable1.getValueAt(filapart, 1).toString();
                         String num="";
                         String consultanumero = "SELECT numero FROM mppres where numegrup="+codigopart+" AND "
                                 + "(mpre_id='"+pres+"' OR mpre_id IN (SELECT id FROM mpres WHERE mpres_id='"+pres+"'))";
                         Statement stnum = conex.createStatement();
                         ResultSet rstnum = stnum.executeQuery(consultanumero);
-                        while(rstnum.next()){
+                        while(rstnum.next())
                             num = rstnum.getString(1);
-                        }
-                        cantidad1 = Float.valueOf(jTable1.getValueAt(filapart, 5).toString());
-                        original = Float.valueOf(jTable1.getValueAt(filapart, 3).toString());
+                        
+                        cantidad1 = new BigDecimal(jTable1.getValueAt(filapart, 5).toString());
+                        original = new BigDecimal(jTable1.getValueAt(filapart, 3).toString());
                         jTable1.removeEditor();
                         System.out.println("TECLAS: " + evt.getKeyCode());
                         Statement stmate;
-                        if (original < cantidad1) {
-                            int op = JOptionPane.showConfirmDialog(null, "Cantidad Valuada excede a la cantidad registrada en " + (cantidad1 - original) + " unidades");
-                            if (op == JOptionPane.YES_OPTION) {
-
-                                try {
+                        if (original.doubleValue() < cantidad1.doubleValue()) {
+                            int op = JOptionPane.showConfirmDialog(null, "Cantidad Valuada excede a la cantidad registrada en " + (cantidad1.doubleValue() - original.doubleValue()) + " unidades");
+                            if (op == JOptionPane.YES_OPTION) 
+                            {
+                                try 
+                                {
                                     stmate = (Statement) conex.createStatement();
-                                    sql = "UPDATE dvalus SET cantidad = " + cantidad1 + ", aumento=1 WHERE numepart='" + num + "' AND mpre_id='" + pres+"'";
+                                    sql = "UPDATE dvalus SET cantidad = " + cantidad1 + ", aumento=1 WHERE numepart='" + num + "' AND mpre_id='" + pres+"' AND mvalu_id="+mvalu+"";
                                     stmate.execute(sql);
-
-                                } catch (SQLException ex) {
+                                } catch (SQLException ex) 
+                                {
                                     Logger.getLogger(valuacion.class.getName()).log(Level.SEVERE, null, ex);
                                 }
-
                             }
-
-
                         } else {
                             try {
                                 stmate = (Statement) conex.createStatement();
-                                sql = "UPDATE dvalus SET cantidad = " + cantidad1 + " WHERE numepart='" + num + "' AND mpre_id='" + pres+"'";
+                                sql = "UPDATE dvalus SET cantidad = " + cantidad1 + " WHERE numepart='" + num + "' AND mpre_id='" + pres+"' AND mvalu_id="+mvalu+"";
                                 stmate.execute(sql);
 
                             } catch (SQLException ex) {
@@ -1024,9 +1031,18 @@ public final class valuacion extends javax.swing.JDialog {
                     } catch (SQLException ex) {
                         Logger.getLogger(valuacion.class.getName()).log(Level.SEVERE, null, ex);
                     }
-            }
-            }
-        }
+                        }
+                        
+                        
+                        }
+                    }
+                    });
+            
+        }   
+    }//GEN-LAST:event_jTable1MouseClicked
+
+    private void jTable1KeyPressed(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_jTable1KeyPressed
+        
 
 
 
@@ -1037,7 +1053,7 @@ public final class valuacion extends javax.swing.JDialog {
         
         if(pierdefoco==0){
         if (!numero.equals("")) {
-           
+           pierdefoco=1;
             String nume="";
             String sql = "SELECT id,numero FROM mppres WHERE numegrup='"+numero+"' AND (mpre_id='" + pres+"' "
                     + " OR mpre_id IN (SELECT id FROM mpres WHERE mpres_id='"+pres+"' GROUP BY id))";
@@ -1093,21 +1109,23 @@ public final class valuacion extends javax.swing.JDialog {
     }//GEN-LAST:event_jTextField8KeyTyped
 
     private void jButton3ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton3ActionPerformed
-        String codigopart;
-        codigopart = jTable1.getValueAt(filapart, 0).toString();
+     
+        filapart = jTable1.getSelectedRow();
         String numegrup = jTable1.getValueAt(filapart, 1).toString();
-        String select ="SELECT numero FROM mppres WHERE numegrup="+numegrup+" AND (mpre_id='"+pres+"' OR "
+        String select ="SELECT numero FROM mppres WHERE numegrup="+numegrup+""
+                + " AND (mpre_id='"+pres+"' OR "
                 + "mpre_id IN (SELECT id FROM mpres WHERE mpres_id='"+pres+"'))";
         String numero="";
         try {
             Statement stselect = (Statement) conex.createStatement();
             ResultSet rstselect = stselect.executeQuery(select);
-            while(rstselect.next()){
-                numero=rstselect.getString(1);
-            }
+            while(rstselect.next())
+                numero=rstselect.getString(1);            
         } catch (SQLException ex) {
             Logger.getLogger(valuacion.class.getName()).log(Level.SEVERE, null, ex);
         }
+        int op = JOptionPane.showConfirmDialog(rootPane, "¿Desea Eliminar la partida Nro. "+numegrup+"?", "Eliminar Partida", JOptionPane.YES_NO_OPTION);
+        if(op==JOptionPane.YES_OPTION){
         String borra = "DELETE FROM dvalus WHERE numepart='" + numero + "' AND mvalu_id=" + mvalu+" AND "
                 + "mpre_id='"+pres+"'";
         try {
@@ -1119,7 +1137,7 @@ public final class valuacion extends javax.swing.JDialog {
             JOptionPane.showMessageDialog(this, "No se ha borrado la partida de la valuación");
             Logger.getLogger(valuacion.class.getName()).log(Level.SEVERE, null, ex);
         }
-
+        }
 
     }//GEN-LAST:event_jButton3ActionPerformed
 
@@ -1128,10 +1146,7 @@ public final class valuacion extends javax.swing.JDialog {
     }//GEN-LAST:event_jTable1KeyReleased
 
     private void jTable1KeyTyped(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_jTable1KeyTyped
-        
-        
-        
-        // TODO add your handling code here:
+
     }//GEN-LAST:event_jTable1KeyTyped
 
     private void jSpinner1KeyTyped(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_jSpinner1KeyTyped
@@ -1156,8 +1171,29 @@ public final class valuacion extends javax.swing.JDialog {
         fechafin = formatofecha.format(jDateChooser2.getDate());
 
 //************************************DEBO VER SI ESTA GUARDADA LA VALUACION Y SINO GUARDARLA
+        String selectCount = "SELECT count(*) FROM mvalus WHERE (mpre_id='"+pres+"' OR mpre_id IN (SELECT id FROM mpres WHERE mpres_id='"+pres+"')"
+                + " ) AND id='"+mvalu+"'";
+        int cuenta=0;
+            try {
+                Statement stCuenta = conex.createStatement();
+                ResultSet rstCuenta = stCuenta.executeQuery(selectCount);
+                while(rstCuenta.next())
+                {
+                    cuenta = rstCuenta.getInt(1);
+                }
+            } catch (SQLException ex) {
+                Logger.getLogger(valuacion.class.getName()).log(Level.SEVERE, null, ex);
+            }
         String tipos = jComboBox1.getSelectedItem().toString();
-        String consulta = "UPDATE mvalus SET desde = '" + fechaini + "', hasta ='" + fechafin + "', tipo = '" + tipos + "' WHERE id='" + mvalu + "' AND mpre_id='" + pres+"'";
+        String consulta ="";
+        
+        if(cuenta==0){
+            consulta = "INSERT INTO mvalus (id, desde, hasta, status, mpre_id, tipo, lapso) "
+                    + "VALUES "
+                    + "('"+mvalu+"', '"+fechaini+"', '"+fechafin+"',1,'"+pres+"', '"+tipos+"',0)";
+        }else{
+        consulta="UPDATE mvalus SET desde = '" + fechaini + "', hasta ='" + fechafin + "', tipo = '" + tipos + "', status=1 WHERE id='" + mvalu + "' AND mpre_id='" + pres+"'";
+        }
         try {
             Statement st = conex.createStatement();
             st.execute(consulta);
@@ -1166,14 +1202,16 @@ public final class valuacion extends javax.swing.JDialog {
         } catch (SQLException ex) {
             Logger.getLogger(valuacion.class.getName()).log(Level.SEVERE, null, ex);
         }
+        
         }
        // doClose(RET_OK);        // TODO add your handling code here:
     }//GEN-LAST:event_okButtonMouseClicked
 
 private void jTextField10FocusLost(java.awt.event.FocusEvent evt) {//GEN-FIRST:event_jTextField10FocusLost
     jLabel10.setText("");
-    cantidad = Float.valueOf(jTextField10.getText());
-    float cantacum=0, cantcontratado=0, compara;
+    pierdefoco=0;
+    cantidad = new BigDecimal(jTextField10.getText());
+    BigDecimal cantacum=new BigDecimal("0.00"), cantcontratado=new BigDecimal("0.00"), compara;
     String numero="";
     int siexiste=0;
     String consultanumero = "SELECT numero, cantidad FROM mppres WHERE (mpre_id='"+pres+"' OR "
@@ -1184,7 +1222,7 @@ private void jTextField10FocusLost(java.awt.event.FocusEvent evt) {//GEN-FIRST:e
             ResultSet rstnumero = stnumero.executeQuery(consultanumero);
             while(rstnumero.next()){
                 numero = rstnumero.getString("numero");
-                cantcontratado = rstnumero.getFloat("cantidad");
+                cantcontratado = rstnumero.getBigDecimal("cantidad");
             }
         } catch (SQLException ex) {
             Logger.getLogger(valuacion.class.getName()).log(Level.SEVERE, null, ex);
@@ -1198,7 +1236,7 @@ private void jTextField10FocusLost(java.awt.event.FocusEvent evt) {//GEN-FIRST:e
             ResultSet rstacum = stacum.executeQuery(acumulada);
             while(rstacum.next())
             {
-                cantacum=rstacum.getFloat(1);
+                cantacum=rstacum.getBigDecimal(1);
             }
         } catch (SQLException ex) {
             Logger.getLogger(valuacion.class.getName()).log(Level.SEVERE, null, ex);
@@ -1215,10 +1253,10 @@ private void jTextField10FocusLost(java.awt.event.FocusEvent evt) {//GEN-FIRST:e
         } catch (SQLException ex) {
             Logger.getLogger(valuacion.class.getName()).log(Level.SEVERE, null, ex);
         }
-     compara=cantacum+cantidad;
+     compara=cantacum.add(cantidad);
      if(siexiste==0){
-     if(compara>cantcontratado){
-         int op = JOptionPane.showConfirmDialog(this, "La cantidad valuada acumulada: "+compara+" excede a la cantidad contratada: "+cantcontratado+" en "+(compara-cantcontratado)+" Unidades, Desea Continuar? Sí/No", "Exceso", JOptionPane.YES_NO_OPTION);
+     if(compara.doubleValue()>cantcontratado.doubleValue()){
+         int op = JOptionPane.showConfirmDialog(this, "La cantidad valuada acumulada: "+compara+" excede a la cantidad contratada: "+cantcontratado+" en "+(compara.doubleValue()-cantcontratado.doubleValue())+" Unidades, Desea Continuar? Sí/No", "Exceso", JOptionPane.YES_NO_OPTION);
          if(op==JOptionPane.YES_OPTION){
          inserta();
          }
@@ -1229,8 +1267,8 @@ private void jTextField10FocusLost(java.awt.event.FocusEvent evt) {//GEN-FIRST:e
          siexiste=0;
          int op1=JOptionPane.showConfirmDialog(null, "Partida ya fue insertada en esta valuación, desea modificarla? Sí/No", "Ya Existe", JOptionPane.YES_NO_OPTION);
          if(op1==JOptionPane.YES_OPTION){
-             if(compara>cantcontratado){
-                int op = JOptionPane.showConfirmDialog(this, "La cantidad valuada acumulada: "+compara+" excede a la cantidad contratada: "+cantcontratado+" en "+(compara-cantcontratado)+" Unidades, Desea Continuar? Sí/No", "Exceso", JOptionPane.YES_NO_OPTION);
+             if(compara.doubleValue()>cantcontratado.doubleValue()){
+                int op = JOptionPane.showConfirmDialog(this, "La cantidad valuada acumulada: "+compara+" excede a la cantidad contratada: "+cantcontratado+" en "+(compara.doubleValue()-cantcontratado.doubleValue())+" Unidades, Desea Continuar? Sí/No", "Exceso", JOptionPane.YES_NO_OPTION);
                 if(op==JOptionPane.YES_OPTION){
                     modifica(numero);
                     } 
@@ -1272,14 +1310,15 @@ private void jTextField8MouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST
             }
             JOptionPane.showMessageDialog(rootPane, "Valuación Eliminada");
                     doClose(RET_CANCEL);
-       }
-        
+       }  
         
         // TODO add your handling code here:
     }//GEN-LAST:event_jButton2ActionPerformed
 
     
-    public String vervalu (){
+       
+    
+        public String vervalu (){
          String valormvalu=mvalu;
         if(jComboBox1.getSelectedItem().equals("Parcial")){
             valormvalu="VALUACIÓN No.: "+mvalu;
@@ -1298,13 +1337,277 @@ private void jTextField8MouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST
         }
         return valormvalu;
     }
+    private void llenaValu()
+    {
+                 String borra = "TRUNCATE TABLE reportevaluacion";
+                  Statement truncate;
+                try {
+                    truncate = (Statement) conex.createStatement();
+                      truncate.execute(borra);
+                      String consultaoriginal= "INSERT INTO reportevaluacion "
+                              + "SELECT mp.numegrup as nro, mp.id as codigo, mp.descri as descri, mp.unidad as unidad,"
+                              + "IFNULL((SELECT SUM(cantidad) as cantidades "
+                              + "FROM dvalus WHERE numepart=mp.numero AND (mpre_id='"+pres+"' OR mpre_id IN "
+                              + "(SELECT id FROM mpres WHERE mpres_id='"+pres+"')) AND "
+                              + "mvalu_id<"+mvalu+"),0) as cantidadanterior,IFNULL((SELECT SUM(cantidad) as cantidades"
+                              + " FROM dvalus WHERE numepart=mp.numero AND (mpre_id='"+pres+"' OR mpre_id IN "
+                              + "(SELECT id FROM mpres WHERE mpres_id='"+pres+"')) AND "
+                              + "mvalu_id<="+mvalu+"),0) as cantidadactual, IF(mp.precasu=0,mp.precunit,mp.precasu)"
+                              + " as preciounitario,"
+                              + "ROUND(IFNULL((SELECT SUM(cantidad) as cantidad "
+                              + "FROM dvalus WHERE numepart=mp.numero AND mpre_id='"+pres+"' AND "
+                              + "mvalu_id<="+mvalu+")*IF(mp.precasu=0,mp.precunit,mp.precasu),0),2) as total,"+mvalu+",'"+pres+"'"
+                              + " FROM mppres as mp, dvalus as dv, mvalus as mv WHERE mp.tipo='Org' AND"
+                              + " mp.numero = dv.numepart AND dv.mpre_id=mp.mpre_id AND "
+                              + "dv.mvalu_id<=mv.id AND mv.id="+mvalu+" AND"
+                              + " (mv.mpre_id = '"+pres+"' OR mv.mpre_id IN (SELECT id FROM mpres WHERE mpres_id='"+pres+"')) "
+                              + "AND (dv.mpre_id='"+pres+"' "
+                              + "OR dv.mpre_id IN (SELECT id FROM mpres WHERE mpres_id='"+pres+"'))"
+                              + " AND (mp.mpre_id='"+pres+"' "
+                              + "OR mp.mpre_id IN (SELECT id FROM mpres WHERE mpres_id='"+pres+"')) "
+                              + "GROUP BY dv.numepart ORDER BY mp.numegrup";
+                      Statement original = (Statement) conex.createStatement();
+                      original.execute(consultaoriginal);
+                      
+                      //------------NO Prevista------------------------------------------
+                      String cuenta = "SELECT COUNT(*) FROM mppres as mp, dvalus as dv, mvalus as mv "
+                              + "WHERE dv.mvalu_id<=mv.id AND mv.id = "+mvalu+" AND (mp.mpre_id='"+pres+"' OR mp.mpre_id IN "
+                              + "(SELECT id FROM mpres WHERE mpres_id='"+pres+"')) AND (dv.mpre_id ='"+pres+"' OR "
+                              + "dv.mpre_id IN (SELECT id FROM mpres WHERE mpres_id = '"+pres+"'))AND mp.numero = dv.numepart"
+                              + " AND (mv.mpre_id='"+pres+"' "
+                              + "OR mv.mpre_id IN (SELECT id FROM mpres WHERE mpres_id ='"+pres+"')) AND mp.tipo='NP' "
+                              + "AND mp.tiponp='NP'";
+                      Statement cuantosnp= (Statement) conex.createStatement();
+                      ResultSet rscuantosnp = cuantosnp.executeQuery(cuenta);
+                      int cuentas=0;
+                      while(rscuantosnp.next()){
+                          cuentas = rscuantosnp.getInt(1);
+                      }
+                      if(cuentas>0)
+                      {
+                          String insertatit = "INSERT INTO reportevaluacion (codigo,descri,mvalu,mpre)"
+                                        + "VALUES ('','PARTIDAS NO PREVISTAS',"+mvalu+",'"+pres+"')";
+                                Statement ins = (Statement) conex.createStatement();
+                                ins.execute(insertatit);
+                                String consultanp= "INSERT INTO reportevaluacion "
+                              + " SELECT mp.numegrup as nro, mp.id as codigo, mp.descri as descri, mp.unidad as unidad,"
+                              + " IFNULL((SELECT SUM(cantidad) as cantidades "
+                              + " FROM dvalus WHERE numepart=mp.numero AND (mpre_id='"+pres+"' OR mpre_id IN "
+                              + "(SELECT id FROM mpres WHERE mpres_id='"+pres+"')) AND "
+                              + " mvalu_id<"+mvalu+"),0) as cantidadanterior,IFNULL((SELECT SUM(cantidad) as cantidades"
+                              + " FROM dvalus WHERE numepart=mp.numero AND (mpre_id='"+pres+"' OR mpre_id IN "
+                              + "(SELECT id FROM mpres WHERE mpres_id='"+pres+"')) AND "
+                              + " mvalu_id<="+mvalu+"),0) as cantidadactual, IF(mp.precasu=0,mp.precunit,mp.precasu) as preciounitario,"
+                              + " ROUND(IFNULL((SELECT SUM(cantidad) as cantidad "
+                              + " FROM dvalus WHERE numepart=mp.numero AND mpre_id='"+pres+"' AND "
+                              + " mvalu_id<="+mvalu+")*IF(mp.precasu=0,mp.precunit,mp.precasu),0),2) as total,"+mvalu+",'"+pres+"'"
+                              + " FROM mppres as mp, dvalus as dv, mvalus as mv WHERE mp.tipo='NP' AND mp.tiponp='NP' AND"
+                              + " mp.numero = dv.numepart AND"
+                              + " dv.mvalu_id<=mv.id AND mv.id="+mvalu+" AND"
+                              + " (mv.mpre_id = '"+pres+"' OR mv.mpre_id IN (SELECT id FROM mpres WHERE mpres_id='"+pres+"')) "
+                              + " AND (dv.mpre_id='"+pres+"'"
+                              + " OR dv.mpre_id IN (SELECT id FROM mpres WHERE mpres_id='"+pres+"'))"
+                              + " AND (mp.mpre_id='"+pres+"'"
+                              + " OR mp.mpre_id IN (SELECT id FROM mpres WHERE mpres_id='"+pres+"'))"
+                              + " GROUP BY dv.numepart ORDER BY mp.numegrup";
+                                System.out.println("consultanp "+consultanp);
+                                Statement noprevista = (Statement) conex.createStatement();
+                                noprevista.execute(consultanp);
+                                
+                      }
+                      //------------------Obras extras------------------
+                      String cuentaoe = "SELECT COUNT(*) FROM mppres as mp, dvalus as dv, mvalus as mv "
+                              + "WHERE dv.mvalu_id<=mv.id AND mv.id = "+mvalu+" AND (mp.mpre_id='"+pres+"' OR mp.mpre_id IN "
+                              + "(SELECT id FROM mpres WHERE mpres_id='"+pres+"')) AND (dv.mpre_id ='"+pres+"' OR "
+                              + "dv.mpre_id IN (SELECT id FROM mpres WHERE mpres_id = '"+pres+"'))AND mp.numero = dv.numepart"
+                              + " AND (mv.mpre_id='"+pres+"' "
+                              + "OR mv.mpre_id IN (SELECT id FROM mpres WHERE mpres_id ='"+pres+"')) AND mp.tipo='NP' "
+                              + "AND mp.tiponp='OE'";
+                       Statement cuantosoe= (Statement) conex.createStatement();
+                      ResultSet rscuantosoe = cuantosoe.executeQuery(cuentaoe);
+                      int cuentasoe=0;
+                      while(rscuantosoe.next()){
+                          cuentasoe = rscuantosoe.getInt(1);
+                      }
+                      if(cuentasoe>0){
+                          String insertatit = "INSERT INTO reportevaluacion (codigo,descri,mvalu,mpre)"
+                                        + "VALUES ('','OBRAS EXTRAS',"+mvalu+",'"+pres+"')";
+                                Statement ins = (Statement) conex.createStatement();
+                                ins.execute(insertatit);
+                                String consultaoe= "INSERT INTO reportevaluacion "
+                              + " SELECT mp.numegrup as nro, mp.id as codigo, mp.descri as descri, mp.unidad as unidad,"
+                              + " IFNULL((SELECT SUM(cantidad) as cantidades "
+                              + " FROM dvalus WHERE numepart=mp.numero AND (mpre_id='"+pres+"' OR mpre_id IN "
+                              + " (SELECT id FROM mpres WHERE mpres_id='"+pres+"')) AND "
+                              + " mvalu_id<"+mvalu+"),0) as cantidadanterior,IFNULL((SELECT SUM(cantidad) as cantidades"
+                              + " FROM dvalus WHERE numepart=mp.numero AND (mpre_id='"+pres+"' OR mpre_id IN "
+                              + " (SELECT id FROM mpres WHERE mpres_id='"+pres+"')) AND "
+                              + " mvalu_id<="+mvalu+"),0) as cantidadactual, IF(mp.precasu=0,mp.precunit,mp.precasu) as preciounitario,"
+                              + " ROUND(IFNULL((SELECT SUM(cantidad) as cantidad "
+                              + " FROM dvalus WHERE numepart=mp.numero AND mpre_id='"+pres+"' AND "
+                              + " mvalu_id<="+mvalu+")*IF(mp.precasu=0,mp.precunit,mp.precasu),0),2) as total,"+mvalu+",'"+pres+"'"
+                              + " FROM mppres as mp, dvalus as dv, mvalus as mv WHERE mp.tipo='NP' AND mp.tiponp='OE' AND"
+                              + " mp.numero = dv.numepart AND "
+                              + " dv.mvalu_id<=mv.id AND mv.id="+mvalu+" AND"
+                              + " (mv.mpre_id = '"+pres+"' OR mv.mpre_id IN (SELECT id FROM mpres WHERE mpres_id='"+pres+"')) "
+                              + " AND (dv.mpre_id='"+pres+"'"
+                              + " OR dv.mpre_id IN (SELECT id FROM mpres WHERE mpres_id='"+pres+"'))"
+                              + " AND (mp.mpre_id='"+pres+"'"
+                              + " OR mp.mpre_id IN (SELECT id FROM mpres WHERE mpres_id='"+pres+"'))"
+                              + " GROUP BY dv.numepart ORDER BY mp.numegrup";
+                                Statement obraextra= (Statement) conex.createStatement();
+                                obraextra.execute(consultaoe);
+                      }
+                      //------------Obras Adicionales--------------------------------------------------------
+                      String cuentaoa = "SELECT COUNT(*) FROM mppres as mp, dvalus as dv, mvalus as mv "
+                              + "WHERE dv.mvalu_id<=mv.id AND mv.id = "+mvalu+" AND (mp.mpre_id='"+pres+"' OR mp.mpre_id IN "
+                              + "(SELECT id FROM mpres WHERE mpres_id='"+pres+"')) AND (dv.mpre_id ='"+pres+"' OR "
+                              + "dv.mpre_id IN (SELECT id FROM mpres WHERE mpres_id = '"+pres+"'))AND mp.numero = dv.numepart"
+                              + " AND (mv.mpre_id='"+pres+"' "
+                              + "OR mv.mpre_id IN (SELECT id FROM mpres WHERE mpres_id ='"+pres+"')) AND mp.tipo='NP' "
+                              + "AND mp.tiponp='OA'";
+                       Statement cuantosoa= (Statement) conex.createStatement();
+                      ResultSet rscuantosoa = cuantosoa.executeQuery(cuentaoa);
+                      int cuentasoa=0;
+                      while(rscuantosoa.next()){
+                          cuentasoa = rscuantosoa.getInt(1);
+                      }
+                      if(cuentasoa>0){
+                          String insertatit = "INSERT INTO reportevaluacion (codigo,descri,mvalu,mpre)"
+                                        + "VALUES ('','OBRAS ADICIONALES',"+mvalu+",'"+pres+"')";
+                                Statement ins = (Statement) conex.createStatement();
+                                ins.execute(insertatit);
+                                String consultaAD= "INSERT INTO reportevaluacion "
+                              + " SELECT mp.numegrup as nro, mp.id as codigo, mp.descri as descri, mp.unidad as unidad,"
+                              + " IFNULL((SELECT SUM(cantidad) as cantidades "
+                              + " FROM dvalus WHERE numepart=mp.numero AND (mpre_id='"+pres+"' OR mpre_id IN "
+                              + " (SELECT id FROM mpres WHERE mpres_id='"+pres+"')) AND "
+                              + " mvalu_id<"+mvalu+"),0) as cantidadanterior,IFNULL((SELECT SUM(cantidad) as cantidades"
+                              + " FROM dvalus WHERE numepart=mp.numero AND (mpre_id='"+pres+"' OR mpre_id IN "
+                              + " (SELECT id FROM mpres WHERE mpres_id='"+pres+"')) AND "
+                              + " mvalu_id<="+mvalu+"),0) as cantidadactual, IF(mp.precasu=0,mp.precunit,mp.precasu) as preciounitario,"
+                              + " ROUND(IFNULL((SELECT SUM(cantidad) as cantidad "
+                              + " FROM dvalus WHERE numepart=mp.numero AND mpre_id='"+pres+"' AND "
+                              + " mvalu_id<="+mvalu+")*IF(mp.precasu=0,mp.precunit,mp.precasu),0),2) as total,"+mvalu+",'"+pres+"'"
+                              + " FROM mppres as mp, dvalus as dv, mvalus as mv WHERE mp.tipo='NP' AND mp.tiponp='OA' AND"
+                              + " mp.numero = dv.numepart AND "
+                              + " dv.mvalu_id<=mv.id AND mv.id="+mvalu+" AND"
+                              + " (mv.mpre_id = '"+pres+"' OR mv.mpre_id IN (SELECT id FROM mpres WHERE mpres_id='"+pres+"')) "
+                              + " AND (dv.mpre_id='"+pres+"'"
+                              + " OR dv.mpre_id IN (SELECT id FROM mpres WHERE mpres_id='"+pres+"'))"
+                              + " AND (mp.mpre_id='"+pres+"'"
+                              + " OR mp.mpre_id IN (SELECT id FROM mpres WHERE mpres_id='"+pres+"'))"
+                              + " GROUP BY dv.numepart ORDER BY mp.numegrup";
+                                Statement obraAD= (Statement) conex.createStatement();
+                                obraAD.execute(consultaAD);
+                      }
+                      //------------Obras COMPLEMENTARIAS--------------------------------------------------------
+                      String cuentaoc = "SELECT COUNT(*) FROM mppres as mp, dvalus as dv, mvalus as mv "
+                              + "WHERE dv.mvalu_id<=mv.id AND mv.id = "+mvalu+" AND (mp.mpre_id='"+pres+"' OR mp.mpre_id IN "
+                              + "(SELECT id FROM mpres WHERE mpres_id='"+pres+"')) AND (dv.mpre_id ='"+pres+"' OR "
+                              + "dv.mpre_id IN (SELECT id FROM mpres WHERE mpres_id = '"+pres+"'))AND mp.numero = dv.numepart"
+                              + " AND (mv.mpre_id='"+pres+"' "
+                              + "OR mv.mpre_id IN (SELECT id FROM mpres WHERE mpres_id ='"+pres+"')) AND mp.tipo='NP' "
+                              + "AND mp.tiponp='OC'";
+                       Statement cuantosoc= (Statement) conex.createStatement();
+                      ResultSet rscuantosoc = cuantosoc.executeQuery(cuentaoc);
+                      int cuentasoc=0;
+                      while(rscuantosoc.next()){
+                          cuentasoc = rscuantosoc.getInt(1);
+                      }
+                      if(cuentasoc>0){
+                          String insertatit = "INSERT INTO reportevaluacion (codigo,descri,mvalu,mpre)"
+                                        + "VALUES ('','OBRAS COMPLEMENTARIAS',"+mvalu+",'"+pres+"'))";
+                                Statement ins = (Statement) conex.createStatement();
+                                ins.execute(insertatit);
+                                String consultaoc= "INSERT INTO reportevaluacion "
+                              + " SELECT mp.numegrup as nro, mp.id as codigo, mp.descri as descri, mp.unidad as unidad,"
+                              + " IFNULL((SELECT SUM(cantidad) as cantidades "
+                              + " FROM dvalus WHERE numepart=mp.numero AND (mpre_id='"+pres+"' OR mpre_id IN "
+                              + "(SELECT id FROM mpres WHERE mpres_id='"+pres+"')) AND "
+                              + " mvalu_id<"+mvalu+"),0) as cantidadanterior,IFNULL((SELECT SUM(cantidad) as cantidades"
+                              + " FROM dvalus WHERE numepart=mp.numero AND (mpre_id='"+pres+"' OR mpre_id IN "
+                              + " (SELECT id FROM mpres WHERE mpres_id='"+pres+"')) AND "
+                              + " mvalu_id<="+mvalu+"),0) as cantidadactual, IF(mp.precasu=0,mp.precunit,mp.precasu) as preciounitario,"
+                              + " ROUND(IFNULL((SELECT SUM(cantidad) as cantidad "
+                              + " FROM dvalus WHERE numepart=mp.numero AND mpre_id='"+pres+"' AND "
+                              + " mvalu_id<="+mvalu+")*IF(mp.precasu=0,mp.precunit,mp.precasu),0),2) as total,"+mvalu+",'"+pres+"'"
+                              + " FROM mppres as mp, dvalus as dv, mvalus as mv WHERE mp.tipo='NP' AND mp.tiponp='OC' AND"
+                              + " mp.numero = dv.numepart AND "
+                              + " dv.mvalu_id<=mv.id AND mv.id="+mvalu+" AND"
+                              + " (mv.mpre_id = '"+pres+"' OR mv.mpre_id IN (SELECT id FROM mpres WHERE mpres_id='"+pres+"')) "
+                              + " AND (dv.mpre_id='"+pres+"'"
+                              + " OR dv.mpre_id IN (SELECT id FROM mpres WHERE mpres_id='"+pres+"'))"
+                              + " AND (mp.mpre_id='"+pres+"'"
+                              + " OR mp.mpre_id IN (SELECT id FROM mpres WHERE mpres_id='"+pres+"'))"
+                              + " GROUP BY dv.numepart ORDER BY mp.numegrup";
+                                Statement obraoc= (Statement) conex.createStatement();
+                                obraoc.execute(consultaoc);
+                      }
+                      
+                      //-----------VARIACIÓN DE PRECIOS----------------------------------------------
+                      String cuentavp = "SELECT COUNT(*) FROM mppres as mp, dvalus as dv, mvalus as mv "
+                              + "WHERE dv.mvalu_id<=mv.id AND mv.id = "+mvalu+" AND"
+                              + " (mp.mpre_id='"+pres+"' OR mp.mpre_id IN "
+                              + "(SELECT id FROM mpres WHERE mpres_id='"+pres+"')) AND (dv.mpre_id ='"+pres+"' OR "
+                              + "dv.mpre_id IN (SELECT id FROM mpres WHERE mpres_id = '"+pres+"'))AND mp.numero = dv.numepart"
+                              + " AND (mv.mpre_id='"+pres+"' "
+                              + "OR mv.mpre_id IN (SELECT id FROM mpres WHERE mpres_id ='"+pres+"')) AND mp.tipo='VP'";
+                       Statement cuantosvp= (Statement) conex.createStatement();
+                      ResultSet rscuantosvp = cuantosvp.executeQuery(cuentavp);
+                      int cuentasvp=0;
+                      while(rscuantosvp.next()){
+                          cuentasvp= rscuantosvp.getInt(1);
+                      }
+                      if(cuentasvp>0){
+                           String deltas="IF((mp.precunit-(SELECT m.precunit FROM "
+                    + "mppres as m WHERE (m.mpre_id='"+pres+"' OR m.mpre_id IN "
+                    + " (SELECT id FROM mpres WHERE mpres_id='"+pres+"')) AND m.numero=mp.mppre_id))<0,0,"
+                    + "mp.precunit-(SELECT m.precunit FROM "
+                    + "mppres as m WHERE (m.mpre_id='"+pres+"' OR m.mpre_id IN "
+                    + " (SELECT id FROM mpres WHERE mpres_id='"+pres+"')) AND m.numero=mp.mppre_id))";
+                          String insertatit = "INSERT INTO reportevaluacion (codigo,descri,mvalu,mpre)"
+                                        + "VALUES ('','VARIACIONES DE PRECIO',"+mvalu+",'"+pres+"')";
+                                Statement ins = (Statement) conex.createStatement();
+                                ins.execute(insertatit);
+                                String consultavp= "INSERT INTO reportevaluacion "
+                              + " SELECT mp.tiporec as nro, mp.id as codigo, mp.descri as descri, mp.unidad as unidad,"
+                              + " IFNULL((SELECT SUM(cantidad) as cantidades "
+                              + " FROM dvalus WHERE numepart=mp.numero AND (mpre_id='"+pres+"' OR mpre_id IN "
+                              + " (SELECT id FROM mpres WHERE mpres_id='"+pres+"')) AND "
+                              + " mvalu_id<"+mvalu+"),0) as cantidadanterior,IFNULL((SELECT SUM(cantidad) as cantidades"
+                              + " FROM dvalus WHERE numepart=mp.numero AND (mpre_id='"+pres+"' OR mpre_id IN "
+                              + " (SELECT id FROM mpres WHERE mpres_id='"+pres+"')) AND "
+                              + " mvalu_id<="+mvalu+"),0) as cantidadactual, "
+                                        + ""+deltas+" as preciounitario,"
+                              + " ROUND(IFNULL((SELECT SUM(cantidad) as cantidad "
+                              + " FROM dvalus WHERE numepart=mp.numero AND mpre_id='"+pres+"' AND "
+                              + " mvalu_id<="+mvalu+")*"+deltas+",0),2) as total,"+mvalu+",'"+pres+"'"
+                              + " FROM mppres as mp, dvalus as dv, mvalus as mv WHERE mp.tipo='VP' AND"
+                              + " mp.numero = dv.numepart AND"
+                              + " dv.mvalu_id<=mv.id AND mv.id="+mvalu+" AND"
+                              + " (mv.mpre_id = '"+pres+"' OR mv.mpre_id IN (SELECT id FROM mpres WHERE mpres_id='"+pres+"')) "
+                              + " AND (dv.mpre_id='"+pres+"' "
+                              + " OR dv.mpre_id IN (SELECT id FROM mpres WHERE mpres_id='"+pres+"'))"
+                              + " AND (mp.mpre_id='"+pres+"' "
+                              + " OR mp.mpre_id IN (SELECT id FROM mpres WHERE mpres_id='"+pres+"')) "
+                              + " GROUP BY dv.numepart ORDER BY mp.numegrup";
+                                System.out.println("consulta vp "+consultavp);
+                                Statement obraoc= (Statement) conex.createStatement();
+                                obraoc.execute(consultavp);
+                      }
+                } catch (SQLException ex) {
+                    Logger.getLogger(reporte.class.getName()).log(Level.SEVERE, null, ex);
+                }
+                
+           
+    }
     private void jButton8ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton8ActionPerformed
-        mvalu = jSpinner1.getValue().toString();
-       
-        reporte rep = new reporte(null, true, conex, pres, mvalu,vervalu());  
-        int x=  this.getX() + (this.getWidth() - 400) / 2;
-        int y = this.getY() + (this.getHeight() - 300) / 2;
-        rep.setBounds(x, y, 400, 300);
+        mvalu = jSpinner1.getValue().toString();     
+        reporte rep = new reporte(null, true, conex, pres, mvalu,vervalu(), jRadioButton1.isSelected()?1:0);  //1 con lapso 0 sin lapso
+        int x =  this.getX() + (this.getWidth() - 600) / 2;
+        int y = this.getY() + (this.getHeight() - 350) / 2;
+        rep.setBounds(x, y, 600, 350);
         this.setModal(false);
         rep.setVisible(true);
         
@@ -1312,25 +1615,27 @@ private void jTextField8MouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST
     }//GEN-LAST:event_jButton8ActionPerformed
 
     private void jButton9ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton9ActionPerformed
-        mvalu = jSpinner1.getValue().toString();
-       
-        reporteinspeccion rep = new reporteinspeccion(null, true, conex, pres, mvalu,vervalu());  
+        mvalu = jSpinner1.getValue().toString();       
+        reporteinspeccion rep = new reporteinspeccion(null, true, conex, pres, mvalu,vervalu(), impu, String.valueOf(impuesto));  
         int x=  this.getX() + (this.getWidth() - 400) / 2;
         int y = this.getY() + (this.getHeight() - 350) / 2;
         rep.setBounds(x, y, 400, 350);
         this.setModal(false);
-        rep.setVisible(true);
-        
+        rep.setVisible(true);        
         // TODO add your handling code here:
     }//GEN-LAST:event_jButton9ActionPerformed
 
     private void jComboBox1ItemStateChanged(java.awt.event.ItemEvent evt) {//GEN-FIRST:event_jComboBox1ItemStateChanged
-
+        if(jComboBox1.getSelectedItem()!=null)
+        if(jComboBox1.getSelectedItem().equals("Reconsideración"))        
+            jRadioButton2.setSelected(true);
+        else
+            jRadioButton1.setSelected(true);
      
     }//GEN-LAST:event_jComboBox1ItemStateChanged
 
     private void jComboBox1MouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_jComboBox1MouseClicked
-
+        if(jComboBox1.getSelectedItem()!=null)
         if (jComboBox1.getSelectedItem().equals("Otro")) {
                 jTextField3.setVisible(true);
                 jTextField3.setEditable(true);
@@ -1340,11 +1645,11 @@ private void jTextField8MouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST
             }        // TODO add your handling code here:
                 // TODO add your handling code here:
     }//GEN-LAST:event_jComboBox1MouseClicked
-
+   
     private void jButton7ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton7ActionPerformed
         
-        liquidacion liqui = new liquidacion(null, false, conex, pres, mvalu);
-         int x=  this.getX() + (this.getWidth() - 400) / 2;
+        liquidacion liqui = new liquidacion(null, false, conex, pres, mvalu, mpres, this);
+        int x=  this.getX() + (this.getWidth() - 400) / 2;
         int y = this.getY() + (this.getHeight() - 300) / 2;
         liqui.setBounds(x, y, 400, 300);
         liqui.setVisible(true);
@@ -1353,13 +1658,61 @@ private void jTextField8MouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST
 
     private void jButton5ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton5ActionPerformed
         reportecuadravance re = new reportecuadravance(null, false, conex, pres, mvalu);
-        int x=  this.getX() + (this.getWidth() - 400) / 2;
-        int y = this.getY() + (this.getHeight() - 250) / 2;
-        re.setBounds(x, y, 400, 250);
+        int x=  this.getX() + (this.getWidth() - 450) / 2;
+        int y = this.getY() + (this.getHeight() - 400) / 2;
+        re.setBounds(x, y, 450, 400);
         re.setVisible(true);
-        // TODO add your handling code here:
     }//GEN-LAST:event_jButton5ActionPerformed
-public void modifica(String num){
+
+    private void jTable1FocusGained(java.awt.event.FocusEvent evt) {//GEN-FIRST:event_jTable1FocusGained
+ 
+           
+        
+        // TODO add your handling code here:
+    }//GEN-LAST:event_jTable1FocusGained
+
+    public BigDecimal getporcAmort()
+    {
+        BigDecimal porcAmort=new BigDecimal("0.00");
+        String sql = "SELECT IFNULL(porcentajeAmort,0) FROM mvalus WHERE id = "+mvalu+" AND mpre_id='"+pres+"'";
+        try {
+            Statement st = conex.createStatement();
+            ResultSet rst = st.executeQuery(sql);
+            while(rst.next())
+                 porcAmort = rst.getBigDecimal(1);  
+        } catch (SQLException ex) {
+            Logger.getLogger(valuacion.class.getName()).log(Level.SEVERE, null, ex);
+        }
+        
+        return porcAmort;
+    }
+    /**
+     * Método encargado de calcular la amortización de anticipo acumulada en todas las valuaciones hasta la actual.
+     * @return BigDecimal acumAmort 
+     */
+   public BigDecimal acumAmortizacion()
+   {
+       BigDecimal acumAmort = new BigDecimal("0.00");
+       String sql = "SELECT IFNULL(SUM(ROUND("
+               + "(SELECT IFNULL(SUM(ROUND(dv.cantidad*IF(mp.precasu=0, mp.precunit, mp.precasu),2)),0) FROM dvalus as dv "
+               + ", mppres as mp WHERE dv.numepart=mp.numero AND (mp.mpre_id=dv.mvalu_id OR mp.mpre_id IN "
+               + "(SELECT id FROM mpres WHERE mpres_id = dv.mvalu_id)) AND dv.mpre_id='"+pres+"' AND dv.mvalu_id=d.mvalu_id)*"
+               + "(IFNULL(v.porcentajeAmort,0)/100),2)),0) "
+               + "FROM dvalus as d, mvalus as v WHERE d.mvalu_id=v.id AND d.mpre_id=v.mpre_id AND d.mpre_id='"+pres+"' AND d.mvalu_id<="+mvalu+"";
+        try {
+            System.out.println(sql);
+            Statement st = conex.createStatement();
+            ResultSet rst = st.executeQuery(sql);
+            while(rst.next())
+            {
+                acumAmort=rst.getBigDecimal(1);
+            }
+        } catch (SQLException ex) {
+            Logger.getLogger(valuacion.class.getName()).log(Level.SEVERE, null, ex);
+        }
+       return acumAmort;
+   }
+    public void modifica(String num){
         try {
             String actualiza = "UPDATE dvalus SET cantidad="+jTextField10.getText()+" WHERE numepart="+num+" AND ("
                     + "mpre_id='"+pres+"' OR mpre_id IN (SELECT id FROM mpres WHERE mpres_id='"+pres+"'))";
@@ -1395,8 +1748,6 @@ public void inserta(){
             while (rst.next()) {
                 precio = rst.getObject(1).toString();
             }
-
-
             String inserta = "INSERT into dvalus (mpre_id, mvalu_id, mppre_id, cantidad, precio, numepart, status) VALUES "
                     + "('" + pres + "', '" + mvalu + "',"
                     + "'" + codigo + "', "+cantidad+", " + precio + ", '" + numero + "', 1)";
@@ -1462,25 +1813,24 @@ public void inserta(){
 
     public void buscapartida() {
         try {
-            estavalu = 0;
-            String deltas="IF((mp.precunit-(SELECT m.precunit FROM "
+            estavalu = new BigDecimal("0.00");
+            String deltas="IF((IF(mp.precasu=0,mp.precunit, mp.precasu)-(SELECT IF(m.precasu=0,m.precunit, m.precasu) FROM "
                     + "mppres as m WHERE (m.mpre_id='"+pres+"' OR m.mpre_id IN "
                     + " (SELECT id FROM mpres WHERE mpres_id='"+pres+"')) AND m.numero=mp.mppre_id))<0,0,"
-                    + "mp.precunit-(SELECT m.precunit FROM "
+                    + "IF(mp.precasu=0,mp.precunit, mp.precasu)-(SELECT IF(m.precasu=0,m.precunit, m.precasu) FROM "
                     + "mppres as m WHERE (m.mpre_id='"+pres+"' OR m.mpre_id IN "
                     + " (SELECT id FROM mpres WHERE mpres_id='"+pres+"')) AND m.numero=mp.mppre_id))";
             
-            
             String sql = "SELECT dv.mppre_id, mp.numegrup, mp.descri, mp.cantidad, dv.numepart, "
                     + "dv.cantidad,IF(mp.tipo!='VP',if(mp.precasu=0,mp.precunit,mp.precasu),"+deltas+") as precio, "
-                    + "ROUND(dv.cantidad*IF(mp.tipo!='VP',if(mp.precasu=0,mp.precunit,mp.precasu),"+deltas+"),2) FROM dvalus as dv, mppres as mp"
+                    + "ROUND(dv.cantidad*IF(mp.tipo!='VP',if(mp.precasu=0,mp.precunit,mp.precasu),"+deltas+"),2), mp.tiporec"
+                    + " FROM dvalus as dv, mppres as mp"
                     + " WHERE mp.numero = dv.numepart AND "
                     + "dv.mvalu_id='" + mvalu + "' AND (dv.mpre_id='" + pres + "' "
                     + "OR dv.mpre_id IN (SELECT id FROM mpres WHERE mpres_id='"+pres+"'))"
                     + " AND (mp.mpre_id='" + pres + "' "
                     + "OR mp.mpre_id IN (SELECT id FROM mpres WHERE mpres_id='"+pres+"'))"
                     + "GROUP BY dv.numepart ORDER BY mp.numegrup";
-
             Statement st = (Statement) conex.createStatement();
             ResultSet rs = st.executeQuery(sql);
             ResultSetMetaData rsMd = (ResultSetMetaData) rs.getMetaData();
@@ -1488,10 +1838,12 @@ public void inserta(){
             DefaultTableModel metabs = new DefaultTableModel() {
 
                 @Override
-                public boolean isCellEditable(int row, int column) {
+                public boolean isCellEditable(int row, int column)
+                {
                     if (column == 5) {
                         return true;
-                    } else {
+                    } else
+                    {
                         return false;
                     }
                 }
@@ -1501,7 +1853,7 @@ public void inserta(){
                     if (columna == 1) {
                         return Integer.class;
                     }
-                    if(columna>2){
+                    if(columna>2&& columna<8){
                         return Double.class;
                     }
 
@@ -1520,14 +1872,14 @@ public void inserta(){
                 }
             }
             String numero;
-            Float cantidadacum;
+            BigDecimal cantidadacum;
             while (rs.next()) {
                 
                 Object[] filas = new Object[cantidadColumnas];
                 for (int i = 0; i < cantidadColumnas; i++) {
                     if (i == 7) {
-                        estavalu += Float.valueOf(rs.getObject(i+1).toString());
-                        System.out.println("estavalusin sumar "+Float.valueOf(rs.getObject(i+1).toString()));
+                        estavalu = estavalu.add(rs.getBigDecimal(i+1));
+                        System.out.println("estavalusin sumar "+(rs.getObject(i+1).toString()));
                         System.out.println("estavalu "+estavalu);
                         
                     }
@@ -1541,7 +1893,7 @@ public void inserta(){
                         Statement stconsulto = (Statement) conex.createStatement();
                         ResultSet rstconsulto = stconsulto.executeQuery(consulto);
                         while(rstconsulto.next()){
-                            cantidadacum = rstconsulto.getFloat(1);
+                            cantidadacum = rstconsulto.getBigDecimal(1);
                             filas[i]=cantidadacum;
                         }
                     }
@@ -1554,7 +1906,7 @@ public void inserta(){
         }
         cambiarcabecera();
 
-        estavalu = Math.rint(estavalu * 100) / 100;
+        estavalu = redon.redondearDosDecimales(estavalu);
         System.out.println("despues de redondear "+estavalu);
          NumberFormat formatoNumero = NumberFormat.getNumberInstance();
             formatoNumero.setMaximumFractionDigits(2);
@@ -1563,8 +1915,10 @@ public void inserta(){
       
 
         buscapres();
+        llenaValu();
+        
     }
-
+   
     public void cambiarcabecera() {
         JTableHeader th = jTable1.getTableHeader();
         TableColumnModel tcm = th.getColumnModel();
@@ -1593,18 +1947,20 @@ public void inserta(){
         tc = tcm.getColumn(7);
         tc.setHeaderValue("Total");
         tc.setPreferredWidth(10);
-
+        tc = tcm.getColumn(8);
+        tc.setHeaderValue("Reconsideración");
+        tc.setPreferredWidth(10);
         th.repaint();
     }
 
     public void buscapres() {
-        double subtotal, total;
+        
         String consulta = "SELECT porimp FROM mpres WHERE id='" + pres+"'";
         try {
             Statement stmt = (Statement) conex.createStatement();
             ResultSet rst = stmt.executeQuery(consulta);
             while (rst.next()) {
-                impu = Float.valueOf(rst.getObject(1).toString());
+                impu = rst.getBigDecimal(1);
 
             }
         } catch (SQLException ex) {
@@ -1612,49 +1968,95 @@ public void inserta(){
         }
         impuesto = impu;
         subtotal = estavalu;
-        impu = subtotal * impu / 100;
+        /**
+         * Calculo de Impuestos con acumulados (acumactual-relacionanterior)
+         */
+        String deltas="IF((IF(mp.precasu=0,mp.precunit,mp.precasu)-(SELECT IF(m.precasu=0,m.precunit,m.precasu) FROM "
+                    + "mppres as m WHERE (m.mpre_id='"+pres+"' OR m.mpre_id IN "
+                    + " (SELECT id FROM mpres WHERE mpres_id='"+pres+"')) AND m.numero=mp.mppre_id))<0,0,"
+                    + "IF(mp.precasu=0,mp.precunit,mp.precasu)-(SELECT IF(m.precasu=0,m.precunit,m.precasu) FROM "
+                    + "mppres as m WHERE (m.mpre_id='"+pres+"' OR m.mpre_id IN "
+                    + " (SELECT id FROM mpres WHERE mpres_id='"+pres+"')) AND m.numero=mp.mppre_id))";
+        
+        BigDecimal anter= new BigDecimal("0.00"), acumula= new BigDecimal("0.00");
+        BigDecimal impanter =new BigDecimal("0.00"), impacum = new BigDecimal("0.00");
+        String anterior = "SELECT ROUND((SELECT SUM(cantidad) as cantidad "
+                              + " FROM dvalus WHERE numepart=mp.numero AND mpre_id='"+pres+"' AND "
+                              + " mvalu_id<"+mvalu+") * IF(tipo!='VP',IF(mp.precasu=0,mp.precunit,mp.precasu),"+deltas+"),2) "
+                + "FROM dvalus as dv, mppres as mp WHERE"
+                + " mp.numero=dv.numepart AND dv.mvalu_id <'"+jSpinner1.getValue()+"' AND (dv.mpre_id='" + pres + "' "
+                    + "OR dv.mpre_id IN (SELECT id FROM mpres WHERE mpres_id='"+pres+"'))"
+                    + " AND (mp.mpre_id='" + pres + "' "
+                    + "OR mp.mpre_id IN (SELECT id FROM mpres WHERE mpres_id='"+pres+"')) GROUP BY dv.numepart";
+        try {
+            Statement stant = conex.createStatement();
+            ResultSet rstant = stant.executeQuery(anterior);
+            while(rstant.next())            
+                anter = anter.add(rstant.getBigDecimal(1));
+            
+        } catch (SQLException ex) {
+            Logger.getLogger(valuacion.class.getName()).log(Level.SEVERE, null, ex);
+        }
+        String acumulado = "SELECT ROUND((SELECT SUM(cantidad) as cantidad "
+                              + " FROM dvalus WHERE numepart=mp.numero AND mpre_id='"+pres+"' AND "
+                              + " mvalu_id<="+mvalu+") * IF(tipo!='VP',IF(mp.precasu=0,mp.precunit,mp.precasu),"+deltas+"),2) "
+                + "FROM dvalus as dv, mppres as mp WHERE"
+                + " mp.numero=dv.numepart AND dv.mvalu_id <='"+jSpinner1.getValue()+"' AND (dv.mpre_id='" + pres + "' "
+                    + "OR dv.mpre_id IN (SELECT id FROM mpres WHERE mpres_id='"+pres+"'))"
+                    + " AND (mp.mpre_id='" + pres + "' "
+                    + "OR mp.mpre_id IN (SELECT id FROM mpres WHERE mpres_id='"+pres+"')) GROUP BY dv.numepart";
+        try {
+            Statement stacum = conex.createStatement();
+            ResultSet rstacum = stacum.executeQuery(acumulado);
+            while(rstacum.next())            
+                acumula = acumula.add(rstacum.getBigDecimal(1));
+            
+        } catch (SQLException ex) {
+            Logger.getLogger(valuacion.class.getName()).log(Level.SEVERE, null, ex);
+        }
+        impanter = redon.redondearDosDecimales(anter.multiply(impu.divide(new BigDecimal(100))));
+        impacum =redon.redondearDosDecimales(acumula.multiply(impu.divide(new BigDecimal(100))));
+        impu = impacum.subtract(impanter);
          NumberFormat formatoNumero = NumberFormat.getNumberInstance();
             formatoNumero.setMaximumFractionDigits(2);
             formatoNumero.setMinimumFractionDigits(2);
             jTextField5.setText(String.valueOf(formatoNumero.format(impu)));
-      
-        total = subtotal + impu;
-        
+        total = subtotal.add(impu);
         jTextField6.setText(String.valueOf(formatoNumero.format(total)));
         buscaacum();
     }
 
     public void buscaacum() {
-        acum=0;
-        String deltas="IF((mp.precunit-(SELECT m.precunit FROM "
+        acum=new BigDecimal("0.00");
+        String deltas="IF((IF(mp.precasu=0,mp.precunit,mp.precasu)-(SELECT IF(m.precasu=0,m.precunit,m.precasu) FROM "
                     + "mppres as m WHERE (m.mpre_id='"+pres+"' OR m.mpre_id IN "
                     + " (SELECT id FROM mpres WHERE mpres_id='"+pres+"')) AND m.numero=mp.mppre_id))<0,0,"
-                    + "mp.precunit-(SELECT m.precunit FROM "
+                    + "IF(mp.precasu=0,mp.precunit,mp.precasu)-(SELECT IF(m.precasu=0,m.precunit,m.precasu) FROM "
                     + "mppres as m WHERE (m.mpre_id='"+pres+"' OR m.mpre_id IN "
                     + " (SELECT id FROM mpres WHERE mpres_id='"+pres+"')) AND m.numero=mp.mppre_id))";
-        String sql = "SELECT dv.cantidad * IF(tipo!='VP',IF(mp.precasu=0,mp.precunit,mp.precasu),"+deltas+") "
+        
+        String sql = "SELECT ROUND((SELECT SUM(cantidad) as cantidad "
+                              + " FROM dvalus WHERE numepart=mp.numero AND mpre_id='"+pres+"' AND "
+                              + " mvalu_id<="+mvalu+") * IF(tipo!='VP',IF(mp.precasu=0,mp.precunit,mp.precasu),"+deltas+"),2) "
                 + "FROM dvalus as dv, mppres as mp WHERE"
-                + " mp.numero=dv.numepart AND (dv.mpre_id='" + pres + "' "
+                + " mp.numero=dv.numepart AND dv.mvalu_id <='"+jSpinner1.getValue()+"' AND (dv.mpre_id='" + pres + "' "
                     + "OR dv.mpre_id IN (SELECT id FROM mpres WHERE mpres_id='"+pres+"'))"
                     + " AND (mp.mpre_id='" + pres + "' "
-                    + "OR mp.mpre_id IN (SELECT id FROM mpres WHERE mpres_id='"+pres+"'))";
+                    + "OR mp.mpre_id IN (SELECT id FROM mpres WHERE mpres_id='"+pres+"')) GROUP BY dv.numepart";
         try {
             Statement stmt = (Statement) conex.createStatement();
             ResultSet rste = stmt.executeQuery(sql);
 
             while (rste.next()) {
-                if (rste.getObject(1) != null) {
-                    acum += Float.valueOf(rste.getObject(1).toString());
-                }
+                if (rste.getObject(1) != null) 
+                    acum = acum.add(rste.getBigDecimal(1));
+                
             }
-
-            acum =  acum * (1+impuesto / 100);
-            acum = Math.rint((acum * 100))/100;
+            acum =  redon.redondearDosDecimales(acum.multiply(new BigDecimal(1).add(impuesto.divide(new BigDecimal("100")))));
             NumberFormat formatoNumero = NumberFormat.getNumberInstance();
             formatoNumero.setMaximumFractionDigits(2);
             formatoNumero.setMinimumFractionDigits(2);
             jTextField7.setText(String.valueOf(formatoNumero.format(acum)));
-
 
         } catch (SQLException ex) {
             Logger.getLogger(valuacion.class.getName()).log(Level.SEVERE, null, ex);
@@ -1680,10 +2082,8 @@ public void inserta(){
     private javax.swing.JComboBox jComboBox1;
     private com.toedter.calendar.JDateChooser jDateChooser1;
     private com.toedter.calendar.JDateChooser jDateChooser2;
-    private com.toedter.calendar.JDateChooser jDateChooser3;
     private javax.swing.JLabel jLabel1;
     private javax.swing.JLabel jLabel10;
-    private javax.swing.JLabel jLabel12;
     private javax.swing.JLabel jLabel13;
     private javax.swing.JLabel jLabel14;
     private javax.swing.JLabel jLabel15;

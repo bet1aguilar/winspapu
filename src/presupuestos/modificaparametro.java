@@ -4,8 +4,11 @@
  */
 package presupuestos;
 
-import com.mysql.jdbc.Connection;
 import com.mysql.jdbc.Statement;
+import config.Redondeo;
+import java.math.BigDecimal;
+import java.math.BigInteger;
+import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.logging.Level;
@@ -14,18 +17,19 @@ import java.util.logging.Logger;
 
 
 public class modificaparametro extends Thread{
-    Connection conex;
+    private Connection conex;
     Presupuesto obj;
     String idpres;
     Boolean mientras=true;
+    Redondeo redon= new Redondeo();
     int valormano=0, valormaterial=0, valorequipo=0;
-    float [] vectormano, vectormat, vectorequip, totalpartida;
+    BigDecimal [] vectormano, vectormat, vectorequip, totalpartida;
     String [] partidamano, partidamat, partidaequip, partida;
     String [][] partidas;
-    float presta, admin, finan, util, impart, imptotal;
+    BigDecimal presta, admin, finan, util, impart, imptotal;
     int posmano=0, posmat=0, posequip=0, pospart=0, postotal=0;
     
-    public modificaparametro(Connection conex, Presupuesto obj, String idpres, float prestaciones, float admin, float finan, float util, float imppart, float imptotal){
+    public modificaparametro(Connection conex, Presupuesto obj, String idpres, BigDecimal prestaciones, BigDecimal admin, BigDecimal finan, BigDecimal util, BigDecimal imppart, BigDecimal imptotal){
         this.conex = conex;
         this.obj = obj;
         this.idpres = idpres;
@@ -37,8 +41,8 @@ public class modificaparametro extends Thread{
         this.imptotal = imptotal;
     }
     public void calculamano(){
-        float valor=0, salario, cantidad, bono, subsid, prestaciones;
-       float rendimi=0;
+        BigDecimal valor=new BigDecimal("0.00"), salario, cantidad, bono, subsid, prestaciones;
+       BigDecimal rendimi=new BigDecimal("0.00");
         int numeroreg = 0;
         String sql = "SELECT SUM(dm.salario*dm.cantidad), SUM(dm.cantidad), mo.bono, mo.subsid, dm.mppre_id, mp.rendimi"
                 + " FROM mmopres as mo, dmoppres as dm, mppres as mp WHERE dm.mpre_id=mo.mpre_id AND "
@@ -56,21 +60,21 @@ public class modificaparametro extends Thread{
             while(cuentst.next()){
                 numeroreg = Integer.parseInt(cuentst.getObject(1).toString());
             }
-            vectormano = new float[numeroreg];
+            vectormano = new BigDecimal[numeroreg];
             partidamano = new String[numeroreg];
             while(rst.next()){
                 
                 partidamano[posmano] = rst.getObject(5).toString();
-                rendimi = Float.valueOf(rst.getObject(6).toString());
-                valor = Float.valueOf(rst.getObject(1).toString());
-                cantidad = Float.valueOf(rst.getObject(2).toString());
-                bono = Float.valueOf(rst.getObject(3).toString());
-                subsid = Float.valueOf(rst.getObject(4).toString());
-                prestaciones = valor * presta/100;
-                bono = cantidad * bono;
-                subsid = cantidad * subsid;
-                valor = valor + prestaciones + bono + subsid;               
-                valor = valor/rendimi;
+                rendimi = rst.getBigDecimal(6);
+                valor = rst.getBigDecimal(1);
+                cantidad = rst.getBigDecimal(2);
+                bono = rst.getBigDecimal(3);
+                subsid =rst.getBigDecimal(4);
+                prestaciones =redon.redondearDosDecimales(valor.multiply(presta.divide(new BigDecimal("100")))); 
+                bono = redon.redondearDosDecimales(cantidad.multiply(bono));
+                subsid = redon.redondearDosDecimales(cantidad.multiply(subsid));
+                valor = valor.add(prestaciones).add( bono).add( subsid);               
+                valor = valor.divide(rendimi,2,BigDecimal.ROUND_HALF_UP);
                 vectormano[posmano]= valor;
                 System.out.println("valor mano "+valor);
                 posmano++;
@@ -95,12 +99,12 @@ public class modificaparametro extends Thread{
                 nofilas = Integer.parseInt(rstfilas.getObject(1).toString());
                 
             }
-            vectormat = new float[nofilas];
+            vectormat = new BigDecimal[nofilas];
             partidamat = new String[nofilas];
             
             while(rst.next()){
-                partidamat[posmat]=rst.getObject(2).toString();
-                vectormat[posmat]= Float.valueOf(rst.getObject(1).toString());
+                partidamat[posmat]=rst.getString(2);
+                vectormat[posmat]= rst.getBigDecimal(1);
                 posmat++;
             }
         } catch (SQLException ex) {
@@ -122,12 +126,12 @@ public class modificaparametro extends Thread{
             while(rstr2.next()){
                 filas = Integer.parseInt(rstr2.getObject(1).toString());
             }
-            vectorequip = new float[filas];
+            vectorequip = new BigDecimal[filas];
             partidaequip = new String[filas];
             
             while(rstr1.next()){
                 partidaequip[posequip]=rstr1.getObject(2).toString();
-                vectorequip[posequip]=Float.valueOf(rstr1.getObject(1).toString());
+                vectorequip[posequip]=rstr1.getBigDecimal(1);
                 posequip++;
             }
         } catch (SQLException ex) {
@@ -168,19 +172,19 @@ public class modificaparametro extends Thread{
         int i=0, encmano=0, encmat=0, encequip=0;
         int posman=0, posequipo=0, posmate=0;
         int maxmano, maxequip, maxmat;
-        float admini, financ, impues, utili;
-        float valorman=0, valorequip=0, valormat=0;
+        BigDecimal admini, financ, impues, utili;
+        BigDecimal valorman= new BigDecimal("0.00"), valorequip= new BigDecimal("0.00"), valormat= new BigDecimal("0.00");
         int largo = partidas[0].length;
         posmano=posmat=posequip=0;
         maxmano=partidamano.length;
         maxequip = partidaequip.length;
         maxmat = partidamat.length;
         partida = new String[largo];
-        totalpartida = new float[largo];
+        totalpartida = new BigDecimal[largo];
         for(i=0;i<pospart;i++)
         {
             posmano = posmat = posequip=0;
-            valorman=valormat=valorequip=0;
+            valorman=valormat=valorequip= new BigDecimal("0.00");
             encmano=encmat=encequip=0;
             while(encmano==0 && posmano<maxmano)
             {
@@ -212,13 +216,13 @@ public class modificaparametro extends Thread{
             }
             
             partida[i] = partidas[0][i];
-            totalpartida[i] = valorman+valormat+valorequip;
-            admini = totalpartida[i]*admin/100;
-            utili = totalpartida[i]*util/100;
-            totalpartida[i] = totalpartida[i]+admini+utili;
-             financ = totalpartida[i]*finan/100;
-            impues = totalpartida[i]*impart/100;
-            totalpartida[i]= totalpartida[i]+financ + impues;
+            totalpartida[i] = valorman.add(valormat).add(valorequip);
+            admini = redon.redondearDosDecimales(totalpartida[i].multiply(admin.divide(new BigDecimal("100"))));
+            utili = redon.redondearDosDecimales(totalpartida[i].multiply(util.divide(new BigDecimal("100"))));
+            totalpartida[i] = totalpartida[i].add(admini).add(utili);
+             financ = redon.redondearDosDecimales(totalpartida[i].multiply(finan.divide(new BigDecimal("100"))));
+            impues = redon.redondearDosDecimales(totalpartida[i].multiply(impart.divide(new BigDecimal("100"))));
+            totalpartida[i]= totalpartida[i].add(financ).add(impues);
             
         }
     
@@ -246,8 +250,6 @@ public class modificaparametro extends Thread{
             calcular();
             actualizar();   
             obj.cargartotal();
-            
-   this.stop();
     }
     
 }

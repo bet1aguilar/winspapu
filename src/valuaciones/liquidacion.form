@@ -118,11 +118,10 @@
           <Properties>
             <Property name="model" type="javax.swing.ComboBoxModel" editor="org.netbeans.modules.form.editors2.ComboBoxModelEditor">
               <StringArray count="2">
-                <StringItem index="0" value="Corpointa"/>
-                <StringItem index="1" value="IVT"/>
+                <StringItem index="0" value="Formato 1"/>
+                <StringItem index="1" value="Formato 2"/>
               </StringArray>
             </Property>
-            <Property name="selectedIndex" type="int" value="-1"/>
           </Properties>
           <Events>
             <EventHandler event="actionPerformed" listener="java.awt.event.ActionListener" parameters="java.awt.event.ActionEvent" handler="jComboBox1ActionPerformed"/>

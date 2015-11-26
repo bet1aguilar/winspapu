@@ -9,8 +9,7 @@
  * Created on 16/09/2014, 05:59:45 PM
  */
 package valuaciones.liquidaciones;
-
-import com.mysql.jdbc.Connection;
+import java.sql.Connection;
 import com.mysql.jdbc.Statement;
 import java.awt.event.ActionEvent;
 import java.awt.event.KeyEvent;
@@ -19,6 +18,7 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.text.NumberFormat;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.HashMap;
@@ -51,7 +51,7 @@ public class ivt extends javax.swing.JDialog {
     /** A return status code - returned if OK button has been pressed */
     public static final int RET_OK = 1;
     String mpres, mvalus;
-    Connection conex;
+    private Connection conex;
     double impuesto = 0;
     double totalvalu = 0, totalrecon = 0, totalextras = 0, totaldismi = 0;
     double totalaum = 0, totalpres = 0, acumliqui = 0, impuacum = 0;
@@ -93,17 +93,20 @@ public class ivt extends javax.swing.JDialog {
         acumliqui = totalvaluacum();
         impuacum = totalvaluimpu();
         jDateChooser1.setDate(new Date());
-        jTextField12.setText(String.valueOf(totalpres));
-        jTextField13.setText(String.valueOf(totalaum));
-        jTextField14.setText(String.valueOf(totaldismi));
-        jTextField15.setText(String.valueOf(totalextras));
-        jTextField16.setText(String.valueOf(totalrecon));
-        double subtotal = totalpres + totalaum - totaldismi + totalextras + totalrecon;
-        jTextField17.setText(String.valueOf(subtotal));
-        double impuest = subtotal * (impuesto / 100);
-        jTextField18.setText(String.valueOf(impuest));
-        double total = subtotal + impuest;
-        jTextField19.setText(String.valueOf(total));
+         NumberFormat formatoNumero = NumberFormat.getNumberInstance();
+            formatoNumero.setMaximumFractionDigits(2);
+            formatoNumero.setMinimumFractionDigits(2);
+        jTextField12.setText(formatoNumero.format(totalpres));
+        jTextField13.setText(formatoNumero.format(totalaum));
+        jTextField14.setText(formatoNumero.format(totaldismi));
+        jTextField15.setText(formatoNumero.format(totalextras));
+        jTextField16.setText(formatoNumero.format(totalrecon));
+        double subtotal = Math.rint((totalpres + totalaum - totaldismi + totalextras + totalrecon)*100)/100;
+        jTextField17.setText(formatoNumero.format(subtotal));
+        double impuest = Math.rint((subtotal * (impuesto / 100))*100)/100;
+        jTextField18.setText(formatoNumero.format(impuest));
+        double total = Math.rint((subtotal + impuest)*100)/100;
+        jTextField19.setText(formatoNumero.format(total));
     }
 
     public double totalvaluimpu() {
@@ -1141,7 +1144,12 @@ private void jTextField11FocusLost(java.awt.event.FocusEvent evt) {//GEN-FIRST:e
             String diaprorro = jTextField31.getText().toString();
             String mesprorro = jTextField32.getText().toString(), anoreprorro = jTextField33.getText().toString();
             double otorgado = Double.valueOf(jTextField38.getText().toString());
-            
+            totalpres = Float.valueOf(jTextField12.getText().toString().replace(".", "").replace(",", "."));
+            totalaum = Float.valueOf(jTextField13.getText().toString().replace(".", "").replace(",", "."));
+            totaldismi = Float.valueOf(jTextField14.getText().toString().replace(".", "").replace(",", "."));
+            totalextras = Float.valueOf(jTextField15.getText().toString().replace(".", "").replace(",", "."));
+            totalrecon= Float.valueOf(jTextField16.getText().toString().replace(".", "").replace(",", "."));
+          
             parameters.put("mpres", mpres);
            parameters.put("mvalu", mvalus);
            parameters.put("obranro", obranro);
@@ -1167,6 +1175,7 @@ private void jTextField11FocusLost(java.awt.event.FocusEvent evt) {//GEN-FIRST:e
            parameters.put("anopara",anopara);
            parameters.put("diareinicio",diareini);
            parameters.put("mesreinicio", mesreini);
+           parameters.put("anoreinicio", anoreini);
            parameters.put("diaprorro", diaprorro);
            parameters.put("mesprorro", mesprorro);
            parameters.put("anoprorro", anoreprorro);
@@ -1216,7 +1225,7 @@ private void jTextField11FocusLost(java.awt.event.FocusEvent evt) {//GEN-FIRST:e
     }
 
     public double totalvalu() {
-        double valus = 0;
+        double valus = 0, impu=impuesto();
         try {
 
             String deltas = "IF((mp.precunit-(SELECT m.precunit FROM "
@@ -1242,10 +1251,11 @@ private void jTextField11FocusLost(java.awt.event.FocusEvent evt) {//GEN-FIRST:e
             while (rsts.next()) {
                 valus = rsts.getDouble(1);
             }
-            return 0;
+         
         } catch (SQLException ex) {
             Logger.getLogger(ivt.class.getName()).log(Level.SEVERE, null, ex);
         }
+        valus=valus+(valus*impu/100);
         return Math.rint(valus*100)/100;
     }
 

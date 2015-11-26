@@ -10,7 +10,7 @@
  */
 package presupuestos.capitulos;
 
-import com.mysql.jdbc.Connection;
+import java.sql.Connection;
 import com.mysql.jdbc.Statement;
 import java.awt.event.ActionEvent;
 import java.awt.event.KeyEvent;
@@ -36,7 +36,7 @@ public class nuevocapitulo extends javax.swing.JDialog {
     /** A return status code - returned if OK button has been pressed */
     public static final int RET_OK = 1;
     String mpres;
-    Connection conex;
+    private Connection conex;
     int edita=0;
     String capituloid="";
     /** Creates new form nuevocapitulo */

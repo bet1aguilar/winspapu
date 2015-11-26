@@ -12,12 +12,13 @@ package parametros;
 
 
 
-import com.mysql.jdbc.Connection;
 import com.mysql.jdbc.PreparedStatement;
 import com.mysql.jdbc.Statement;
+import java.awt.Dimension;
 import java.awt.Graphics2D;
 import java.awt.Image;
 import java.awt.Rectangle;
+import java.awt.Toolkit;
 import java.awt.event.ActionEvent;
 import java.awt.event.KeyEvent;
 import java.awt.image.BufferedImage;
@@ -26,6 +27,7 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.sql.Blob;
+import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.logging.Level;
@@ -58,6 +60,9 @@ public class propietario extends javax.swing.JDialog {
     String primero;
     File fichero;
     int nuevo;
+    int publico=0;
+    private boolean desbloqueado;
+    private int sicierras;
     public propietario(java.awt.Frame parent, boolean modal, Connection conex) {
         super(parent, modal);
         initComponents();
@@ -66,8 +71,11 @@ public class propietario extends javax.swing.JDialog {
         jLabel21.setVisible(false);
         jLabel10.setVisible(false);
         jLabel9.setVisible(false);
+  
         definemodelo();
         cargaventana();
+         bloqueo bloq = new bloqueo(conex);
+        bloqueaboton(!bloq.isbloqued());
         String cancelName = "cancel";
         InputMap inputMap = getRootPane().getInputMap(JComponent.WHEN_ANCESTOR_OF_FOCUSED_COMPONENT);
         inputMap.put(KeyStroke.getKeyStroke(KeyEvent.VK_ESCAPE, 0), cancelName);
@@ -80,7 +88,22 @@ public class propietario extends javax.swing.JDialog {
             }
         });
     }
-
+    public void sicierra(int i){
+    sicierras = i;
+    }
+    public void asignaprop(String id){
+        jSpinner1.setValue(id);
+        cargaventana();
+    }
+    private void bloqueaboton(boolean bloq)
+    {
+         jButton3.setEnabled(bloq);
+        jButton2.setEnabled(bloq);
+    }
+    protected void desbloqueo(boolean desbloqueo){
+        desbloqueado=desbloqueo;
+    }
+   
     public propietario(java.awt.Frame parent, boolean modal, Connection conex, int i) {
         super(parent, modal);
         initComponents();
@@ -131,16 +154,17 @@ public class propietario extends javax.swing.JDialog {
         jLabel12 = new javax.swing.JLabel();
         jTextField7 = new javax.swing.JTextField();
         jButton1 = new javax.swing.JButton();
-        jPanel3 = new javax.swing.JPanel();
-        jScrollPane2 = new javax.swing.JScrollPane();
-        jLabel7 = new javax.swing.JLabel();
         jSpinner1 = new javax.swing.JSpinner();
         jPanel4 = new javax.swing.JPanel();
         cancelButton = new javax.swing.JButton();
         jButton2 = new javax.swing.JButton();
         okButton = new javax.swing.JButton();
         jButton3 = new javax.swing.JButton();
+        jButton4 = new javax.swing.JButton();
+        jButton5 = new javax.swing.JButton();
         jTextField1 = new javax.swing.JTextField();
+        jScrollPane2 = new javax.swing.JScrollPane();
+        jLabel7 = new javax.swing.JLabel();
 
         addWindowListener(new java.awt.event.WindowAdapter() {
             public void windowClosing(java.awt.event.WindowEvent evt) {
@@ -214,23 +238,6 @@ public class propietario extends javax.swing.JDialog {
             }
         });
 
-        jPanel3.setBorder(javax.swing.BorderFactory.createBevelBorder(javax.swing.border.BevelBorder.RAISED, java.awt.Color.gray, new java.awt.Color(153, 153, 153), java.awt.Color.black, java.awt.Color.darkGray));
-        jPanel3.setAutoscrolls(true);
-
-        jLabel7.setAutoscrolls(true);
-        jScrollPane2.setViewportView(jLabel7);
-
-        javax.swing.GroupLayout jPanel3Layout = new javax.swing.GroupLayout(jPanel3);
-        jPanel3.setLayout(jPanel3Layout);
-        jPanel3Layout.setHorizontalGroup(
-            jPanel3Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addComponent(jScrollPane2, javax.swing.GroupLayout.DEFAULT_SIZE, 226, Short.MAX_VALUE)
-        );
-        jPanel3Layout.setVerticalGroup(
-            jPanel3Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addComponent(jScrollPane2, javax.swing.GroupLayout.DEFAULT_SIZE, 135, Short.MAX_VALUE)
-        );
-
         jSpinner1.setModel(new javax.swing.SpinnerNumberModel());
         jSpinner1.addChangeListener(new javax.swing.event.ChangeListener() {
             public void stateChanged(javax.swing.event.ChangeEvent evt) {
@@ -274,12 +281,32 @@ public class propietario extends javax.swing.JDialog {
             }
         });
 
+        jButton4.setIcon(new javax.swing.ImageIcon(getClass().getResource("/winspapus/imagenes/llave.fw.png"))); // NOI18N
+        jButton4.setToolTipText("Desbloquear Para Organismos Públicos, Contacte con Sistemas R.H. C.A.");
+        jButton4.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jButton4ActionPerformed(evt);
+            }
+        });
+
+        jButton5.setIcon(new javax.swing.ImageIcon(getClass().getResource("/winspapus/imagenes/buscar.fw.png"))); // NOI18N
+        jButton5.setToolTipText("Buscar Propietario");
+        jButton5.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jButton5ActionPerformed(evt);
+            }
+        });
+
         javax.swing.GroupLayout jPanel4Layout = new javax.swing.GroupLayout(jPanel4);
         jPanel4.setLayout(jPanel4Layout);
         jPanel4Layout.setHorizontalGroup(
             jPanel4Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, jPanel4Layout.createSequentialGroup()
-                .addContainerGap(93, Short.MAX_VALUE)
+                .addContainerGap(56, Short.MAX_VALUE)
+                .addComponent(jButton4, javax.swing.GroupLayout.PREFERRED_SIZE, 45, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                .addComponent(jButton5, javax.swing.GroupLayout.PREFERRED_SIZE, 45, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addComponent(jButton2, javax.swing.GroupLayout.PREFERRED_SIZE, 45, javax.swing.GroupLayout.PREFERRED_SIZE)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addComponent(jButton3, javax.swing.GroupLayout.PREFERRED_SIZE, 45, javax.swing.GroupLayout.PREFERRED_SIZE)
@@ -293,6 +320,8 @@ public class propietario extends javax.swing.JDialog {
             .addGroup(jPanel4Layout.createSequentialGroup()
                 .addContainerGap()
                 .addGroup(jPanel4Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                    .addComponent(jButton4, javax.swing.GroupLayout.PREFERRED_SIZE, 45, javax.swing.GroupLayout.PREFERRED_SIZE)
+                    .addComponent(jButton5, javax.swing.GroupLayout.PREFERRED_SIZE, 45, javax.swing.GroupLayout.PREFERRED_SIZE)
                     .addComponent(jButton2, javax.swing.GroupLayout.PREFERRED_SIZE, 45, javax.swing.GroupLayout.PREFERRED_SIZE)
                     .addComponent(jButton3, javax.swing.GroupLayout.PREFERRED_SIZE, 45, javax.swing.GroupLayout.PREFERRED_SIZE)
                     .addComponent(okButton, javax.swing.GroupLayout.PREFERRED_SIZE, 45, javax.swing.GroupLayout.PREFERRED_SIZE)
@@ -308,51 +337,53 @@ public class propietario extends javax.swing.JDialog {
             }
         });
 
+        jLabel7.setBackground(new java.awt.Color(255, 255, 255));
+        jLabel7.setAutoscrolls(true);
+        jLabel7.setOpaque(true);
+        jScrollPane2.setViewportView(jLabel7);
+
         javax.swing.GroupLayout jPanel1Layout = new javax.swing.GroupLayout(jPanel1);
         jPanel1.setLayout(jPanel1Layout);
         jPanel1Layout.setHorizontalGroup(
             jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addComponent(jPanel2, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
             .addGroup(jPanel1Layout.createSequentialGroup()
+                .addGap(32, 32, 32)
                 .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
-                    .addGroup(jPanel1Layout.createSequentialGroup()
-                        .addContainerGap()
-                        .addComponent(jPanel4, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
+                    .addComponent(jLabel3)
+                    .addComponent(jLabel2)
+                    .addComponent(jLabel5)
+                    .addComponent(jLabel4)
+                    .addComponent(jLabel6)
+                    .addComponent(jLabel12))
+                .addGap(18, 18, 18)
+                .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
+                    .addComponent(jPanel4, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                     .addGroup(javax.swing.GroupLayout.Alignment.LEADING, jPanel1Layout.createSequentialGroup()
-                        .addGap(32, 32, 32)
-                        .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
-                            .addComponent(jLabel3)
-                            .addComponent(jLabel2)
-                            .addComponent(jLabel5)
-                            .addComponent(jLabel4)
-                            .addComponent(jLabel6)
-                            .addComponent(jLabel12))
-                        .addGap(18, 18, 18)
+                        .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                            .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
+                                .addComponent(jTextField7)
+                                .addComponent(jTextField4, javax.swing.GroupLayout.DEFAULT_SIZE, 397, Short.MAX_VALUE)
+                                .addComponent(jTextField2)
+                                .addComponent(jScrollPane1, javax.swing.GroupLayout.DEFAULT_SIZE, 397, Short.MAX_VALUE)
+                                .addComponent(jTextField3))
+                            .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, jPanel1Layout.createSequentialGroup()
+                                .addComponent(jLabel21)
+                                .addGap(98, 98, 98)))
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                         .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                             .addGroup(jPanel1Layout.createSequentialGroup()
-                                .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                                    .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
-                                        .addComponent(jTextField7)
-                                        .addComponent(jTextField4, javax.swing.GroupLayout.DEFAULT_SIZE, 397, Short.MAX_VALUE)
-                                        .addComponent(jTextField2)
-                                        .addComponent(jScrollPane1, javax.swing.GroupLayout.DEFAULT_SIZE, 397, Short.MAX_VALUE)
-                                        .addComponent(jTextField3))
-                                    .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, jPanel1Layout.createSequentialGroup()
-                                        .addComponent(jLabel21)
-                                        .addGap(98, 98, 98)))
+                                .addComponent(jLabel9)
                                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                                .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                                    .addGroup(jPanel1Layout.createSequentialGroup()
-                                        .addComponent(jLabel9)
-                                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                                        .addComponent(jPanel3, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
-                                    .addComponent(jButton1)))
-                            .addGroup(jPanel1Layout.createSequentialGroup()
-                                .addComponent(jSpinner1, javax.swing.GroupLayout.PREFERRED_SIZE, 73, javax.swing.GroupLayout.PREFERRED_SIZE)
-                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                                .addComponent(jLabel10)
-                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                                .addComponent(jTextField1, javax.swing.GroupLayout.PREFERRED_SIZE, 77, javax.swing.GroupLayout.PREFERRED_SIZE)))))
+                                .addComponent(jScrollPane2, javax.swing.GroupLayout.PREFERRED_SIZE, 163, javax.swing.GroupLayout.PREFERRED_SIZE))
+                            .addComponent(jButton1))
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 75, Short.MAX_VALUE))
+                    .addGroup(javax.swing.GroupLayout.Alignment.LEADING, jPanel1Layout.createSequentialGroup()
+                        .addComponent(jSpinner1, javax.swing.GroupLayout.PREFERRED_SIZE, 73, javax.swing.GroupLayout.PREFERRED_SIZE)
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                        .addComponent(jLabel10)
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                        .addComponent(jTextField1, javax.swing.GroupLayout.PREFERRED_SIZE, 77, javax.swing.GroupLayout.PREFERRED_SIZE)))
                 .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
         );
         jPanel1Layout.setVerticalGroup(
@@ -390,7 +421,7 @@ public class propietario extends javax.swing.JDialog {
                                         .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
                                             .addComponent(jTextField4, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                                             .addComponent(jLabel6)))
-                                    .addComponent(jPanel3, 0, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+                                    .addComponent(jScrollPane2, javax.swing.GroupLayout.DEFAULT_SIZE, 135, Short.MAX_VALUE))
                                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                                 .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
                                     .addComponent(jTextField7, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
@@ -437,7 +468,7 @@ public class propietario extends javax.swing.JDialog {
             if(bytes!=null){
             leidos= bytes.getBytes(1,(int) bytes.length());
             image = new ImageIcon(leidos);
-            icono = new ImageIcon(image.getImage().getScaledInstance(image.getIconWidth(), image.getIconHeight(), Image.SCALE_DEFAULT));
+            icono = new ImageIcon(image.getImage().getScaledInstance(jLabel7.getWidth(), jLabel7.getHeight(), Image.SCALE_DEFAULT));
             
             jLabel7.setIcon(icono);
             }else{
@@ -454,21 +485,21 @@ public class propietario extends javax.swing.JDialog {
     
     public final void definemodelo(){
         String consulta = "SELECT id From mprops";
-        String [] prop;
+        String [] propi;
         try {
             Statement st = (Statement) conex.createStatement();
             ResultSet rst = st.executeQuery(consulta);
             rst.last();
-            prop = new String[rst.getRow()];
+            propi = new String[rst.getRow()];
             rst.first();
-            prop[0]=rst.getString(1);
+            propi[0]=rst.getString(1);
             int i=0;
             do{
-                prop[i]=rst.getString(1);
+                propi[i]=rst.getString(1);
                 i++;
             }while(rst.next());
-            primero = prop[0];
-            SpinnerListModel modelo = new SpinnerListModel(prop);
+            primero = propi[0];
+            SpinnerListModel modelo = new SpinnerListModel(propi);
             jSpinner1.setModel(modelo);
         } catch (SQLException ex) {
             Logger.getLogger(propietario.class.getName()).log(Level.SEVERE, null, ex);
@@ -494,13 +525,15 @@ public class propietario extends javax.swing.JDialog {
         JFileChooser fileChooser = new JFileChooser();
         FileNameExtensionFilter filter = new FileNameExtensionFilter("JPG, GIF, PNG", "jpg", "gif", "png", "jpeg");
         fileChooser.setFileFilter(filter);
+        File rutaactual= new File("./logos");
+        fileChooser.setCurrentDirectory(rutaactual);
         int seleccion = fileChooser.showOpenDialog(jTextField7);
         if (seleccion == JFileChooser.APPROVE_OPTION) {
             try {
                 fichero = fileChooser.getSelectedFile();
                  jTextField7.setText(fichero.getPath().toString());
                 ImageIcon fot = new ImageIcon(fichero.getPath().toString());
-                icono = new ImageIcon(fot.getImage().getScaledInstance(fot.getIconWidth(), fot.getIconHeight(), Image.SCALE_AREA_AVERAGING));
+                icono = new ImageIcon(fot.getImage().getScaledInstance(jLabel7.getWidth(), jLabel7.getHeight(), Image.SCALE_AREA_AVERAGING));
                 jLabel7.setIcon(icono); 
                 BufferedImage img = new BufferedImage(icono.getIconWidth(), icono.getIconHeight(), BufferedImage.TYPE_INT_RGB);
                 Image imge = ((ImageIcon) icono).getImage();
@@ -562,6 +595,10 @@ nuevo();
 private void okButtonMouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_okButtonMouseClicked
        int vacio=0; 
        String sql;
+       if(nuevo==0){
+            jTextField1.setText(jSpinner1.getValue().toString());
+           
+        }
         if(jTextArea1.getText().toString().equals("")|| jSpinner1.getValue().toString().equals("")){
             vacio=1;
         }
@@ -641,7 +678,7 @@ private void okButtonMouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:ev
                         Statement ste = (Statement) conex.createStatement();
                         ste.execute(sql);
                     }
-                    JOptionPane.showMessageDialog(this, "Se ha añadido un nuevo Propietario");
+                    JOptionPane.showMessageDialog(this, "Se ha modificado el Propietario");
                 }
                 jTextField1.setVisible(false);
            jSpinner1.setVisible(true);
@@ -660,7 +697,10 @@ private void okButtonMouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:ev
             jLabel9.setVisible(true);
             
         }
-         doClose(RET_CANCEL);// TODO add your handling code here:
+        if(sicierras==1){
+            this.doClose(RET_OK);
+        }
+       
 }//GEN-LAST:event_okButtonMouseClicked
 
 private void jTextField1KeyTyped(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_jTextField1KeyTyped
@@ -708,7 +748,58 @@ private void jTextArea1KeyTyped(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_
         
         // TODO add your handling code here:
     }//GEN-LAST:event_jButton3ActionPerformed
+
+    private void jButton4ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton4ActionPerformed
+    bloqueo b = new bloqueo(conex);
+     pideclave();
+    if(desbloqueado)
+    {
+        if(b.isbloqued()){
+             int op = JOptionPane.showConfirmDialog(this, "Desea Desbloquear el contratista?","Desbloquear Contratista", JOptionPane.YES_NO_OPTION);
+            if(op==JOptionPane.YES_OPTION)
+            {
+                b.actualiza(0);
+            }
+        }else{
+            int op = JOptionPane.showConfirmDialog(this, "Desea Bloquear el contratista?","Bloquear Contratista", JOptionPane.YES_NO_OPTION);
+            if(op==JOptionPane.YES_OPTION)
+            {
+                b.actualiza(1);
+            }
+        }
+         bloqueaboton(!b.isbloqued());
+    }        // TODO add your handling code here:
+    }//GEN-LAST:event_jButton4ActionPerformed
+
+    private void jButton5ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton5ActionPerformed
+        edita=1;
+        nuevo=0;
+        viejo();
+        definemodelo();
+        buscaPropietario contrat = new buscaPropietario(null, true, conex,this);
+        Toolkit tk = Toolkit.getDefaultToolkit();
+        Dimension tama = tk.getScreenSize();
+        int x = (tama.width/2)-600/2;
+        int y = (tama.height/2)-400/2;
+        contrat.setBounds(x, y, 600, 400);
+        contrat.setVisible(true);        // TODO add your handling code here:
+    }//GEN-LAST:event_jButton5ActionPerformed
+   private void viejo(){
+        Rectangle rect = new Rectangle();
+        jTextField1.setVisible(false);
+        rect.setBounds(jSpinner1.getBounds());
+        jSpinner1.setVisible(true);        
+        jSpinner1.setBounds(rect);
+        
+    }
     
+    private void pideclave(){
+        claveAdmin admin = new claveAdmin(null, true,this,conex);
+        int xi=(int)(this.getWidth()/2)-400/2;
+        int yi = (int) (this.getHeight()/2)-200/2;
+        admin.setBounds(xi, yi, 400, 200);
+        admin.setVisible(true);
+    }
     private void doClose(int retStatus) {
         returnStatus = retStatus;
         setVisible(false);
@@ -724,6 +815,8 @@ private void jTextArea1KeyTyped(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_
     private javax.swing.JButton jButton1;
     private javax.swing.JButton jButton2;
     private javax.swing.JButton jButton3;
+    private javax.swing.JButton jButton4;
+    private javax.swing.JButton jButton5;
     private javax.swing.JLabel jLabel1;
     private javax.swing.JLabel jLabel10;
     private javax.swing.JLabel jLabel12;
@@ -737,7 +830,6 @@ private void jTextArea1KeyTyped(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_
     private javax.swing.JLabel jLabel9;
     private javax.swing.JPanel jPanel1;
     private javax.swing.JPanel jPanel2;
-    private javax.swing.JPanel jPanel3;
     private javax.swing.JPanel jPanel4;
     private javax.swing.JScrollPane jScrollPane1;
     private javax.swing.JScrollPane jScrollPane2;

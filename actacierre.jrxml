@@ -1,0 +1,342 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<jasperReport xmlns="http://jasperreports.sourceforge.net/jasperreports" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports http://jasperreports.sourceforge.net/xsd/jasperreport.xsd" name="actainicio" language="groovy" pageWidth="612" pageHeight="792" whenNoDataType="BlankPage" columnWidth="555" leftMargin="20" rightMargin="20" topMargin="20" bottomMargin="20" whenResourceMissingType="Empty" uuid="c51295ea-573a-4109-8317-0af48906ce32">
+	<property name="ireport.zoom" value="1.4641000000000006"/>
+	<property name="ireport.x" value="0"/>
+	<property name="ireport.y" value="200"/>
+	<parameter name="mpres" class="java.lang.String">
+		<defaultValueExpression><![CDATA[$P{mpres}]]></defaultValueExpression>
+	</parameter>
+	<parameter name="obra" class="java.lang.String"/>
+	<parameter name="ubicacion" class="java.lang.String"/>
+	<parameter name="contratista" class="java.lang.String"/>
+	<parameter name="representante" class="java.lang.String"/>
+	<parameter name="residente" class="java.lang.String"/>
+	<parameter name="inspector" class="java.lang.String"/>
+	<parameter name="cedinspector" class="java.lang.String"/>
+	<parameter name="civinspector" class="java.lang.String"/>
+	<parameter name="cedrepresentante" class="java.lang.String"/>
+	<parameter name="cedresidente" class="java.lang.String"/>
+	<parameter name="civresidente" class="java.lang.String"/>
+	<parameter name="fecha" class="java.lang.String"/>
+	<parameter name="texto" class="java.lang.String"/>
+	<parameter name="texto2" class="java.lang.String"/>
+	<parameter name="titulo" class="java.lang.String"/>
+	<queryString>
+		<![CDATA[SELECT
+     IFNULL(mconts.`logo`,"") AS mconts_logo,
+     IFNULL(mprops.`logo`,"") AS mprops_logo,
+     mpres.`nombre` AS mpres_nombre,
+     mpres.`ubicac` AS mpres_ubicac,
+     mconts.`encabe` AS mconts_encabe,
+     mpres.`nrocon` AS mpres_nrocon,
+     IFNULL(mpres.`fecapr`,'') AS mpres_fecapr
+FROM
+     `mprops` mprops INNER JOIN `mpres` mpres ON mprops.`id` = mpres.`codpro`
+     INNER JOIN `mconts` mconts ON mpres.`codcon` = mconts.`id`]]>
+	</queryString>
+	<field name="mconts_logo" class="java.lang.Object"/>
+	<field name="mprops_logo" class="java.lang.Object"/>
+	<field name="mpres_nombre" class="java.lang.String"/>
+	<field name="mpres_ubicac" class="java.lang.String"/>
+	<field name="mconts_encabe" class="java.lang.String"/>
+	<field name="mpres_nrocon" class="java.lang.String"/>
+	<field name="mpres_fecapr" class="java.lang.String"/>
+	<background>
+		<band splitType="Stretch"/>
+	</background>
+	<pageHeader>
+		<band height="156" splitType="Stretch">
+			<textField isBlankWhenNull="true">
+				<reportElement uuid="8c9e454e-178e-4f59-b120-697662a277ee" x="152" y="0" width="264" height="58"/>
+				<textElement textAlignment="Center">
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{mconts_encabe}]]></textFieldExpression>
+			</textField>
+			<image onErrorType="Blank">
+				<reportElement uuid="89d24f15-6530-4527-b70f-f3b369c312d5" x="0" y="0" width="152" height="58"/>
+				<imageExpression><![CDATA[JRImageRenderer.getInstance((byte []) $F{mconts_logo})]]></imageExpression>
+			</image>
+			<image hAlign="Right" onErrorType="Blank">
+				<reportElement uuid="026b73da-7881-46de-a037-8ccd5f53e506" x="416" y="0" width="156" height="58"/>
+				<imageExpression><![CDATA[JRImageRenderer.getInstance((byte []) $F{mprops_logo})]]></imageExpression>
+			</image>
+			<textField isBlankWhenNull="true">
+				<reportElement uuid="182aa1c4-575f-42be-a1d4-87b675b22b25" x="129" y="117" width="169" height="20"/>
+				<box leftPadding="5"/>
+				<textElement verticalAlignment="Middle">
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{mpres_nrocon}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement uuid="6da9a68f-964e-4375-a4b9-fed964372ae1" x="0" y="117" width="129" height="20"/>
+				<box leftPadding="10"/>
+				<textElement verticalAlignment="Middle">
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[CONTRATO:]]></text>
+			</staticText>
+			<staticText>
+				<reportElement uuid="445a4a9e-7d1c-48e8-9056-f4765d7ee124" x="298" y="117" width="118" height="20"/>
+				<box leftPadding="5"/>
+				<textElement verticalAlignment="Middle">
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[FECHA DE CONTRATO:]]></text>
+			</staticText>
+			<staticText>
+				<reportElement uuid="59ab1619-d8c3-492e-a374-201ad055ad1c" stretchType="RelativeToTallestObject" x="0" y="98" width="129" height="20"/>
+				<box leftPadding="10"/>
+				<textElement verticalAlignment="Middle">
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[OBRA:]]></text>
+			</staticText>
+			<staticText>
+				<reportElement uuid="194d3258-dc86-4d19-bb54-4c0c1d3fe4c9" x="0" y="136" width="129" height="20"/>
+				<box leftPadding="10"/>
+				<textElement verticalAlignment="Middle">
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[REPRESENTANTE:]]></text>
+			</staticText>
+			<textField isStretchWithOverflow="true" isBlankWhenNull="true">
+				<reportElement uuid="e821a235-d705-406f-b8b2-c689671b1807" x="129" y="98" width="443" height="20"/>
+				<box leftPadding="5" rightPadding="5"/>
+				<textElement textAlignment="Justified" verticalAlignment="Middle">
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$P{obra}]]></textFieldExpression>
+			</textField>
+			<textField isBlankWhenNull="true">
+				<reportElement uuid="568cc4ce-eb47-4e00-b61b-d2ad2b4ea3d3" x="129" y="136" width="443" height="20"/>
+				<box leftPadding="5" rightPadding="5"/>
+				<textElement textAlignment="Justified" verticalAlignment="Middle">
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$P{representante}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement uuid="6461db95-4e6d-4a1a-823c-4089289d7d27" x="416" y="117" width="156" height="20"/>
+				<box leftPadding="5"/>
+				<textElement verticalAlignment="Middle">
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{mpres_fecapr}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement uuid="8686508a-7d3a-437c-afb5-48f266ff5550" x="469" y="77" width="100" height="20"/>
+				<textElement textAlignment="Right" verticalAlignment="Middle">
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$P{fecha}]]></textFieldExpression>
+			</textField>
+		</band>
+	</pageHeader>
+	<detail>
+		<band height="412" splitType="Stretch">
+			<staticText>
+				<reportElement uuid="7e9e90d0-122f-433b-a033-0d6e0ad11d6e" x="19" y="213" width="172" height="20"/>
+				<box>
+					<bottomPen lineWidth="1.0"/>
+				</box>
+				<textElement verticalAlignment="Middle">
+					<font isBold="true"/>
+				</textElement>
+				<text><![CDATA[POR EL EJECUTIVO]]></text>
+			</staticText>
+			<staticText>
+				<reportElement uuid="0a57993d-540f-45cd-8a3f-c71ef601abc9" x="358" y="332" width="197" height="20"/>
+				<box>
+					<topPen lineWidth="1.0"/>
+				</box>
+				<textElement verticalAlignment="Middle">
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[ING. y/o ARQ. RESIDENTE DE LA OBRA:]]></text>
+			</staticText>
+			<staticText>
+				<reportElement uuid="88d40e40-c9aa-48b7-8836-62e933f59d9c" x="19" y="233" width="172" height="20"/>
+				<textElement verticalAlignment="Middle">
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[ING. y/o ARQ. INSPECTOR DE LA OBRA:]]></text>
+			</staticText>
+			<staticText>
+				<reportElement uuid="7be6c66e-2162-40c9-9437-ee85683acde6" stretchType="RelativeToTallestObject" x="19" y="253" width="39" height="20"/>
+				<textElement verticalAlignment="Middle">
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[NOMBRE:]]></text>
+			</staticText>
+			<staticText>
+				<reportElement uuid="a7937337-5702-4adf-bb51-ed7f43bbb1d0" stretchType="RelativeToTallestObject" x="19" y="272" width="39" height="20"/>
+				<textElement verticalAlignment="Middle">
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[C.I No.]]></text>
+			</staticText>
+			<staticText>
+				<reportElement uuid="91c3b101-5149-41de-b32e-c312ff4bcc5b" stretchType="RelativeToTallestObject" x="19" y="292" width="39" height="20"/>
+				<textElement verticalAlignment="Middle">
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[CIV:]]></text>
+			</staticText>
+			<staticText>
+				<reportElement uuid="e649c44f-d07c-48f1-90db-38d02330dbcd" x="19" y="312" width="536" height="20"/>
+				<box>
+					<bottomPen lineWidth="0.0"/>
+				</box>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font isBold="true"/>
+				</textElement>
+				<text><![CDATA[POR LA CONTRATISTA]]></text>
+			</staticText>
+			<staticText>
+				<reportElement uuid="eda21752-1f88-4ad5-bfae-d5bee5e5c379" x="19" y="332" width="172" height="20"/>
+				<box>
+					<topPen lineWidth="1.0"/>
+				</box>
+				<textElement verticalAlignment="Middle">
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[REPRESENTANTE DE LA OBRA:]]></text>
+			</staticText>
+			<staticText>
+				<reportElement uuid="458191ce-4f39-47f8-8eff-11e21c3f2247" stretchType="RelativeToTallestObject" x="358" y="372" width="39" height="20"/>
+				<textElement verticalAlignment="Middle">
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[C.I No.]]></text>
+			</staticText>
+			<staticText>
+				<reportElement uuid="6901b9b0-db5a-4f04-83f6-87d2d96f0b52" stretchType="RelativeToTallestObject" x="358" y="353" width="39" height="20"/>
+				<textElement verticalAlignment="Middle">
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[NOMBRE:]]></text>
+			</staticText>
+			<staticText>
+				<reportElement uuid="3f54e0f5-9995-4e0c-bdf2-008e0d53d794" stretchType="RelativeToTallestObject" x="358" y="392" width="39" height="20"/>
+				<textElement verticalAlignment="Middle">
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[CIV:]]></text>
+			</staticText>
+			<staticText>
+				<reportElement uuid="c647b710-7f6b-4b00-a062-a78a4bb5bd80" stretchType="RelativeToTallestObject" x="19" y="371" width="39" height="20"/>
+				<textElement verticalAlignment="Middle">
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[C.I No.]]></text>
+			</staticText>
+			<staticText>
+				<reportElement uuid="f8b969bc-1075-4c6e-b0d4-18ec02627e6b" stretchType="RelativeToTallestObject" x="19" y="352" width="39" height="20"/>
+				<textElement verticalAlignment="Middle">
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[NOMBRE:]]></text>
+			</staticText>
+			<textField isBlankWhenNull="true">
+				<reportElement uuid="a4f5a206-7a04-4257-bd8f-ec9773ff25c0" x="58" y="272" width="133" height="20"/>
+				<textElement textAlignment="Right" verticalAlignment="Middle">
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$P{cedinspector}]]></textFieldExpression>
+			</textField>
+			<textField isBlankWhenNull="true">
+				<reportElement uuid="7f28f9b4-49ea-433f-a421-7f294016fb00" x="58" y="253" width="133" height="20"/>
+				<box leftPadding="0" rightPadding="0"/>
+				<textElement textAlignment="Right" verticalAlignment="Middle">
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$P{inspector}]]></textFieldExpression>
+			</textField>
+			<textField isBlankWhenNull="true">
+				<reportElement uuid="35588fdd-a418-4d57-8ef5-c4c9da17ce79" x="58" y="292" width="133" height="20"/>
+				<textElement textAlignment="Right" verticalAlignment="Middle">
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$P{civinspector}]]></textFieldExpression>
+			</textField>
+			<textField isBlankWhenNull="true">
+				<reportElement uuid="38e7d9df-dcac-44e7-8a6e-651e8c83d0fc" x="58" y="352" width="133" height="20"/>
+				<box leftPadding="0" rightPadding="0"/>
+				<textElement textAlignment="Right" verticalAlignment="Middle">
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$P{representante}]]></textFieldExpression>
+			</textField>
+			<textField isBlankWhenNull="true">
+				<reportElement uuid="253e56db-5d8e-45a6-979d-1a3b266dec45" x="58" y="371" width="133" height="20"/>
+				<textElement textAlignment="Right" verticalAlignment="Middle">
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$P{cedrepresentante}]]></textFieldExpression>
+			</textField>
+			<textField isBlankWhenNull="true">
+				<reportElement uuid="bd381dd8-3f67-44dd-9100-8665e25df885" x="397" y="353" width="158" height="20"/>
+				<box leftPadding="0" rightPadding="0"/>
+				<textElement textAlignment="Right" verticalAlignment="Middle">
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$P{residente}]]></textFieldExpression>
+			</textField>
+			<textField isBlankWhenNull="true">
+				<reportElement uuid="c2847b35-4af6-488b-a2a1-d28d28b1da33" x="397" y="372" width="158" height="20"/>
+				<textElement textAlignment="Right" verticalAlignment="Middle">
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$P{cedresidente}]]></textFieldExpression>
+			</textField>
+			<textField isBlankWhenNull="true">
+				<reportElement uuid="3bee8f6b-7cdc-4f20-8a82-b75fc613d6eb" x="397" y="392" width="158" height="20"/>
+				<textElement textAlignment="Right" verticalAlignment="Middle">
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$P{civresidente}]]></textFieldExpression>
+			</textField>
+			<textField isStretchWithOverflow="true" isBlankWhenNull="true">
+				<reportElement uuid="40d69236-fa56-4d4e-b78f-c33120820c99" stretchType="RelativeToBandHeight" x="19" y="31" width="536" height="94"/>
+				<textElement textAlignment="Justified"/>
+				<textFieldExpression><![CDATA[$P{texto}]]></textFieldExpression>
+			</textField>
+			<textField isStretchWithOverflow="true" isBlankWhenNull="true">
+				<reportElement uuid="4508dd47-ae18-4cbf-9ced-b2ebd4dcb7a5" positionType="FixRelativeToBottom" stretchType="RelativeToTallestObject" x="19" y="150" width="536" height="43"/>
+				<box topPadding="5"/>
+				<textElement textAlignment="Justified"/>
+				<textFieldExpression><![CDATA[$P{texto2}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement uuid="4de09b60-9847-41be-9c6d-f6db95564dbb" x="1" y="9" width="569" height="20"/>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$P{titulo}]]></textFieldExpression>
+			</textField>
+		</band>
+	</detail>
+	<pageFooter>
+		<band height="23" splitType="Stretch">
+			<staticText>
+				<reportElement uuid="05670946-180d-4282-8469-375448f8dac6" x="1" y="2" width="570" height="11"/>
+				<box>
+					<topPen lineWidth="1.0"/>
+				</box>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font size="6" isBold="true"/>
+				</textElement>
+				<text><![CDATA[SPAPU (Sistemas R.H. C.A.)  San Cristóbal Edo. Táchira, Barrio Obrero Carrera 18 Entre calles 8 y 9 Edf. Marcol's No. 8-23 ]]></text>
+			</staticText>
+			<textField>
+				<reportElement uuid="5ba41c17-e6a0-48f6-9115-d877e16c8a55" x="0" y="12" width="570" height="11"/>
+				<textElement textAlignment="Center" verticalAlignment="Middle" markup="none">
+					<font size="6" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA["0276-3567564 / 0276-3553158 / 0276-3560071 / 0276-3579562 www.spapu.net / Facebook: SPAPU.SISTEMASRH / Twitter: @Spapu"]]></textFieldExpression>
+			</textField>
+		</band>
+	</pageFooter>
+</jasperReport>

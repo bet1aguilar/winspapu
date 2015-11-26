@@ -4,8 +4,10 @@
  */
 package presupuestos;
 
-import com.mysql.jdbc.Connection;
+import java.sql.Connection;
 import com.mysql.jdbc.Statement;
+import config.Redondeo;
+import java.math.BigDecimal;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.logging.Level;
@@ -16,11 +18,12 @@ import java.util.logging.Logger;
  * @author Betmart
  */
 public class calculapartidas {
-    Connection conex;
+    private Connection conex;
     String mpres, numero;
-    float admin=0,conteq=0,contmat=0,contmano=0, contotal=0;
-    float util=0,finan=0,impart=0;
-    float prest=0;
+    Redondeo redondear = new Redondeo();
+    BigDecimal admin= new BigDecimal("0.00"),conteq=new BigDecimal("0.00"),contmat=new BigDecimal("0.00"),contmano=new BigDecimal("0.00"), contotal=new BigDecimal("0.00");
+    BigDecimal util=new BigDecimal("0.00"),finan=new BigDecimal("0.00"),impart=new BigDecimal("0.00");
+    BigDecimal prest=new BigDecimal("0.00");
     public calculapartidas(Connection conex, String mpres, String numpartida){
         this.mpres=mpres;
         this.numero=numpartida;
@@ -31,15 +34,15 @@ public class calculapartidas {
     public final void cambiapreciopartida(){
         //AL CAMBIAR UN VALOR DE LOS PARAMETROS DEL PRESUPUESTO COMO LOS PORCENTAJES DE PRESTACIONES SOCIALES
         // SE RECALCULA EL COSTO DE TODAS LAS PARTIDAS      
-        float rendimi=0;
-        float cantidad=0,bono=0,subsid=0;
+        BigDecimal rendimi=new BigDecimal("0.00");
+        BigDecimal cantidad=new BigDecimal("0.00"),bono=new BigDecimal("0.00"),subsid=new BigDecimal("0.00");
         //CONSULTA RENDIMIENTO DE LA PARTIDA
         String selecrendimi = "SELECT rendimi FROM mppres WHERE numero="+numero+" AND mpre_id='"+mpres+"'";
         try {
             Statement sts = (Statement) conex.createStatement();
             ResultSet rsts = sts.executeQuery(selecrendimi);
             while(rsts.next()){
-                rendimi=rsts.getFloat(1);
+                rendimi=rsts.getBigDecimal(1);
             }
         } catch (SQLException ex) {
             System.out.println("Error al consultar el rendimiento de la partida, cuando se va a insertar en una nueva reconsideración");
@@ -54,7 +57,7 @@ public class calculapartidas {
             Statement st = (Statement) conex.createStatement();
             ResultSet rst = st.executeQuery(totalmaterial);
             while(rst.next()){
-              contmat = rst.getFloat("total");
+              contmat = rst.getBigDecimal("total");
             }
         } catch (SQLException ex) {
             System.out.println("Error al Sumar materiales de la partida de la valuación para agregarla en reconsideración");
@@ -69,7 +72,7 @@ public class calculapartidas {
             Statement st= (Statement) conex.createStatement();
             ResultSet rst = st.executeQuery(totalequipo);
             while(rst.next()){
-                conteq=rst.getFloat(1);
+                conteq=rst.getBigDecimal(1);
             }
         } catch (SQLException ex) {
             System.out.println("Error al consultar el total en equipos para la inserción de partidas en la reconsideración");
@@ -84,31 +87,31 @@ public class calculapartidas {
             Statement st = (Statement) conex.createStatement();
             ResultSet rst = st.executeQuery(consultamano);
             while(rst.next()){
-                contmano = rst.getFloat("total");
-                cantidad = rst.getFloat("cantidad");
-                bono = rst.getFloat("mm.bono");
-                subsid = rst.getFloat("mm.subsid");
+                contmano = rst.getBigDecimal("total");
+                cantidad = rst.getBigDecimal("cantidad");
+                bono = rst.getBigDecimal("mm.bono");
+                subsid = rst.getBigDecimal("mm.subsid");
             }
         } catch (SQLException ex) {
             System.out.println("Error al sumar la cantidad de mano de obra en la inserción de la reconsideración");
             Logger.getLogger(calculapartidas.class.getName()).log(Level.SEVERE, null, ex);
         }
-        bono = cantidad*bono;
-        subsid = cantidad*subsid;
-        prest = contmano*prest;
-        float auxcontmano = contmano+bono+subsid+prest;
-        if(rendimi==0)
-            rendimi=1;
-        contmano=auxcontmano/rendimi;
-        conteq=conteq/rendimi;
-        float total = contmat+conteq+contmano;
-        float auxtotal=total;
-        admin = total*admin;
-        util=(auxtotal+admin)*util;
-        auxtotal=total+admin+util;
-        finan=auxtotal*finan;
-        impart=auxtotal*impart;
-        total=auxtotal+finan+impart;
+        bono = redondear.redondearDosDecimales(cantidad.multiply(bono));
+        subsid = redondear.redondearDosDecimales(cantidad.multiply(subsid));
+        prest = redondear.redondearDosDecimales(contmano.multiply(prest));
+        BigDecimal auxcontmano = contmano.add(bono).add(subsid).add(prest);
+        if(rendimi==new BigDecimal("0.00"))
+            rendimi=new BigDecimal("1.00");
+        contmano=auxcontmano.divide(rendimi,2,BigDecimal.ROUND_HALF_UP);
+        conteq=conteq.divide(rendimi,2,BigDecimal.ROUND_HALF_UP);
+        BigDecimal total = contmat.add(conteq).add(contmano);
+        BigDecimal auxtotal=total;
+        admin = redondear.redondearDosDecimales(total.multiply(admin));
+        util=redondear.redondearDosDecimales((auxtotal.add(admin)).multiply(util));
+        auxtotal=total.add(admin).add(util);
+        finan=redondear.redondearDosDecimales(auxtotal.multiply(finan));
+        impart=redondear.redondearDosDecimales(auxtotal.multiply(impart));
+        total=auxtotal.add(finan).add(impart);
         String actualiza="UPDATE mppres SET precunit="+total+" WHERE numero="+numero+" AND mpre_id='"+mpres+"'";
         try {
             Statement sta = (Statement) conex.createStatement();
@@ -121,40 +124,40 @@ public class calculapartidas {
     public final void buscaparametros(){
         String selecpart = "SELECT porcgad, porcpre, porcutil FROM mppres WHERE mpre_id='"+mpres+"' AND numero="+numero+"";
         String selecpres = "SELECT porgam,porcfi,poripa,porpre,poruti FROM mpres WHERE id='"+mpres+"'";
-        String adminpart=null,prestpart=null,utilpart=null,adminpres=null,prestpres=null,utilpres=null;
+        BigDecimal adminpart=new BigDecimal("0.00"),prestpart=new BigDecimal("0.00"),utilpart=new BigDecimal("0.00"),adminpres=new BigDecimal("0.00"),prestpres=new BigDecimal("0.00"),utilpres=new BigDecimal("0.00");
         
         try {
             Statement st = (Statement) conex.createStatement();
             ResultSet rst = st.executeQuery(selecpart);
             while(rst.next()){
-                adminpart=rst.getString("porcgad");
-                prestpart=rst.getString("porcpre");
-                utilpart=rst.getString("porcutil");
+                adminpart=rst.getBigDecimal("porcgad");
+                prestpart=rst.getBigDecimal("porcpre");
+                utilpart=rst.getBigDecimal("porcutil");
             }
            Statement stpres = (Statement) conex.createStatement();
            ResultSet rstpres = stpres.executeQuery(selecpres);
            while(rstpres.next()){
-               adminpres=rstpres.getString("porgam");
-               prestpres = rstpres.getString("porpre");
-               utilpres = rstpres.getString("poruti");
-               finan = rstpres.getFloat("porcfi")/100;
-               impart=rstpres.getFloat("poripa");
+               adminpres=rstpres.getBigDecimal("porgam");
+               prestpres = rstpres.getBigDecimal("porpre");
+               utilpres = rstpres.getBigDecimal("poruti");
+               finan = rstpres.getBigDecimal("porcfi").divide(new BigDecimal("100"));
+               impart=rstpres.getBigDecimal("poripa");
                
            }
           if(adminpart==null){
-              admin=Float.valueOf(adminpres)/100;
+              admin=(adminpres).divide(new BigDecimal("100"));
           }else{
-              admin=Float.valueOf(adminpart)/100;
+              admin=(adminpart).divide(new BigDecimal("100"));
           }
           if(prestpart==null){
-              prest=Float.valueOf(prestpres)/100;
+              prest=(prestpres).divide(new BigDecimal("100"));
           }else{
-              prest=Float.valueOf(prestpart)/100;
+              prest=(prestpart).divide(new BigDecimal("100"));
           }
           if(utilpart==null){
-              util=Float.valueOf(utilpres)/100;             
+              util=(utilpres).divide(new BigDecimal("100"));             
           }else{
-              util=Float.valueOf(utilpart)/100;
+              util= utilpart.divide(new BigDecimal("100"));
           }
         } catch (SQLException ex) {
             Logger.getLogger(calculapartidas.class.getName()).log(Level.SEVERE, null, ex);

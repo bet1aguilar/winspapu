@@ -9,11 +9,12 @@
  * Created on 06/11/2013, 03:47:46 PM
  */
 package valuaciones;
-
-import com.mysql.jdbc.Connection;
+import java.sql.Connection;
 import com.mysql.jdbc.Statement;
+import config.Redondeo;
 import java.awt.event.ActionEvent;
 import java.awt.event.KeyEvent;
+import java.math.BigDecimal;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.logging.Level;
@@ -22,7 +23,6 @@ import javax.swing.AbstractAction;
 import javax.swing.ActionMap;
 import javax.swing.InputMap;
 import javax.swing.JComponent;
-import javax.swing.JOptionPane;
 import javax.swing.KeyStroke;
 import javax.swing.table.DefaultTableModel;
 
@@ -36,7 +36,8 @@ public class detallepres extends javax.swing.JDialog {
     public static final int RET_CANCEL = 0;
     /** A return status code - returned if OK button has been pressed */
     public static final int RET_OK = 1;
-    Connection conex;
+    private Connection conex;
+    Redondeo redon = new Redondeo();
     String pres="";
             
     /** Creates new form detallepres */
@@ -66,7 +67,7 @@ public class detallepres extends javax.swing.JDialog {
     }
     public final void buscapres(){
         String covenin="";
-        float acumaum=0, acumdismi=0, acumvari=0, acumnp=0, acumoe=0, acumoa=0, acumoc=0;
+        BigDecimal acumaum=new BigDecimal("0.00"), acumdismi=new BigDecimal("0.00"), acumvari=new BigDecimal("0.00"), acumnp=new BigDecimal("0.00"), acumoe=new BigDecimal("0.00"), acumoa=new BigDecimal("0.00"), acumoc=new BigDecimal("0.00");
         try {
             
            int pos=1;
@@ -82,7 +83,7 @@ public class detallepres extends javax.swing.JDialog {
                    if (columna == 0) {
                         return Integer.class;
                     }
-                    if(columna>1){
+                    if(columna>0){
                         return Double.class;
                     }
 
@@ -101,120 +102,131 @@ public class detallepres extends javax.swing.JDialog {
              mepres.addColumn("OC");
              while(pos<31){
                  Object[] filas = new Object[8];
-                 float cantaumento = 0, precunitaumento = 0, cantdismi=0, precunitdismi=0;
-                 float precunitvaria=0, cantvari=0, precnp=0, cantnp=0,cantoa=0, cantoe=0, cantoc=0;
-                 float precoa=0, precoe=0, precoc=0;
-                 filas[0]=pos-1;
-                 
-                 String aumentopart = "SELECT SUM(a.aumento), SUM(IF(precasu=0,precunit,precasu)) as precunit"
+                 BigDecimal cantaumento = new BigDecimal("0.00"), precunitaumento = new BigDecimal("0.00"), cantdismi=new BigDecimal("0.00"), precunitdismi=new BigDecimal("0.00");
+                 BigDecimal precunitvaria=new BigDecimal("0.00"), cantvari=new BigDecimal("0.00"), precnp=new BigDecimal("0.00"), cantnp=new BigDecimal("0.00"),cantoa=new BigDecimal("0.00"), cantoe=new BigDecimal("0.00"), cantoc=new BigDecimal("0.00");
+                 BigDecimal precoa=new BigDecimal("0.00"), precoe=new BigDecimal("0.00"), precoc=new BigDecimal("0.00");
+                 filas[0]=pos;
+                 //AUMENTOS
+                 String aumentopart = "SELECT IFNULL(SUM(ROUND(IFNULL(ROUND(a.aumento,2),0)*IFNULL(IF(precasu=0,precunit,precasu),0),2)),0) as precunit"
                          + " FROM admppres a, mppres m WHERE  "
-                         + " (a.mpre_id='"+pres+"' OR a.mpre_id IN (SELECT id FROM mpres WHERE mpres_id='"+pres+"') "
-                         + ") AND (m.mpre_id='"+pres+"' OR m.mpre_id IN (SELECT id FROM mpres WHERE mpres_id='"+pres+"'))"
-                         + " AND a.numepart = m.numero AND a.payd_id="+pos+" AND a.aumento>0";
+                         + " (a.mpre_id='"+pres+"' OR a.mpre_id IN (SELECT id FROM mpres WHERE mpres_id='"+pres+"'))"
+                             + "AND (m.mpre_id='"+pres+"' OR m.mpre_id IN (SELECT id FROM mpres WHERE mpres_id='"+pres+"'))"
+                           + " AND a.payd_id='"+pos+"' AND (m.mpre_id = a.mpre_id OR m.mpre_id IN "
+                         + "(SELECT id FROM mpres WHERE mpres_id=a.mpre_id)) AND m.numero = a.numepart AND "
+                             + "a.aumento>0 ORDER BY numegrup";
                  Statement saumento = (Statement) conex.createStatement();
                  ResultSet rsaument = saumento.executeQuery(aumentopart);
                  while(rsaument.next()){
-                     cantaumento=rsaument.getFloat(1);
-                     precunitaumento = rsaument.getFloat(2);
+                     precunitaumento = rsaument.getBigDecimal(1);
                  }
-                 precunitaumento = cantaumento*precunitaumento;
-                 acumaum+=precunitaumento;
+                 acumaum = acumaum.add(precunitaumento);
                   filas[1]=precunitaumento;
-                  
-                  String dismi = "SELECT SUM(a.disminucion), SUM(IF(precasu=0,precunit,precasu)) as precunit"
-                          + " FROM admppres a, mppres m WHERE  "
-                         + "(a.mpre_id='"+pres+"' OR a.mpre_id IN (SELECT id FROM mpres WHERE "
-                          + "mpres_id='"+pres+"') "
-                         + ") AND (m.mpre_id='"+pres+"' OR m.mpre_id IN (SELECT id FROM mpres "
-                          + "WHERE mpres_id='"+pres+"'))"
-                         + " AND a.numepart = m.numero AND a.payd_id="+pos+" AND a.disminucion>0";
+                  //DISMINUCIONES
+                  String dismi = "SELECT IFNULL(SUM(ROUND(IFNULL(ROUND(a.disminucion,2),0)*IFNULL(IF(precasu=0,precunit,precasu),0),2)),0) as precunit"
+                         + " FROM admppres a, mppres m WHERE  "
+                         + " (a.mpre_id='"+pres+"' OR a.mpre_id IN (SELECT id FROM mpres WHERE mpres_id='"+pres+"'))"
+                             + "AND (m.mpre_id='"+pres+"' OR m.mpre_id IN (SELECT id FROM mpres WHERE mpres_id='"+pres+"'))"
+                           + " AND a.payd_id='"+pos+"' AND (m.mpre_id = a.mpre_id OR m.mpre_id IN "
+                         + "(SELECT id FROM mpres WHERE mpres_id=a.mpre_id)) AND m.numero = a.numepart AND "
+                             + "a.disminucion>0 ORDER BY numegrup";
                   System.out.println("dismi "+dismi);
                   Statement sdisminuacion = (Statement) conex.createStatement();
                  ResultSet rsdismi = sdisminuacion.executeQuery(dismi);
-                 while(rsdismi.next()){
-                     cantdismi=rsdismi.getFloat(1);
-                     precunitdismi = rsdismi.getFloat(2);
-                 }
+                 while(rsdismi.next())
+                   
+                     precunitdismi = rsdismi.getBigDecimal(1);
                  
-                 precunitdismi = cantdismi*precunitdismi;
+                
                   filas[2]=precunitdismi;
-                  acumdismi+=precunitdismi;
+                  acumdismi=acumdismi.add(precunitdismi);
+                  //VARIACIONES DE PRECIO
                   
-                  String consultavari = "SELECT SUM(IF(precasu=0, precunit, precasu)) as precunit, "
-                          + "SUM(cantidad) FROM "
-                          + "mppres WHERE tipo='VP' AND nrocuadro="+pos+1+" AND (mpre_id='"+pres+"' "
-                          + "OR mpre_id IN (SELECT id FROM"
+                  /*
+                   * 
+                   * SELECT ROUND((IF(mp.precasu = 0,mp.precunit,mp.precasu) - 
+                   * (SELECT IF(precasu = 0, precunit, precasu) FROM mppres WHERE
+                   * (mpre_id = 'COR01' OR mpre_id IN (SELECT id FROM mpres WHERE
+                            mpres_id = 'COR01'))
+                        AND numero = mp.mppre_id)) * IFNULL(mp.cantidad, 0), 2)
+                    FROM
+                        mppres as mp
+                    WHERE
+                        mp.tipo = 'VP' AND mp.nrocuadro = 1
+                            AND (mp.mpre_id = 'COR01'
+                            OR mp.mpre_id IN (SELECT 
+                                id
+                            FROM
+                                mpres
+                            WHERE
+                                mpres_id = 'COR01'))
+                   */
+                  String consultavari = "SELECT IFNULL(ROUND((IF(mp.precasu=0, mp.precunit, mp.precasu)-"
+                          + "(SELECT IF(precasu=0, precunit, precasu) FROM mppres WHERE (mpre_id='"+pres+"' "
+                          + "OR mpre_id IN (SELECT id FROM mpres WHERE mpres_id='"+pres+"')) AND numero = mp.mppre_id))"
+                          + "*IFNULL(mp.cantidad,0),2),0) FROM "
+                          + "mppres as mp WHERE mp.tipo='VP' AND mp.nrocuadro="+pos+" AND (mp.mpre_id='"+pres+"' "
+                          + "OR mp.mpre_id IN (SELECT id FROM"
                           + " mpres WHERE mpres_id='"+pres+"'))";
+                  System.out.println("consultavari "+consultavari);
                   Statement stconsutavari = (Statement) conex.createStatement();
                   ResultSet rstconsutavari = stconsutavari.executeQuery(consultavari);
                   while(rstconsutavari.next()){
-                      cantvari = rstconsutavari.getInt(2);
-                      precunitvaria = rstconsutavari.getInt(1);
+                      precunitvaria = precunitvaria.add(rstconsutavari.getBigDecimal(1));
                   }
-                  precunitvaria = precunitvaria*cantvari;
+                 
                   filas[3]=precunitvaria;
-                  acumvari+= precunitvaria;
-                  
-                  String np = "SELECT SUM(IF(precasu=0, precunit, precasu)) as precunit, "
-                          + "SUM(cantidad) FROM "
+                  acumvari= acumvari.add(precunitvaria);
+                  //NO PREVISTAS
+                  String np = "SELECT  IFNULL(SUM(ROUND(IFNULL((IF(precasu = 0, precunit, precasu)),0) *IFNULL((cantidad), 0),2)),0)  FROM "
                           + "mppres WHERE tipo='NP' AND tiponp='NP' AND nropresupuesto="+pos+" "
                           + "AND (mpre_id='"+pres+"' OR mpre_id IN (SELECT id FROM"
                           + " mpres WHERE mpres_id='"+pres+"')) ";
                  Statement stconsutanp = (Statement) conex.createStatement();
                   ResultSet rstconsutanp = stconsutanp.executeQuery(np);
                   while(rstconsutanp.next()){
-                      cantnp = rstconsutanp.getInt(2);
-                      precnp = rstconsutanp.getInt(1);
+                      precnp = rstconsutanp.getBigDecimal(1);
                   }
-                  precnp = precnp*cantnp;
                   filas[4]=precnp;
-                  acumnp+= precnp; 
+                  acumnp= acumnp.add( precnp); 
               
-                  
-                   String oa = "SELECT SUM(IF(precasu=0, precunit, precasu)) as precunit, "
-                           + "SUM(cantidad) FROM "
-                          + "mppres WHERE tipo='NP' AND tiponp='OA' AND nropresupuesto="+pos+" AND "
-                           + "(mpre_id='"+pres+"' OR mpre_id IN (SELECT id FROM"
+                  //OBRAS ADICIONALES
+                   String oa = "SELECT  IFNULL(SUM(ROUND(IFNULL((IF(precasu = 0, precunit, precasu)),0) *IFNULL((cantidad), 0),2)),0)  FROM "
+                          + "mppres WHERE tipo='NP' AND tiponp='OA' AND nropresupuesto="+pos+" "
+                          + "AND (mpre_id='"+pres+"' OR mpre_id IN (SELECT id FROM"
                           + " mpres WHERE mpres_id='"+pres+"')) ";
                  
                  Statement stconsutaoa = (Statement) conex.createStatement();
                   ResultSet rstconsutaoa = stconsutaoa.executeQuery(oa);
                   while(rstconsutaoa.next()){
-                      cantoa = rstconsutaoa.getInt(2);
-                      precoa = rstconsutaoa.getInt(1);
+                      precoa = rstconsutaoa.getBigDecimal(1);
                   }
-                  precoa = precoa*cantoa;
                   filas[5]=precoa;
-                  acumoa+= precoa; 
-                  
-                   String oe = "SELECT IF(precasu=0, precunit, precasu) as precunit, cantidad FROM "
-                          + "mppres WHERE tipo='NP' AND tiponp='OE' AND nropresupuesto="+pos+" AND "
-                           + "(mpre_id='"+pres+"' OR mpre_id IN (SELECT id FROM"
+                  acumoa= acumoa.add(precoa); 
+                  //OBRAS EXTRAS
+                   String oe = "SELECT  IFNULL(SUM(ROUND(IFNULL((IF(precasu = 0, precunit, precasu)),0) *IFNULL((cantidad), 0),2)),0)  FROM "
+                          + "mppres WHERE tipo='NP' AND tiponp='OE' AND nropresupuesto="+pos+" "
+                          + "AND (mpre_id='"+pres+"' OR mpre_id IN (SELECT id FROM"
                           + " mpres WHERE mpres_id='"+pres+"')) ";
 
                  Statement stconsutaoe = (Statement) conex.createStatement();
                   ResultSet rstconsutaoe = stconsutaoe.executeQuery(oe);
                   while(rstconsutaoe.next()){
-                      cantoe = rstconsutaoe.getInt(2);
-                      precoe = rstconsutaoe.getInt(1);
+                      precoe = rstconsutaoe.getBigDecimal(1);
                   }
-                  precoe = precoe*cantoe;
                   filas[6]=precoe;
-                  acumoe+= precoe; 
-                  
-                   String oc = "SELECT IF(precasu=0, precunit, precasu) as precunit, cantidad FROM "
-                          + "mppres WHERE tipo='NP' AND tiponp='OC' AND nropresupuesto="+pos+" AND "
-                           + "(mpre_id='"+pres+"' OR mpre_id IN (SELECT id FROM"
+                  acumoe = acumoe.add(precoe); 
+                  //OBRAS COMPLEMENTARIAS
+                   String oc = "SELECT  IFNULL(SUM(ROUND(IFNULL((IF(precasu = 0, precunit, precasu)),0) *IFNULL((cantidad), 0),2)),0)  FROM "
+                          + "mppres WHERE tipo='NP' AND tiponp='OC' AND nropresupuesto="+pos+" "
+                          + "AND (mpre_id='"+pres+"' OR mpre_id IN (SELECT id FROM"
                           + " mpres WHERE mpres_id='"+pres+"')) ";
                  Statement stconsutaoc = (Statement) conex.createStatement();
                   ResultSet rstconsutaoc = stconsutaoc.executeQuery(oc);
                   while(rstconsutaoc.next()){
-                      cantoc = rstconsutaoc.getInt(2);
-                      precoc = rstconsutaoc.getInt(1);
+                      precoc = rstconsutaoc.getBigDecimal(1);
                   }
-                  precoc = precoc*cantoc;
                   filas[7]=precoc;
-                  acumoc+= precoc; 
+                  acumoc= acumoc.add(precoc); 
                   
                   mepres.addRow(filas);
                   
@@ -231,7 +243,7 @@ public class detallepres extends javax.swing.JDialog {
         jTextField7.setText(String.valueOf(acumoa));
         jTextField8.setText(String.valueOf(acumoe));
         jTextField9.setText(String.valueOf(acumoc));
-        float acumdif = acumaum+acumvari+acumnp+acumoa+acumoe+acumoc-acumdismi;
+        BigDecimal acumdif = acumaum.add(acumvari).add(acumnp).add(acumoa).add(acumoe).add(acumoc).subtract(acumdismi);
         jTextField6.setText(String.valueOf(acumdif));
          
            
@@ -304,7 +316,7 @@ public class detallepres extends javax.swing.JDialog {
         jPanel4.setBackground(new java.awt.Color(91, 91, 95));
 
         jLabel1.setBackground(new java.awt.Color(91, 91, 95));
-        jLabel1.setFont(new java.awt.Font("Tahoma", 1, 11)); // NOI18N
+        jLabel1.setFont(new java.awt.Font("Tahoma", 1, 11));
         jLabel1.setForeground(new java.awt.Color(255, 255, 255));
         jLabel1.setHorizontalAlignment(javax.swing.SwingConstants.CENTER);
         jLabel1.setText("Detalle de Presupuesto");
@@ -321,7 +333,7 @@ public class detallepres extends javax.swing.JDialog {
             .addComponent(jLabel1, javax.swing.GroupLayout.PREFERRED_SIZE, 45, javax.swing.GroupLayout.PREFERRED_SIZE)
         );
 
-        jTable1.setFont(new java.awt.Font("Tahoma", 0, 10)); // NOI18N
+        jTable1.setFont(new java.awt.Font("Tahoma", 0, 10));
         jTable1.setModel(new javax.swing.table.DefaultTableModel(
             new Object [][] {
 
@@ -335,6 +347,7 @@ public class detallepres extends javax.swing.JDialog {
         jScrollPane1.setViewportView(jTable1);
 
         jTextField1.setEditable(false);
+        jTextField1.setFont(new java.awt.Font("Tahoma", 0, 10));
         jTextField1.setHorizontalAlignment(javax.swing.JTextField.RIGHT);
         jTextField1.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
@@ -343,6 +356,7 @@ public class detallepres extends javax.swing.JDialog {
         });
 
         jTextField2.setEditable(false);
+        jTextField2.setFont(new java.awt.Font("Tahoma", 0, 10));
         jTextField2.setHorizontalAlignment(javax.swing.JTextField.RIGHT);
         jTextField2.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
@@ -351,6 +365,7 @@ public class detallepres extends javax.swing.JDialog {
         });
 
         jTextField3.setEditable(false);
+        jTextField3.setFont(new java.awt.Font("Tahoma", 0, 10));
         jTextField3.setHorizontalAlignment(javax.swing.JTextField.RIGHT);
         jTextField3.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
@@ -359,6 +374,7 @@ public class detallepres extends javax.swing.JDialog {
         });
 
         jTextField5.setEditable(false);
+        jTextField5.setFont(new java.awt.Font("Tahoma", 0, 10));
         jTextField5.setHorizontalAlignment(javax.swing.JTextField.RIGHT);
         jTextField5.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
@@ -367,9 +383,11 @@ public class detallepres extends javax.swing.JDialog {
         });
 
         jTextField6.setEditable(false);
+        jTextField6.setFont(new java.awt.Font("Tahoma", 0, 10));
         jTextField6.setHorizontalAlignment(javax.swing.JTextField.RIGHT);
 
         jTextField7.setEditable(false);
+        jTextField7.setFont(new java.awt.Font("Tahoma", 0, 10));
         jTextField7.setHorizontalAlignment(javax.swing.JTextField.RIGHT);
         jTextField7.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
@@ -378,6 +396,7 @@ public class detallepres extends javax.swing.JDialog {
         });
 
         jTextField8.setEditable(false);
+        jTextField8.setFont(new java.awt.Font("Tahoma", 0, 10));
         jTextField8.setHorizontalAlignment(javax.swing.JTextField.RIGHT);
         jTextField8.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
@@ -386,6 +405,7 @@ public class detallepres extends javax.swing.JDialog {
         });
 
         jTextField9.setEditable(false);
+        jTextField9.setFont(new java.awt.Font("Tahoma", 0, 10));
         jTextField9.setHorizontalAlignment(javax.swing.JTextField.RIGHT);
         jTextField9.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
@@ -399,9 +419,9 @@ public class detallepres extends javax.swing.JDialog {
         jPanel3.setLayout(jPanel3Layout);
         jPanel3Layout.setHorizontalGroup(
             jPanel3Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGroup(jPanel3Layout.createSequentialGroup()
-                .addGroup(jPanel3Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                    .addGroup(jPanel3Layout.createSequentialGroup()
+            .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, jPanel3Layout.createSequentialGroup()
+                .addGroup(jPanel3Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
+                    .addGroup(javax.swing.GroupLayout.Alignment.LEADING, jPanel3Layout.createSequentialGroup()
                         .addContainerGap()
                         .addComponent(jScrollPane1, javax.swing.GroupLayout.DEFAULT_SIZE, 723, Short.MAX_VALUE))
                     .addGroup(jPanel3Layout.createSequentialGroup()
@@ -428,10 +448,10 @@ public class detallepres extends javax.swing.JDialog {
         );
         jPanel3Layout.setVerticalGroup(
             jPanel3Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGroup(jPanel3Layout.createSequentialGroup()
+            .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, jPanel3Layout.createSequentialGroup()
                 .addContainerGap()
-                .addComponent(jScrollPane1, javax.swing.GroupLayout.DEFAULT_SIZE, 223, Short.MAX_VALUE)
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                .addComponent(jScrollPane1, javax.swing.GroupLayout.PREFERRED_SIZE, 257, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
                 .addGroup(jPanel3Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
                     .addComponent(jTextField2, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                     .addComponent(jTextField1, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)

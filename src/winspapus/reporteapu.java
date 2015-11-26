@@ -57,7 +57,7 @@ public class reporteapu extends javax.swing.JDialog {
     String ruta;
     String mtabus, numero;
     String fecha ;
-     SimpleDateFormat formato = new SimpleDateFormat("dd/MM/yyyy");
+    SimpleDateFormat formato = new SimpleDateFormat("dd/MM/yyyy");
 
     public reporteapu(java.awt.Frame parent, boolean modal, Connection conex, String mtabus, String num) {
         super(parent, modal);
@@ -85,9 +85,7 @@ public class reporteapu extends javax.swing.JDialog {
     public void generareporte(){
          try {
               FileInputStream input=null;
-              
             try {
-                
                input = new FileInputStream(new File("APU.jrxml"));
             } catch (FileNotFoundException ex) {
                 JOptionPane.showMessageDialog(null, "No se encuentra el archivo del reporte "+ex.getMessage());
@@ -96,11 +94,8 @@ public class reporteapu extends javax.swing.JDialog {
             JasperDesign design = JRXmlLoader.load(input); 
             JasperReport report = JasperCompileManager.compileReport(design);
             Map parameters = new HashMap();
-            if(jRadioButton2.isSelected())
-            {
-               
-                fecha="";
-            }
+            if(jRadioButton2.isSelected())               
+                fecha="";         
             else{
             
               fecha=formato.format(jDateChooser1.getDate());
@@ -133,7 +128,7 @@ public class reporteapu extends javax.swing.JDialog {
                 Logger.getLogger(reporteapu.class.getName()).log(Level.SEVERE, null, ex);
             }
                  JRXlsExporter exporterXLS = new JRXlsExporter();
-            exporterXLS.setParameter(JRXlsExporterParameter.JASPER_PRINT, print);
+         exporterXLS.setParameter(JRXlsExporterParameter.JASPER_PRINT, print);
          exporterXLS.setParameter(JRXlsExporterParameter.OUTPUT_STREAM, outputByteArray);
          exporterXLS.setParameter(JRXlsExporterParameter.IS_ONE_PAGE_PER_SHEET, Boolean.FALSE);
          exporterXLS.setParameter(JRXlsExporterParameter.IS_DETECT_CELL_TYPE, Boolean.TRUE);

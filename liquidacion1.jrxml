@@ -2,7 +2,7 @@
 <jasperReport xmlns="http://jasperreports.sourceforge.net/jasperreports" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports http://jasperreports.sourceforge.net/xsd/jasperreport.xsd" name="liquidacion1" language="groovy" pageWidth="612" pageHeight="792" columnWidth="555" leftMargin="20" rightMargin="20" topMargin="20" bottomMargin="20" uuid="dc69826d-a550-4663-bf1e-76e2ef90d00a">
 	<property name="ireport.zoom" value="1.2100000000000062"/>
 	<property name="ireport.x" value="0"/>
-	<property name="ireport.y" value="361"/>
+	<property name="ireport.y" value="0"/>
 	<parameter name="mpres" class="java.lang.String">
 		<defaultValueExpression><![CDATA[]]></defaultValueExpression>
 	</parameter>
@@ -89,16 +89,16 @@
 		<![CDATA[SELECT
      mpres.`nombre` AS mpres_nombre,
      mpres.`ubicac` AS mpres_ubicac,
-     mprops.`logo` AS mprops_logo,
+     IFNULL(mprops.`logo`,'') AS mprops_logo,
      mconts.`nombre` AS mconts_nombre,
      mconts.`encabe` AS mconts_encabe,
      mpres.`nrocon` AS mpres_nrocon,
      mconts.`cedrep` AS mconts_cedrep,
      mconts.`repleg` AS mconts_repleg,
-     mconts.`logo` AS mconts_logo,
+     IFNULL(mconts.`logo`,'') AS mconts_logo,
      mpres.`porimp` AS mpres_porimp,
-     mvalus.`desde` AS mvalus_desde,
-     mvalus.`hasta` AS mvalus_hasta,
+      DATE_FORMAT(mvalus.`desde`,'%d/%m/%Y') AS mvalus_desde,
+     DATE_FORMAT(mvalus.`hasta`,'%d/%m/%Y') AS mvalus_hasta,
      mconts.`ingres` AS mconts_ingres,
      mconts.`cedres` AS mconts_cedres,
      mconts.`civres` AS mconts_civres,
@@ -124,8 +124,8 @@ WHERE
 	<field name="mconts_repleg" class="java.lang.String"/>
 	<field name="mconts_logo" class="java.lang.Object"/>
 	<field name="mpres_porimp" class="java.math.BigDecimal"/>
-	<field name="mvalus_desde" class="java.sql.Date"/>
-	<field name="mvalus_hasta" class="java.sql.Date"/>
+	<field name="mvalus_desde" class="java.lang.String"/>
+	<field name="mvalus_hasta" class="java.lang.String"/>
 	<field name="mconts_ingres" class="java.lang.String"/>
 	<field name="mconts_cedres" class="java.lang.String"/>
 	<field name="mconts_civres" class="java.lang.String"/>
@@ -159,7 +159,7 @@ WHERE
 		<initialValueExpression><![CDATA[0]]></initialValueExpression>
 	</variable>
 	<variable name="totaldeduc" class="java.lang.Double">
-		<variableExpression><![CDATA[$V{retlab}+$V{fielcump}+$V{amortant}+$V{valext}]]></variableExpression>
+		<variableExpression><![CDATA[$V{retlab}+$V{fielcump}+$V{amortant}+$V{valext}+0.0000001]]></variableExpression>
 		<initialValueExpression><![CDATA[0]]></initialValueExpression>
 	</variable>
 	<variable name="totaliqui" class="java.lang.Double">
@@ -193,8 +193,8 @@ WHERE
 	</background>
 	<pageHeader>
 		<band height="58" splitType="Stretch">
-			<textField isStretchWithOverflow="true">
-				<reportElement uuid="2db57f3c-24dc-4d6f-8797-16cdb2367748" x="152" y="0" width="279" height="58"/>
+			<textField isStretchWithOverflow="true" isBlankWhenNull="true">
+				<reportElement uuid="2db57f3c-24dc-4d6f-8797-16cdb2367748" x="152" y="0" width="264" height="58"/>
 				<textElement textAlignment="Center" verticalAlignment="Top">
 					<font size="8"/>
 				</textElement>
@@ -204,16 +204,16 @@ WHERE
 				<reportElement uuid="7cf7b0ee-26a5-46ae-9d2b-17ef166d5194" x="0" y="0" width="152" height="58"/>
 				<imageExpression><![CDATA[JRImageRenderer.getInstance((byte []) $F{mconts_logo})]]></imageExpression>
 			</image>
-			<image hAlign="Right">
-				<reportElement uuid="dfc9b4a5-5a55-48ee-a487-d264a17d0542" x="431" y="0" width="141" height="58"/>
+			<image hAlign="Right" onErrorType="Blank">
+				<reportElement uuid="dfc9b4a5-5a55-48ee-a487-d264a17d0542" x="416" y="0" width="156" height="58"/>
 				<imageExpression><![CDATA[JRImageRenderer.getInstance((byte []) $F{mprops_logo})]]></imageExpression>
 			</image>
 		</band>
 	</pageHeader>
 	<detail>
-		<band height="494">
+		<band height="491">
 			<staticText>
-				<reportElement uuid="a674b9d1-7bcb-4966-b291-174f830af6d1" x="-2" y="131" width="572" height="13"/>
+				<reportElement uuid="a674b9d1-7bcb-4966-b291-174f830af6d1" x="-2" y="131" width="574" height="13"/>
 				<box>
 					<pen lineWidth="1.0"/>
 					<topPen lineWidth="1.0"/>
@@ -533,7 +533,7 @@ WHERE
 				<text><![CDATA[Monto]]></text>
 			</staticText>
 			<staticText>
-				<reportElement uuid="7f966135-44de-49c8-8529-23162a369bfb" x="458" y="144" width="112" height="16"/>
+				<reportElement uuid="7f966135-44de-49c8-8529-23162a369bfb" x="458" y="144" width="114" height="16"/>
 				<box>
 					<pen lineWidth="1.0"/>
 					<topPen lineWidth="1.0"/>
@@ -547,7 +547,7 @@ WHERE
 				<text><![CDATA[Fecha Terminación:]]></text>
 			</staticText>
 			<textField>
-				<reportElement uuid="6b392c59-3a7f-46fc-8ca8-b707fb0a63e5" x="458" y="160" width="112" height="16"/>
+				<reportElement uuid="6b392c59-3a7f-46fc-8ca8-b707fb0a63e5" x="458" y="160" width="114" height="16"/>
 				<box>
 					<leftPen lineWidth="1.0"/>
 					<bottomPen lineWidth="1.0"/>
@@ -792,7 +792,7 @@ WHERE
 				<textFieldExpression><![CDATA[$V{totaldeduc}]]></textFieldExpression>
 			</textField>
 			<staticText>
-				<reportElement uuid="c4215092-64d7-4bed-8066-5c05f1905f5d" x="458" y="176" width="112" height="15"/>
+				<reportElement uuid="c4215092-64d7-4bed-8066-5c05f1905f5d" x="458" y="176" width="114" height="15"/>
 				<box>
 					<pen lineWidth="1.0"/>
 					<topPen lineWidth="1.0"/>
@@ -820,7 +820,7 @@ WHERE
 				<text><![CDATA[Fecha]]></text>
 			</staticText>
 			<staticText>
-				<reportElement uuid="521e627c-94da-4461-a4d4-d19c993894b7" x="458" y="221" width="112" height="14"/>
+				<reportElement uuid="521e627c-94da-4461-a4d4-d19c993894b7" x="458" y="221" width="114" height="14"/>
 				<box>
 					<pen lineWidth="1.0"/>
 					<topPen lineWidth="1.0"/>
@@ -834,7 +834,7 @@ WHERE
 				<text><![CDATA[Reinicio]]></text>
 			</staticText>
 			<staticText>
-				<reportElement uuid="e21bc765-1ec4-4f91-9ecf-ad5958acad21" x="458" y="250" width="112" height="15"/>
+				<reportElement uuid="e21bc765-1ec4-4f91-9ecf-ad5958acad21" x="458" y="250" width="114" height="15"/>
 				<box>
 					<pen lineWidth="1.0"/>
 					<topPen lineWidth="1.0"/>
@@ -904,7 +904,7 @@ WHERE
 				<textFieldExpression><![CDATA[$P{mespara}]]></textFieldExpression>
 			</textField>
 			<textField isBlankWhenNull="true">
-				<reportElement uuid="3878839c-d5a6-4bff-a887-c0b86da8c39b" x="541" y="191" width="29" height="30"/>
+				<reportElement uuid="3878839c-d5a6-4bff-a887-c0b86da8c39b" x="541" y="191" width="31" height="30"/>
 				<box>
 					<pen lineWidth="1.0"/>
 					<topPen lineWidth="1.0"/>
@@ -946,7 +946,7 @@ WHERE
 				<textFieldExpression><![CDATA[$P{mesreinicio}]]></textFieldExpression>
 			</textField>
 			<textField isBlankWhenNull="true">
-				<reportElement uuid="c5d170f4-5c79-41f6-859a-b984153c63fa" x="541" y="235" width="29" height="15"/>
+				<reportElement uuid="c5d170f4-5c79-41f6-859a-b984153c63fa" x="541" y="235" width="31" height="15"/>
 				<box>
 					<pen lineWidth="1.0"/>
 					<topPen lineWidth="1.0"/>
@@ -988,7 +988,7 @@ WHERE
 				<textFieldExpression><![CDATA[$P{mesprorro}]]></textFieldExpression>
 			</textField>
 			<textField isBlankWhenNull="true">
-				<reportElement uuid="831b0d71-49b0-4d7a-aa1f-8c3d56fda8d7" x="541" y="265" width="29" height="30"/>
+				<reportElement uuid="831b0d71-49b0-4d7a-aa1f-8c3d56fda8d7" x="541" y="265" width="31" height="30"/>
 				<box>
 					<pen lineWidth="1.0"/>
 					<topPen lineWidth="1.0"/>
@@ -1016,7 +1016,7 @@ WHERE
 				<text><![CDATA[TOTAL A PAGAR POR ESTA LIQUIDACIÓN (OBRA EJECUTADA-DEDUCCIONES):]]></text>
 			</staticText>
 			<textField pattern="#,##0.00" isBlankWhenNull="true">
-				<reportElement uuid="59124ec6-2b9c-4987-9005-9a9d05812172" x="458" y="295" width="112" height="14"/>
+				<reportElement uuid="59124ec6-2b9c-4987-9005-9a9d05812172" x="458" y="295" width="114" height="14"/>
 				<box>
 					<pen lineWidth="1.0"/>
 					<topPen lineWidth="1.0"/>
@@ -1044,7 +1044,7 @@ WHERE
 				<text><![CDATA[Costo de Obra:]]></text>
 			</staticText>
 			<textField pattern="#,##0.00" isBlankWhenNull="true">
-				<reportElement uuid="55107de9-f10d-4bc1-ac4d-994b6b162a83" x="458" y="309" width="112" height="12"/>
+				<reportElement uuid="55107de9-f10d-4bc1-ac4d-994b6b162a83" x="458" y="309" width="114" height="12"/>
 				<box>
 					<pen lineWidth="1.0"/>
 					<topPen lineWidth="1.0"/>
@@ -1100,7 +1100,7 @@ WHERE
 				<textFieldExpression><![CDATA[$V{costoobra}]]></textFieldExpression>
 			</textField>
 			<staticText>
-				<reportElement uuid="eba2dc57-1927-4690-837a-f896d7d4980b" x="-2" y="321" width="572" height="13"/>
+				<reportElement uuid="eba2dc57-1927-4690-837a-f896d7d4980b" x="-2" y="321" width="574" height="13"/>
 				<box>
 					<pen lineWidth="1.0"/>
 					<topPen lineWidth="1.0"/>
@@ -1170,7 +1170,7 @@ WHERE
 				<text><![CDATA[RESPONS. CIVIL]]></text>
 			</staticText>
 			<staticText>
-				<reportElement uuid="0108b8e3-e2c0-4d89-89c8-bc011c815758" x="458" y="334" width="112" height="22"/>
+				<reportElement uuid="0108b8e3-e2c0-4d89-89c8-bc011c815758" x="458" y="334" width="114" height="22"/>
 				<box>
 					<pen lineWidth="1.0"/>
 					<topPen lineWidth="1.0"/>
@@ -1575,7 +1575,7 @@ WHERE
 				</textElement>
 				<textFieldExpression><![CDATA[$P{impacumvalu}]]></textFieldExpression>
 			</textField>
-			<textField isBlankWhenNull="true">
+			<textField pattern="#,##0.00" isBlankWhenNull="true">
 				<reportElement uuid="bf15f549-9007-4fe6-9447-a671ed7960c5" x="291" y="476" width="63" height="15"/>
 				<box>
 					<pen lineWidth="1.0"/>
@@ -1649,7 +1649,7 @@ WHERE
 				<text><![CDATA[Saldo]]></text>
 			</staticText>
 			<textField isBlankWhenNull="true">
-				<reportElement uuid="3042ea08-fb75-43c9-b500-70bf05c337c1" x="458" y="356" width="112" height="15"/>
+				<reportElement uuid="3042ea08-fb75-43c9-b500-70bf05c337c1" x="458" y="356" width="114" height="15"/>
 				<box rightPadding="3">
 					<pen lineWidth="1.0"/>
 					<topPen lineWidth="1.0"/>
@@ -1663,7 +1663,7 @@ WHERE
 				<textFieldExpression><![CDATA[$P{liquidacionanterior}]]></textFieldExpression>
 			</textField>
 			<textField isBlankWhenNull="true">
-				<reportElement uuid="d7906f88-4f14-4c2b-bafc-094f3045ef17" x="458" y="371" width="112" height="15"/>
+				<reportElement uuid="d7906f88-4f14-4c2b-bafc-094f3045ef17" x="458" y="371" width="114" height="15"/>
 				<box>
 					<pen lineWidth="1.0"/>
 					<topPen lineWidth="1.0"/>
@@ -1677,7 +1677,7 @@ WHERE
 				<textFieldExpression><![CDATA[$P{presenteliq}]]></textFieldExpression>
 			</textField>
 			<textField isBlankWhenNull="true">
-				<reportElement uuid="de944d12-6ac8-4e8c-a44b-75e634f69389" x="458" y="386" width="112" height="15"/>
+				<reportElement uuid="de944d12-6ac8-4e8c-a44b-75e634f69389" x="458" y="386" width="114" height="15"/>
 				<box>
 					<pen lineWidth="1.0"/>
 					<topPen lineWidth="1.0"/>
@@ -1691,10 +1691,10 @@ WHERE
 				<textFieldExpression><![CDATA[$P{acumuladas}]]></textFieldExpression>
 			</textField>
 			<rectangle>
-				<reportElement uuid="63787c61-453c-4d13-a61a-a8de5fb8420f" x="458" y="401" width="112" height="30"/>
+				<reportElement uuid="63787c61-453c-4d13-a61a-a8de5fb8420f" x="458" y="401" width="114" height="30"/>
 			</rectangle>
 			<staticText>
-				<reportElement uuid="fe8ba2e5-82fa-4940-b1f4-39a315bc2696" x="458" y="431" width="112" height="15"/>
+				<reportElement uuid="fe8ba2e5-82fa-4940-b1f4-39a315bc2696" x="458" y="431" width="114" height="15"/>
 				<box>
 					<pen lineWidth="1.0"/>
 					<topPen lineWidth="1.0"/>
@@ -1708,7 +1708,7 @@ WHERE
 				<text><![CDATA[Montos]]></text>
 			</staticText>
 			<textField isBlankWhenNull="true">
-				<reportElement uuid="8adfab9a-a3f6-47b9-a7c3-a6084f50a8db" x="458" y="446" width="112" height="15"/>
+				<reportElement uuid="8adfab9a-a3f6-47b9-a7c3-a6084f50a8db" x="458" y="446" width="114" height="15"/>
 				<box>
 					<pen lineWidth="1.0"/>
 					<topPen lineWidth="1.0"/>
@@ -1722,7 +1722,7 @@ WHERE
 				<textFieldExpression><![CDATA[$P{anticipootorgado}]]></textFieldExpression>
 			</textField>
 			<textField isBlankWhenNull="true">
-				<reportElement uuid="34623465-9489-4a49-86fb-b7835fe9ec9d" x="458" y="461" width="112" height="15"/>
+				<reportElement uuid="34623465-9489-4a49-86fb-b7835fe9ec9d" x="458" y="461" width="114" height="15"/>
 				<box>
 					<pen lineWidth="1.0"/>
 					<topPen lineWidth="1.0"/>
@@ -1736,7 +1736,7 @@ WHERE
 				<textFieldExpression><![CDATA[$P{anticipoacumulado}]]></textFieldExpression>
 			</textField>
 			<textField isBlankWhenNull="false">
-				<reportElement uuid="7d3e3649-cfe5-44fa-bf32-cdf1870f3819" x="458" y="476" width="112" height="15"/>
+				<reportElement uuid="7d3e3649-cfe5-44fa-bf32-cdf1870f3819" x="458" y="476" width="114" height="15"/>
 				<box>
 					<pen lineWidth="1.0"/>
 					<topPen lineWidth="1.0"/>
@@ -2107,7 +2107,7 @@ WHERE
 		</band>
 	</detail>
 	<pageFooter>
-		<band height="115" splitType="Stretch">
+		<band height="74" splitType="Stretch">
 			<staticText>
 				<reportElement uuid="9c81d074-a219-4d43-8ce3-d3230b9846e4" x="2" y="52" width="570" height="11"/>
 				<textElement textAlignment="Center" verticalAlignment="Middle">
@@ -2120,10 +2120,10 @@ WHERE
 				<textElement textAlignment="Center" verticalAlignment="Middle" markup="none">
 					<font size="6" isBold="true"/>
 				</textElement>
-				<textFieldExpression><![CDATA["0276-3567564 / 0276-3553158 / 0276-3560071 / 0276-3579562 www.spapu.com.ve / Facebook: Rhspapu / Twitter: @Spapu"]]></textFieldExpression>
+				<textFieldExpression><![CDATA["0276-3567564 / 0276-3553158 / 0276-3560071 / 0276-3579562 www.spapu.net / Facebook: SPAPU.SISTEMASRH / Twitter: @Spapu"]]></textFieldExpression>
 			</textField>
 			<rectangle>
-				<reportElement uuid="e6302196-127a-4a2c-8d3f-0cf8d8c8b796" x="0" y="0" width="175" height="52"/>
+				<reportElement uuid="e6302196-127a-4a2c-8d3f-0cf8d8c8b796" x="-2" y="0" width="177" height="52"/>
 			</rectangle>
 			<rectangle>
 				<reportElement uuid="93ab23d5-c87c-4db4-a41f-597b47d89dbf" x="175" y="0" width="205" height="52"/>

@@ -10,7 +10,7 @@
  */
 package valuaciones;
 
-import com.mysql.jdbc.Connection;
+import java.sql.Connection;
 import com.mysql.jdbc.Statement;
 import java.awt.event.ActionEvent;
 import java.awt.event.KeyEvent;
@@ -35,7 +35,7 @@ public class variatab extends javax.swing.JDialog {
     public static final int RET_OK = 1;
     String [] partidas;
     String mpres, partida;
-    Connection conex;
+    private Connection conex;
     int indi =0;
     public variatab(java.awt.Frame parent, boolean modal, Connection conex, String mpres, String partida) {
         super(parent, modal);

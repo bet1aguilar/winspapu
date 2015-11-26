@@ -10,8 +10,8 @@
  */
 package valuaciones;
 
-import com.mysql.jdbc.Connection;
 import com.mysql.jdbc.Statement;
+import config.Redondeo;
 import java.awt.event.ActionEvent;
 import java.awt.event.KeyEvent;
 import java.io.ByteArrayOutputStream;
@@ -21,6 +21,8 @@ import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.math.BigDecimal;
+import java.math.RoundingMode;
+import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.text.SimpleDateFormat;
@@ -67,6 +69,7 @@ public class reporterecon extends javax.swing.JDialog {
     int nrocuadro=0;
     Date date=new Date();
     String fecha;
+    Redondeo redon = new Redondeo();
      SimpleDateFormat format = new SimpleDateFormat("dd/MM/yyyy");
     /** Creates new form reporte */
     public reporterecon(java.awt.Frame parent, boolean modal, Connection conex, String mpres, int nrocuadro) {
@@ -75,6 +78,7 @@ public class reporterecon extends javax.swing.JDialog {
         this.nrocuadro=nrocuadro;
         this.conex=conex;
         this.mpres = mpres;
+        jTextField1.setText(jTextField1.getText()+" No "+nrocuadro);
         jDateChooser1.setDate(date);
         // Close the dialog when Esc is pressed
         String cancelName = "cancel";
@@ -92,7 +96,7 @@ public class reporterecon extends javax.swing.JDialog {
     
     public void generarreporte()
     {
-        Double totalpres=0.00;
+        BigDecimal totalpres=new BigDecimal("0.00");
         try {
             JasperPrint print=null;
          
@@ -100,7 +104,7 @@ public class reporterecon extends javax.swing.JDialog {
             try {
                
                 input = new FileInputStream(new File("reconsideraciones.jrxml"));
-                   String subtotal = "SELECT IF(IF(mppres.precasu=0,mppres.precunit,mppres.precasu)-"
+                   String subtotal = "SELECT ROUND(IF(IF(mppres.precasu=0,mppres.precunit,mppres.precasu)-"
                            + "(SELECT IF(mp.precasu=0,mp.precunit, mp.precasu) as precio FROM mppres as mp WHERE"
                            + " numero=mppres.mppre_id AND (mp.mpre_id='"+mpres+"' OR mp.mpre_id IN "
                            + " (SELECT id FROM mpres WHERE mpres_id='"+mpres+"')))<0,"
@@ -108,7 +112,7 @@ public class reporterecon extends javax.swing.JDialog {
                            + "IF(mppres.precasu=0,mppres.`precunit`,mppres.precasu)-"
                            + "(SELECT IF(mp.precasu=0,mp.precunit, mp.precasu) as precio FROM mppres as mp WHERE "
                            + "numero=mppres.mppre_id AND (mp.mpre_id='"+mpres+"' OR mp.mpre_id IN (SELECT id FROM mpres "
-                           + "WHERE mpres_id='"+mpres+"'))))*mppres.cantidad as total "
+                           + "WHERE mpres_id='"+mpres+"'))))*mppres.cantidad,2) as total "
                            + "FROM mppres WHERE (mppres.mpre_id='"+mpres+"' OR mppres.mpre_id IN "
                            + "(SELECT id FROM mpres WHERE mpres_id='"+mpres+"'))"
                            + " AND mppres.tipo='VP' AND mppres.nrocuadro="+nrocuadro+"";      
@@ -117,7 +121,7 @@ public class reporterecon extends javax.swing.JDialog {
                         ResultSet rst = st.executeQuery(subtotal);
                         while(rst.next())
                         {
-                            totalpres += rst.getDouble(1);
+                            totalpres=  totalpres.add(rst.getBigDecimal(1));
                         }
                     } catch (SQLException ex) {
                         Logger.getLogger(reporterecon.class.getName()).log(Level.SEVERE, null, ex);
@@ -130,12 +134,12 @@ public class reporterecon extends javax.swing.JDialog {
                 Logger.getLogger(reporterecon.class.getName()).log(Level.SEVERE, null, ex);
             }
             String porcentaje = "SELECT porimp FROM mpres WHERE id='"+mpres+"'";
-            Double porimp=0.00;
+            BigDecimal porimp=new BigDecimal("0.00");
             try {
                 Statement stporcentaje = (Statement) conex.createStatement();
                 ResultSet rstp = stporcentaje.executeQuery(porcentaje);
                 while(rstp.next()){
-                    porimp=rstp.getDouble(1);
+                    porimp=rstp.getBigDecimal(1);
                 }
             } catch (SQLException ex) {
                 Logger.getLogger(reporterecon.class.getName()).log(Level.SEVERE, null, ex);
@@ -145,18 +149,18 @@ public class reporterecon extends javax.swing.JDialog {
                 JasperReport report = JasperCompileManager.compileReport(design);
                
              
-              String titulo = jTextField1.getText().toString()+" N° "+nrocuadro;
+              String titulo = jTextField1.getText().toString()+" No "+nrocuadro;
             
              
              String timpuesto="Impuesto:";
-            Double imp=0.00;
+            BigDecimal imp=new BigDecimal("0.00");
             
             if(jCheckBox4.isSelected()){
                 parameters.put("tituloimp", timpuesto);
-                imp=totalpres*porimp/100;
+                imp=totalpres.multiply(porimp.divide(new BigDecimal(100))).setScale(3, BigDecimal.ROUND_HALF_UP).setScale(2,BigDecimal.ROUND_HALF_UP);
                  parameters.put("imp", imp);
-                 double total=0.00;
-                 total=totalpres+imp;
+                 BigDecimal total=new BigDecimal("0.00");
+                 total=totalpres.add(imp);
                  totalpres=total;
                  parameters.put("titulototal", "Total:");
                   parameters.put("totaltotal", total);
@@ -165,8 +169,8 @@ public class reporterecon extends javax.swing.JDialog {
             if(jCheckBox5.isSelected()){
                 parameters.put("ajustetitulo", "Ajuste por Redondeo:");
                   parameters.put("ajuste", jTextField3.getText().toString());
-                  double ajuste = Double.valueOf(jTextField3.getText().toString());
-                  totalpres=totalpres+ajuste;
+                  BigDecimal ajuste = new BigDecimal(jTextField3.getText().toString());
+                  totalpres=totalpres.add(ajuste);
                   parameters.put("titulototal", "Total:");
                   parameters.put("totaltotal", totalpres);
             }
@@ -174,7 +178,7 @@ public class reporterecon extends javax.swing.JDialog {
                 denumeroaletra nume = new denumeroaletra();
               String letras="";
                int decimalPlaces = 2; 
-          BigDecimal bd = new BigDecimal(totalpres); 
+          BigDecimal bd = totalpres; 
           bd = bd.setScale(decimalPlaces, BigDecimal.ROUND_HALF_EVEN); 
 
         
@@ -300,10 +304,10 @@ public class reporterecon extends javax.swing.JDialog {
         jPanel3.setBackground(new java.awt.Color(100, 100, 100));
 
         jLabel1.setBackground(new java.awt.Color(91, 91, 95));
-        jLabel1.setFont(new java.awt.Font("Tahoma", 1, 11)); // NOI18N
+        jLabel1.setFont(new java.awt.Font("Tahoma", 1, 11));
         jLabel1.setForeground(new java.awt.Color(255, 255, 255));
         jLabel1.setHorizontalAlignment(javax.swing.SwingConstants.CENTER);
-        jLabel1.setText("Cuadro demostrativo para reconsideraciones");
+        jLabel1.setText("Cuadro Demostrativo para Reconsideraciones de Precios");
         jLabel1.setOpaque(true);
 
         javax.swing.GroupLayout jPanel3Layout = new javax.swing.GroupLayout(jPanel3);

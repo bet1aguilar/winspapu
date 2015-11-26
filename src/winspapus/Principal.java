@@ -10,36 +10,56 @@
  */
 package winspapus;
 
+import com.itextpdf.text.DocumentException;
 import com.mysql.jdbc.Connection;
 import com.mysql.jdbc.ResultSetMetaData;
 import com.mysql.jdbc.Statement;
+import config.Redondeo;
+import config.endesencripta;
+import herramienta.Validacion;
 import java.awt.Dimension;
+import java.awt.Toolkit;
+import java.awt.event.KeyAdapter;
+import java.awt.event.KeyEvent;
 import java.beans.PropertyVetoException;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.math.BigDecimal;
 import java.sql.DriverManager;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.text.DecimalFormat;
 import java.util.Date;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Vector;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
 import javax.swing.table.JTableHeader;
+import javax.swing.table.TableCellEditor;
 import javax.swing.table.TableColumn;
 import javax.swing.table.TableColumnModel;
+import net.sf.jasperreports.engine.JRException;
+import net.sf.jasperreports.engine.JasperCompileManager;
+import net.sf.jasperreports.engine.JasperFillManager;
+import net.sf.jasperreports.engine.JasperPrint;
+import net.sf.jasperreports.engine.JasperReport;
+import net.sf.jasperreports.engine.design.JasperDesign;
+import net.sf.jasperreports.engine.xml.JRXmlLoader;
+import net.sf.jasperreports.view.JasperViewer;
 
 import parametros.contratistas;
 import parametros.propietario;
 import presupuesto.materiales.matrizmaterialespres;
-import reportes.presupuestogeneral;
 import valuaciones.aumentosdismi;
 import valuaciones.reconsideraciones;
 import valuaciones.valuacion;
 import winspapus.equipos.equipos;
 import winspapus.equipos.matrizequipos;
 import winspapus.herramienta.RecuperarPre;
-import winspapus.herramienta.RecuperarTab;
 import winspapus.manos.manoobra;
 import winspapus.manos.matrizmano;
 import winspapus.materiales.*;
@@ -50,10 +70,19 @@ import presupuestos.diagrama;
 import presupuestos.equipo.*;
 import presupuestos.manoobra.matrizmanopres;
 import presupuestos.memoria;
+import presupuestos.reporteapu2;
 import presupuestos.tabpresupuesto;
+import reportes.reporteactacierre;
 import reportes.reportecuadrocierre;
+import reportes.reporteinicio;
 import reportes.reportepresupuesto;
+import respaldoData.configuracionBD;
 import valuaciones.parametrorecon;
+import winspapus.herramienta.RecuperarTab;
+import winspapus.herramienta.Tabulador.RecuperarTabulador;
+import winspapus.herramienta.Tabulador.RespaldarTabulador;
+import winspapus.herramienta.presupuesto.RecuperarPresupuesto;
+import winspapus.herramienta.presupuesto.RespaldarPresupuesto;
 /**
  *
  * @author Betmart
@@ -61,10 +90,13 @@ import valuaciones.parametrorecon;
 public class Principal extends javax.swing.JFrame {
     String principio="";
     String seleccionado;
+    Validacion val;
     String utilidad;    
+    private Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
     public int sinst;
+    TableCellEditor editor;
     int buscala = 0;
-    private Presupuesto presupuesto = null;
+    public Presupuesto presupuesto = null;
     int filamate = 0, filaequipo=0, filamano=0;
     int noredondeo=0;
     public int haypresupuesto=0;
@@ -72,8 +104,9 @@ public class Principal extends javax.swing.JFrame {
     DecimalFormat formatoNumero = new DecimalFormat("#,##0.00");;
      int row=-1, fila;
      String busqueda="";
-     
-     private int entro=0;
+     private boolean isoficial=false;
+     Redondeo redondear=new Redondeo();
+        public int entro=0;
       String codicove="", descri="",num="" , num2="";
       private consulta aqui;
        DefaultTableModel mptabs;
@@ -83,21 +116,22 @@ public class Principal extends javax.swing.JFrame {
    public int llamaabusca=0;
      Principal obj= this;
      JScrollPane scroll;
-     float contmat=0, contmano=0, conteq=0, contotal=0;;
+     BigDecimal contmat= new BigDecimal("0.00"), contmano= new BigDecimal("0.00"), conteq=new BigDecimal("0.00"), contotal=new BigDecimal("0.00");
      
     private int x=0, y=0;
     private String presup;
+    private boolean desbloqueado=false;
     /** Creates new form Principal */
     public Principal() {
-        this.setIconImage (new ImageIcon(getClass().getResource("imagenes/LOGO.png")).getImage());
-        
-        System.out.println("Formato"+formatoNumero.getCurrency());
-        this.setDefaultCloseOperation(Principal.EXIT_ON_CLOSE);
-        this.setVisible(true);
-       
-        initComponents();
-        formatoNumero.setMaximumFractionDigits(2);
-        jTable1.setShowHorizontalLines(true);
+    this.setIconImage (new ImageIcon(getClass().getResource("imagenes/LOGO.png")).getImage());        
+    System.out.println("Formato"+formatoNumero.getCurrency());
+    this.setDefaultCloseOperation(Principal.EXIT_ON_CLOSE);
+    this.setVisible(true);
+    initComponents();
+    
+    jMenu6.setVisible(true);
+    formatoNumero.setMaximumFractionDigits(2);
+    jTable1.setShowHorizontalLines(true);
     jTable1.setShowVerticalLines(false);
     jTable1.getTableHeader().setSize(new Dimension(25,40));
     jTable1.getTableHeader().setPreferredSize(new Dimension(25,30));
@@ -131,11 +165,24 @@ public class Principal extends javax.swing.JFrame {
         jScrollPane8.getViewport().add(jPanel1);
       jInternalFrame1.setVisible(false);
         principio = jLabel3.getText();
-       conectar();
-       
+       conectar();   
+       verificaPublico();
        buscatab();
        consultactivo();
        verificarpres();
+       if(cuentapres()==0)
+       {
+          setdisabled(false);
+       }
+       if(isbloquedmtabu()){
+           jButton33.setIcon(new javax.swing.ImageIcon(getClass().getResource("/winspapus/imagenes/candadoabierto.fw.png")));
+           jButton33.setToolTipText("Desbloquear Tabulador");
+       }else{
+           jButton33.setIcon(new javax.swing.ImageIcon(getClass().getResource("/winspapus/imagenes/candado.fw.png"))); 
+           jButton33.setToolTipText("Bloquear Tabulador");
+       }
+       jButton12.setEnabled(false);
+        jButton8.setEnabled(false);
        jButton28.setVisible(false);
        jButton14.setEnabled(false);
        jButton15.setEnabled(false);
@@ -143,11 +190,69 @@ public class Principal extends javax.swing.JFrame {
        jButton17.setEnabled(false);
        jButton18.setEnabled(false);
        jButton19.setEnabled(false);
+       jButton33.setEnabled(false);               
        jButton20.setEnabled(false);
        jButton21.setEnabled(false);
        jButton22.setEnabled(false);
     }
-    
+    private void verificaPublico()
+    {
+        String sql = "SELECT publico FROM instalacion";
+        int publico=0;
+        try {
+            Statement st = (Statement) conexion.createStatement();
+            ResultSet rst = st.executeQuery(sql);
+            while(rst.next())
+            {
+                publico=rst.getInt(1);
+            }
+        } catch (SQLException ex) {
+            Logger.getLogger(Principal.class.getName()).log(Level.SEVERE, null, ex);
+        }
+        if(publico == 1)
+        {
+            //BLOQUEA MENU, SOLO DEJA DISPONIBLE OPCIONES PARA INSTITUCIONES PÚBLICAS
+            
+        }
+    }
+    public final void setdisabled(boolean able){
+         jMenuItem6.setEnabled(able);
+         jButton26.setEnabled(able);
+         jMenuItem10.setEnabled(able);
+         jMenuItem7.setEnabled(able);
+         jMenu15.setEnabled(able);
+         jMenuItem33.setEnabled(able);
+         jMenuItem34.setEnabled(able);
+         jMenuItem35.setEnabled(able);
+         jMenuItem36.setEnabled(able);
+         jMenuItem8.setEnabled(able);
+         jMenuItem14.setEnabled(able);
+         jMenuItem47.setEnabled(able);
+         jMenuItem15.setEnabled(able);
+         jMenuItem37.setEnabled(able);
+         jMenu7.setEnabled(able);
+         jMenu14.setEnabled(able);
+    }
+    public final void setavalible(boolean able){
+        jMenuItem6.setEnabled(able);
+         jButton26.setEnabled(able);
+    }
+    public Connection getConexion(){
+        return conexion;
+    }
+    public final int cuentapres(){
+        int cuenta=0;
+        String select = "SELECT COUNT(*) FROM mpres";
+        try {
+            ResultSet rst = conexion.createStatement().executeQuery(select);
+            rst.next();
+            cuenta = rst.getInt(1);
+        } catch (SQLException ex) {
+            Logger.getLogger(Principal.class.getName()).log(Level.SEVERE, null, ex);
+        }
+        
+        return cuenta;
+    }
     public final void verificarpres()
     {
         
@@ -180,8 +285,11 @@ public class Principal extends javax.swing.JFrame {
         }
         try {          
             //
-            conexion = (Connection) DriverManager.getConnection("jdbc:mysql://localhost/winspapu", "spapu01", "04160481070MSag");
+            endesencripta desen1 = new endesencripta();
+            conexion = (Connection) DriverManager.getConnection("jdbc:mysql://localhost/winspapu", "spapu01",desen1.getClaveBD());
             //establer seguridad local
+            val = new Validacion(conexion);
+            endesencripta desen = new endesencripta(conexion);
             Statement seg = (Statement) conexion.createStatement();
             Statement esc = (Statement) conexion.createStatement();
 
@@ -197,22 +305,33 @@ public class Principal extends javax.swing.JFrame {
             int regis = rst.getRow();    
             if (regis!=0){
             Date fec1=rst.getDate("fecha");
-            
+            String licen = rst.getString("licencia");
             Date hoy = new Date();
             double difer=hoy.getTime()-fec1.getTime(),dias=difer/(1000*60*24*60);
-            if (dias>=30)
+            if (dias>=30&&licen.equals("DEMO"))
             {
-              sql="update mpresadm set status='0'";  
-              Statement demo1 = (Statement) conexion.createStatement();
-              demo1.execute(sql); 
-              JOptionPane.showMessageDialog(presupuesto, "Tiempo Agotado de la Versión DEMO, comunicarse con SISTEMAS RH");              
-              System.exit(0);
+             if(regis==-5)
+             {
+                 regis=1;
+             }
+              JOptionPane.showMessageDialog(presupuesto, "Tiempo Agotado de la Versión DEMO, comunicarse con SISTEMAS RH");   
+              int op=JOptionPane.showConfirmDialog(presupuesto, "¿Desea Activar su sistema?","Activar Sistema",JOptionPane.YES_NO_OPTION);
+              if(op==JOptionPane.YES_OPTION)
+              {
+                  regis=-5;
+              }else{
+                   sql="update mpresadm set status='0'";  
+                  Statement demo1 = (Statement) conexion.createStatement();
+                  demo1.execute(sql); 
+                  System.exit(0);
+              }
+              
             } 
             status = rst.getInt("status");
             }
-            if (regis==0){
+            if (regis==0 || regis==-5){
                 int opc;
-                opc=JOptionPane.showConfirmDialog(null, "Atención el Sistema se va a Ejecutar por primera vez, Desea Continuar?","INICIAR DE SISTEMA",JOptionPane.YES_NO_OPTION);
+                opc=JOptionPane.showConfirmDialog(null, "Atención el Sistema se va a Activar, Desea Continuar?","INICIAR DE SISTEMA",JOptionPane.YES_NO_OPTION);
                 if ((opc==1)||(opc==2)){
                    System.exit(0);
                 } 
@@ -225,9 +344,9 @@ public class Principal extends javax.swing.JFrame {
                    esc.execute("delete from mpresadm");                      
                    System.exit(0);
                 }     
-                conespapu = (Connection) DriverManager.getConnection("jdbc:mysql://spapu2.db.11811826.hostedresource.com/spapu2", "spapu2", "Rahp81261!");
+                //conespapu = (Connection) DriverManager.getConnection("jdbc:mysql://spapu2.db.11811826.hostedresource.com/spapu2", "spapu2", desen.getClaveServer());
 
-                instalador instalar=new instalador(this, true,conespapu, this, conexion,dd);
+                instalador instalar=new instalador(this, true,conespapu, this, conexion,dd, regis);
                 int xi=(this.getWidth()/2)-350/2;
                 int yi=(this.getHeight()/2)-100/2;
                 instalar.setBounds(xi, yi, 350, 200);
@@ -238,16 +357,25 @@ public class Principal extends javax.swing.JFrame {
                 }                    
                
                  
-
-//                conexremota = (Connection) DriverManager.getConnection("jdbc:mysql://dominiospapu/spapu", "root", "04160481070MSag");
-         //       Statement st = (Statement) conexremota.createStatement();
-                
+               
             }
             else{
                 if(!rst.getString("codigo").equals(dd)&&status==1)  {
                    JOptionPane.showMessageDialog(null, "LICENCIA NO AUTORIZADA, LLAMAR A SISTEMAS RH");
                    System.exit(0);
-                }                                    
+                }  
+                try{
+                    //conespapu = (Connection) DriverManager.getConnection("jdbc:mysql://spapu2.db.11811826.hostedresource.com/spapu2", "spapu2", desen.getClaveServer());
+                
+                    if(rst.getInt("bloqueado")==1)
+                    {
+                        JOptionPane.showMessageDialog(presupuesto, "Su licencia ha sido bloqueada, contacte con Sistemas R.H.");
+                        System.exit(0);
+                    }
+                }catch (SQLException ex) {
+                    return;
+                }
+                
             }
             //
         } catch (SQLException ex) {
@@ -260,8 +388,9 @@ public class Principal extends javax.swing.JFrame {
         }
     }
     public final void consultactivo(){
-          String sql = "SELECT id FROM mtabus WHERE seleccionado=1 AND status=1";
+          String sql = "SELECT id, bloqueado FROM mtabus WHERE seleccionado=1 AND status=1";
           String id="0";
+          int bloqueado=0;
           int filas=0;
           
         try {
@@ -269,6 +398,7 @@ public class Principal extends javax.swing.JFrame {
             ResultSet rst = st.executeQuery(sql); 
             while(rst.next()){
                 id=rst.getString("id");
+                bloqueado = rst.getInt(2);
             }
             if(id.equals("0") ||id.equals("")){
                 filas = 0;
@@ -296,6 +426,10 @@ public class Principal extends javax.swing.JFrame {
         } catch (SQLException ex) {
             Logger.getLogger(Principal.class.getName()).log(Level.SEVERE, null, ex);
         }
+        if(bloqueado==0)
+            desbloquearBotones(true);
+        else
+            desbloquearBotones(false);
     }
     
     @SuppressWarnings("unchecked")
@@ -319,8 +453,6 @@ public class Principal extends javax.swing.JFrame {
         jScrollPane8 = new javax.swing.JScrollPane();
         jPanel1 = new javax.swing.JPanel();
         jPanel2 = new javax.swing.JPanel();
-        jPanel5 = new javax.swing.JPanel();
-        jLabel1 = new javax.swing.JLabel();
         jPanel6 = new javax.swing.JPanel();
         jTextField1 = new javax.swing.JTextField();
         jLabel2 = new javax.swing.JLabel();
@@ -332,8 +464,11 @@ public class Principal extends javax.swing.JFrame {
         jButton6 = new javax.swing.JButton();
         jButton31 = new javax.swing.JButton();
         jButton32 = new javax.swing.JButton();
+        jButton33 = new javax.swing.JButton();
+        jButton34 = new javax.swing.JButton();
         jScrollPane1 = new javax.swing.JScrollPane();
         jTable1 = new javax.swing.JTable();
+        jLabel1 = new javax.swing.JLabel();
         jPanel3 = new javax.swing.JPanel();
         jPanel7 = new javax.swing.JPanel();
         jLabel3 = new javax.swing.JLabel();
@@ -347,6 +482,7 @@ public class Principal extends javax.swing.JFrame {
         jButton11 = new javax.swing.JButton();
         jButton10 = new javax.swing.JButton();
         jButton24 = new javax.swing.JButton();
+        jButton3 = new javax.swing.JButton();
         jScrollPane2 = new javax.swing.JScrollPane();
         jTable2 = new javax.swing.JTable();
         jPanel10 = new javax.swing.JPanel();
@@ -359,6 +495,8 @@ public class Principal extends javax.swing.JFrame {
         jLabel19 = new javax.swing.JLabel();
         jLabel23 = new javax.swing.JLabel();
         jLabel27 = new javax.swing.JLabel();
+        jLabel32 = new javax.swing.JLabel();
+        jLabel40 = new javax.swing.JLabel();
         jPanel17 = new javax.swing.JPanel();
         jLabel25 = new javax.swing.JLabel();
         jLabel24 = new javax.swing.JLabel();
@@ -415,7 +553,6 @@ public class Principal extends javax.swing.JFrame {
         jButton26 = new javax.swing.JButton();
         jButton27 = new javax.swing.JButton();
         jButton28 = new javax.swing.JButton();
-        jButton3 = new javax.swing.JButton();
         jButton30 = new javax.swing.JButton();
         jMenuBar1 = new javax.swing.JMenuBar();
         jMenu1 = new javax.swing.JMenu();
@@ -430,6 +567,8 @@ public class Principal extends javax.swing.JFrame {
         jMenuItem9 = new javax.swing.JMenuItem();
         jSeparator6 = new javax.swing.JPopupMenu.Separator();
         jMenuItem38 = new javax.swing.JMenuItem();
+        jMenuItem43 = new javax.swing.JMenuItem();
+        jMenuItem44 = new javax.swing.JMenuItem();
         jMenu2 = new javax.swing.JMenu();
         jMenuItem6 = new javax.swing.JMenuItem();
         jMenuItem46 = new javax.swing.JMenuItem();
@@ -449,6 +588,7 @@ public class Principal extends javax.swing.JFrame {
         jSeparator4 = new javax.swing.JPopupMenu.Separator();
         jMenu7 = new javax.swing.JMenu();
         jMenuItem16 = new javax.swing.JMenuItem();
+        jMenuItem12 = new javax.swing.JMenuItem();
         jSeparator1 = new javax.swing.JPopupMenu.Separator();
         jMenuItem19 = new javax.swing.JMenuItem();
         jMenuItem20 = new javax.swing.JMenuItem();
@@ -461,7 +601,6 @@ public class Principal extends javax.swing.JFrame {
         jMenuItem25 = new javax.swing.JMenuItem();
         jMenuItem26 = new javax.swing.JMenuItem();
         jMenuItem27 = new javax.swing.JMenuItem();
-        jMenuItem28 = new javax.swing.JMenuItem();
         jSeparator2 = new javax.swing.JPopupMenu.Separator();
         jMenuItem29 = new javax.swing.JMenuItem();
         jMenu14 = new javax.swing.JMenu();
@@ -471,11 +610,21 @@ public class Principal extends javax.swing.JFrame {
         jMenuItem17 = new javax.swing.JMenuItem();
         jMenuItem18 = new javax.swing.JMenuItem();
         jMenu16 = new javax.swing.JMenu();
-        jMenu17 = new javax.swing.JMenu();
-        jMenuItem39 = new javax.swing.JMenuItem();
         jMenu18 = new javax.swing.JMenu();
+        jMenuItem11 = new javax.swing.JMenuItem();
+        jMenuItem32 = new javax.swing.JMenuItem();
+        jMenuItem39 = new javax.swing.JMenuItem();
+        jMenu17 = new javax.swing.JMenu();
+        jMenuItem28 = new javax.swing.JMenuItem();
+        jMenuItem41 = new javax.swing.JMenuItem();
         jMenuItem42 = new javax.swing.JMenuItem();
-        jMenuItem44 = new javax.swing.JMenuItem();
+        jMenu19 = new javax.swing.JMenu();
+        jMenuItem48 = new javax.swing.JMenuItem();
+        jMenuItem49 = new javax.swing.JMenuItem();
+        jMenu6 = new javax.swing.JMenu();
+        jMenuItem13 = new javax.swing.JMenuItem();
+        jMenuItem50 = new javax.swing.JMenuItem();
+        jMenuItem40 = new javax.swing.JMenuItem();
 
         jMenu4.setText("File");
         jMenuBar2.add(jMenu4);
@@ -536,7 +685,7 @@ public class Principal extends javax.swing.JFrame {
         jMenu10.setText("jMenu10");
 
         setDefaultCloseOperation(javax.swing.WindowConstants.DO_NOTHING_ON_CLOSE);
-        setTitle("WinSpapu Sistema de Presupuesto y Análisis de Precio Unitario");
+        setTitle("SPAPU Sistema de Presupuesto y Análisis de Precio Unitario");
         setBackground(new java.awt.Color(97, 126, 171));
         addWindowListener(new java.awt.event.WindowAdapter() {
             public void windowClosed(java.awt.event.WindowEvent evt) {
@@ -587,29 +736,12 @@ public class Principal extends javax.swing.JFrame {
         jPanel2.setBorder(new javax.swing.border.LineBorder(new java.awt.Color(102, 102, 102), 1, true));
         jPanel2.setAutoscrolls(true);
 
-        jPanel5.setBackground(new java.awt.Color(100, 100, 100));
-        jPanel5.setBorder(javax.swing.BorderFactory.createLineBorder(new java.awt.Color(100, 100, 100)));
-
-        jLabel1.setBackground(new java.awt.Color(91, 91, 95));
-        jLabel1.setFont(new java.awt.Font("Tahoma", 1, 12));
-        jLabel1.setForeground(new java.awt.Color(255, 255, 255));
-        jLabel1.setHorizontalAlignment(javax.swing.SwingConstants.CENTER);
-        jLabel1.setLabelFor(jPanel5);
-        jLabel1.setText("Listado de Precios Referenciales");
-        jLabel1.setOpaque(true);
-
-        javax.swing.GroupLayout jPanel5Layout = new javax.swing.GroupLayout(jPanel5);
-        jPanel5.setLayout(jPanel5Layout);
-        jPanel5Layout.setHorizontalGroup(
-            jPanel5Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addComponent(jLabel1, javax.swing.GroupLayout.Alignment.TRAILING, javax.swing.GroupLayout.DEFAULT_SIZE, 572, Short.MAX_VALUE)
-        );
-        jPanel5Layout.setVerticalGroup(
-            jPanel5Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addComponent(jLabel1, javax.swing.GroupLayout.Alignment.TRAILING, javax.swing.GroupLayout.PREFERRED_SIZE, 45, javax.swing.GroupLayout.PREFERRED_SIZE)
-        );
-
         jTextField1.setPreferredSize(new java.awt.Dimension(20, 30));
+        jTextField1.addKeyListener(new java.awt.event.KeyAdapter() {
+            public void keyTyped(java.awt.event.KeyEvent evt) {
+                jTextField1KeyTyped(evt);
+            }
+        });
 
         jLabel2.setText("Buscar:");
 
@@ -675,47 +807,70 @@ public class Principal extends javax.swing.JFrame {
             }
         });
 
+        jButton33.setIcon(new javax.swing.ImageIcon(getClass().getResource("/winspapus/imagenes/candado.fw.png"))); // NOI18N
+        jButton33.setToolTipText("Bloquear Tabulador");
+        jButton33.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jButton33ActionPerformed(evt);
+            }
+        });
+
+        jButton34.setIcon(new javax.swing.ImageIcon(getClass().getResource("/winspapus/imagenes/imprimirpeque.fw.png"))); // NOI18N
+        jButton34.setToolTipText("Reporte General de Partidas");
+        jButton34.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jButton34ActionPerformed(evt);
+            }
+        });
+
         javax.swing.GroupLayout jPanel6Layout = new javax.swing.GroupLayout(jPanel6);
         jPanel6.setLayout(jPanel6Layout);
         jPanel6Layout.setHorizontalGroup(
             jPanel6Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(jPanel6Layout.createSequentialGroup()
-                .addComponent(jLabel2, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                .addContainerGap()
+                .addComponent(jLabel2)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                .addComponent(jTextField1, javax.swing.GroupLayout.PREFERRED_SIZE, 144, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addGap(18, 18, 18)
+                .addComponent(jTextField1, javax.swing.GroupLayout.PREFERRED_SIZE, 148, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addGap(0, 0, 0)
                 .addComponent(jButton1, javax.swing.GroupLayout.PREFERRED_SIZE, 30, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addGap(2, 2, 2)
+                .addGap(0, 0, 0)
+                .addComponent(jButton33, javax.swing.GroupLayout.PREFERRED_SIZE, 30, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addGap(0, 0, 0)
                 .addComponent(jButton23, javax.swing.GroupLayout.PREFERRED_SIZE, 30, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addGap(2, 2, 2)
+                .addGap(0, 0, 0)
                 .addComponent(jButton13, javax.swing.GroupLayout.PREFERRED_SIZE, 30, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addGap(2, 2, 2)
+                .addGap(0, 0, 0)
                 .addComponent(jButton4, javax.swing.GroupLayout.PREFERRED_SIZE, 30, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addGap(2, 2, 2)
+                .addGap(0, 0, 0)
                 .addComponent(jButton5, javax.swing.GroupLayout.PREFERRED_SIZE, 30, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addGap(2, 2, 2)
+                .addGap(0, 0, 0)
                 .addComponent(jButton6, javax.swing.GroupLayout.PREFERRED_SIZE, 30, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addGap(2, 2, 2)
+                .addGap(0, 0, 0)
                 .addComponent(jButton31, javax.swing.GroupLayout.PREFERRED_SIZE, 30, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addGap(2, 2, 2)
-                .addComponent(jButton32, javax.swing.GroupLayout.PREFERRED_SIZE, 30, javax.swing.GroupLayout.PREFERRED_SIZE))
+                .addGap(0, 0, 0)
+                .addComponent(jButton32, javax.swing.GroupLayout.PREFERRED_SIZE, 30, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addGap(0, 0, 0)
+                .addComponent(jButton34, javax.swing.GroupLayout.PREFERRED_SIZE, 30, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addContainerGap(69, Short.MAX_VALUE))
         );
         jPanel6Layout.setVerticalGroup(
             jPanel6Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(jPanel6Layout.createSequentialGroup()
                 .addGroup(jPanel6Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                    .addComponent(jButton5, javax.swing.GroupLayout.PREFERRED_SIZE, 30, javax.swing.GroupLayout.PREFERRED_SIZE)
-                    .addComponent(jButton13, javax.swing.GroupLayout.PREFERRED_SIZE, 30, javax.swing.GroupLayout.PREFERRED_SIZE)
-                    .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, jPanel6Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                        .addComponent(jLabel2, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                        .addComponent(jTextField1, javax.swing.GroupLayout.PREFERRED_SIZE, 28, javax.swing.GroupLayout.PREFERRED_SIZE))
-                    .addComponent(jButton23, javax.swing.GroupLayout.PREFERRED_SIZE, 30, javax.swing.GroupLayout.PREFERRED_SIZE)
-                    .addComponent(jButton4, javax.swing.GroupLayout.PREFERRED_SIZE, 30, javax.swing.GroupLayout.PREFERRED_SIZE)
-                    .addComponent(jButton6, javax.swing.GroupLayout.PREFERRED_SIZE, 30, javax.swing.GroupLayout.PREFERRED_SIZE)
-                    .addComponent(jButton1, javax.swing.GroupLayout.PREFERRED_SIZE, 30, javax.swing.GroupLayout.PREFERRED_SIZE)
-                    .addComponent(jButton31, javax.swing.GroupLayout.PREFERRED_SIZE, 30, javax.swing.GroupLayout.PREFERRED_SIZE)
-                    .addComponent(jButton32, javax.swing.GroupLayout.PREFERRED_SIZE, 30, javax.swing.GroupLayout.PREFERRED_SIZE))
-                .addContainerGap())
+                    .addComponent(jButton1, javax.swing.GroupLayout.DEFAULT_SIZE, 30, Short.MAX_VALUE)
+                    .addComponent(jButton33, javax.swing.GroupLayout.PREFERRED_SIZE, 30, Short.MAX_VALUE)
+                    .addComponent(jButton23, javax.swing.GroupLayout.DEFAULT_SIZE, 30, Short.MAX_VALUE)
+                    .addComponent(jButton13, javax.swing.GroupLayout.DEFAULT_SIZE, 30, Short.MAX_VALUE)
+                    .addComponent(jButton4, javax.swing.GroupLayout.PREFERRED_SIZE, 30, Short.MAX_VALUE)
+                    .addComponent(jButton5, javax.swing.GroupLayout.DEFAULT_SIZE, 30, Short.MAX_VALUE)
+                    .addComponent(jButton6, javax.swing.GroupLayout.PREFERRED_SIZE, 30, Short.MAX_VALUE)
+                    .addComponent(jButton31, javax.swing.GroupLayout.DEFAULT_SIZE, 30, Short.MAX_VALUE)
+                    .addComponent(jButton32, javax.swing.GroupLayout.DEFAULT_SIZE, 30, Short.MAX_VALUE)
+                    .addComponent(jLabel2, javax.swing.GroupLayout.Alignment.CENTER, javax.swing.GroupLayout.DEFAULT_SIZE, 30, Short.MAX_VALUE)
+                    .addComponent(jTextField1, javax.swing.GroupLayout.Alignment.CENTER, javax.swing.GroupLayout.PREFERRED_SIZE, 28, javax.swing.GroupLayout.PREFERRED_SIZE)
+                    .addComponent(jButton34, javax.swing.GroupLayout.DEFAULT_SIZE, 30, Short.MAX_VALUE))
+                .addGap(11, 11, 11))
         );
 
         jTable1.setAutoCreateRowSorter(true);
@@ -734,28 +889,32 @@ public class Principal extends javax.swing.JFrame {
         jTable1.getAccessibleContext().setAccessibleName("tabla");
         jTable1.getAccessibleContext().setAccessibleParent(jPanel2);
 
+        jLabel1.setBackground(new java.awt.Color(91, 91, 95));
+        jLabel1.setFont(new java.awt.Font("Tahoma", 1, 12));
+        jLabel1.setForeground(new java.awt.Color(255, 255, 255));
+        jLabel1.setHorizontalAlignment(javax.swing.SwingConstants.CENTER);
+        jLabel1.setText("Listado de Precios Referenciales");
+        jLabel1.setOpaque(true);
+
         javax.swing.GroupLayout jPanel2Layout = new javax.swing.GroupLayout(jPanel2);
         jPanel2.setLayout(jPanel2Layout);
         jPanel2Layout.setHorizontalGroup(
             jPanel2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addComponent(jPanel5, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+            .addComponent(jLabel1, javax.swing.GroupLayout.DEFAULT_SIZE, 567, Short.MAX_VALUE)
             .addGroup(jPanel2Layout.createSequentialGroup()
                 .addContainerGap()
-                .addComponent(jScrollPane1, javax.swing.GroupLayout.DEFAULT_SIZE, 554, Short.MAX_VALUE)
+                .addComponent(jScrollPane1, javax.swing.GroupLayout.DEFAULT_SIZE, 547, Short.MAX_VALUE)
                 .addContainerGap())
-            .addGroup(jPanel2Layout.createSequentialGroup()
-                .addContainerGap()
-                .addComponent(jPanel6, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addContainerGap(108, Short.MAX_VALUE))
+            .addComponent(jPanel6, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
         );
         jPanel2Layout.setVerticalGroup(
             jPanel2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(jPanel2Layout.createSequentialGroup()
-                .addComponent(jPanel5, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addComponent(jLabel1, javax.swing.GroupLayout.PREFERRED_SIZE, 45, javax.swing.GroupLayout.PREFERRED_SIZE)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                .addComponent(jPanel6, javax.swing.GroupLayout.PREFERRED_SIZE, 32, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addComponent(jPanel6, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                .addComponent(jScrollPane1, javax.swing.GroupLayout.DEFAULT_SIZE, 105, Short.MAX_VALUE)
+                .addComponent(jScrollPane1, javax.swing.GroupLayout.DEFAULT_SIZE, 115, Short.MAX_VALUE)
                 .addContainerGap())
         );
 
@@ -768,7 +927,6 @@ public class Principal extends javax.swing.JFrame {
         jLabel3.setFont(new java.awt.Font("Tahoma", 1, 12));
         jLabel3.setForeground(new java.awt.Color(255, 255, 255));
         jLabel3.setHorizontalAlignment(javax.swing.SwingConstants.CENTER);
-        jLabel3.setLabelFor(jPanel5);
         jLabel3.setText("Partidas del Listado de Precios");
         jLabel3.setOpaque(true);
 
@@ -776,17 +934,22 @@ public class Principal extends javax.swing.JFrame {
         jPanel7.setLayout(jPanel7Layout);
         jPanel7Layout.setHorizontalGroup(
             jPanel7Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addComponent(jLabel3, javax.swing.GroupLayout.Alignment.TRAILING, javax.swing.GroupLayout.DEFAULT_SIZE, 572, Short.MAX_VALUE)
+            .addComponent(jLabel3, javax.swing.GroupLayout.Alignment.TRAILING, javax.swing.GroupLayout.DEFAULT_SIZE, 565, Short.MAX_VALUE)
         );
         jPanel7Layout.setVerticalGroup(
             jPanel7Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addComponent(jLabel3, javax.swing.GroupLayout.Alignment.TRAILING, javax.swing.GroupLayout.DEFAULT_SIZE, 25, Short.MAX_VALUE)
+            .addComponent(jLabel3, javax.swing.GroupLayout.PREFERRED_SIZE, 37, javax.swing.GroupLayout.PREFERRED_SIZE)
         );
 
         jTextField2.setPreferredSize(new java.awt.Dimension(20, 20));
         jTextField2.addFocusListener(new java.awt.event.FocusAdapter() {
             public void focusGained(java.awt.event.FocusEvent evt) {
                 jTextField2FocusGained(evt);
+            }
+        });
+        jTextField2.addKeyListener(new java.awt.event.KeyAdapter() {
+            public void keyTyped(java.awt.event.KeyEvent evt) {
+                jTextField2KeyTyped(evt);
             }
         });
 
@@ -852,12 +1015,26 @@ public class Principal extends javax.swing.JFrame {
             }
         });
 
+        jButton3.setBackground(new java.awt.Color(245, 244, 244));
+        jButton3.setIcon(new javax.swing.ImageIcon(getClass().getResource("/winspapus/imagenes/imprimirpeque.fw.png"))); // NOI18N
+        jButton3.setToolTipText("Imprimir Análisis de Precio Unitario");
+        jButton3.setEnabled(false);
+        jButton3.setFocusable(false);
+        jButton3.setHorizontalTextPosition(javax.swing.SwingConstants.CENTER);
+        jButton3.setPreferredSize(new java.awt.Dimension(30, 30));
+        jButton3.setVerticalTextPosition(javax.swing.SwingConstants.BOTTOM);
+        jButton3.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jButton3ActionPerformed(evt);
+            }
+        });
+
         javax.swing.GroupLayout jPanel8Layout = new javax.swing.GroupLayout(jPanel8);
         jPanel8.setLayout(jPanel8Layout);
         jPanel8Layout.setHorizontalGroup(
             jPanel8Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, jPanel8Layout.createSequentialGroup()
-                .addComponent(jLabel4, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+            .addGroup(jPanel8Layout.createSequentialGroup()
+                .addComponent(jLabel4)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addComponent(jTextField2, javax.swing.GroupLayout.PREFERRED_SIZE, 148, javax.swing.GroupLayout.PREFERRED_SIZE)
                 .addGap(18, 18, 18)
@@ -874,24 +1051,27 @@ public class Principal extends javax.swing.JFrame {
                 .addComponent(jButton10, javax.swing.GroupLayout.PREFERRED_SIZE, 30, javax.swing.GroupLayout.PREFERRED_SIZE)
                 .addGap(2, 2, 2)
                 .addComponent(jButton24, javax.swing.GroupLayout.PREFERRED_SIZE, 30, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addGap(113, 113, 113))
+                .addGap(0, 0, 0)
+                .addComponent(jButton3, javax.swing.GroupLayout.PREFERRED_SIZE, 30, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addContainerGap(87, Short.MAX_VALUE))
         );
         jPanel8Layout.setVerticalGroup(
             jPanel8Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(jPanel8Layout.createSequentialGroup()
-                .addGroup(jPanel8Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                    .addGroup(jPanel8Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
+                .addGroup(jPanel8Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
+                    .addComponent(jButton3, javax.swing.GroupLayout.Alignment.LEADING, 0, 0, Short.MAX_VALUE)
+                    .addGroup(javax.swing.GroupLayout.Alignment.LEADING, jPanel8Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
                         .addGroup(jPanel8Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
                             .addComponent(jTextField2, javax.swing.GroupLayout.DEFAULT_SIZE, 30, Short.MAX_VALUE)
                             .addComponent(jLabel4))
-                        .addComponent(jButton2, javax.swing.GroupLayout.PREFERRED_SIZE, 30, javax.swing.GroupLayout.PREFERRED_SIZE))
-                    .addComponent(jButton11, javax.swing.GroupLayout.PREFERRED_SIZE, 30, javax.swing.GroupLayout.PREFERRED_SIZE)
-                    .addComponent(jButton24, javax.swing.GroupLayout.PREFERRED_SIZE, 30, javax.swing.GroupLayout.PREFERRED_SIZE)
-                    .addComponent(jButton10, javax.swing.GroupLayout.PREFERRED_SIZE, 30, javax.swing.GroupLayout.PREFERRED_SIZE)
-                    .addComponent(jButton8, javax.swing.GroupLayout.PREFERRED_SIZE, 30, javax.swing.GroupLayout.PREFERRED_SIZE)
-                    .addComponent(jButton12, javax.swing.GroupLayout.PREFERRED_SIZE, 30, javax.swing.GroupLayout.PREFERRED_SIZE)
-                    .addComponent(jButton9, javax.swing.GroupLayout.PREFERRED_SIZE, 30, javax.swing.GroupLayout.PREFERRED_SIZE))
-                .addContainerGap())
+                        .addComponent(jButton2, javax.swing.GroupLayout.DEFAULT_SIZE, 30, Short.MAX_VALUE)
+                        .addComponent(jButton11, javax.swing.GroupLayout.DEFAULT_SIZE, 30, Short.MAX_VALUE)
+                        .addComponent(jButton24, javax.swing.GroupLayout.DEFAULT_SIZE, 30, Short.MAX_VALUE)
+                        .addComponent(jButton10, javax.swing.GroupLayout.DEFAULT_SIZE, 30, Short.MAX_VALUE)
+                        .addComponent(jButton8, javax.swing.GroupLayout.DEFAULT_SIZE, 30, Short.MAX_VALUE)
+                        .addComponent(jButton12, javax.swing.GroupLayout.DEFAULT_SIZE, 30, Short.MAX_VALUE)
+                        .addComponent(jButton9, javax.swing.GroupLayout.PREFERRED_SIZE, 30, Short.MAX_VALUE)))
+                .addGap(9, 9, 9))
         );
 
         jTable2.setAutoCreateRowSorter(true);
@@ -904,6 +1084,17 @@ public class Principal extends javax.swing.JFrame {
         jTable2.addMouseListener(new java.awt.event.MouseAdapter() {
             public void mouseClicked(java.awt.event.MouseEvent evt) {
                 jTable2MouseClicked(evt);
+            }
+        });
+        jTable2.addKeyListener(new java.awt.event.KeyAdapter() {
+            public void keyReleased(java.awt.event.KeyEvent evt) {
+                jTable2KeyReleased(evt);
+            }
+            public void keyPressed(java.awt.event.KeyEvent evt) {
+                jTable2KeyPressed(evt);
+            }
+            public void keyTyped(java.awt.event.KeyEvent evt) {
+                jTable2KeyTyped(evt);
             }
         });
         jScrollPane2.setViewportView(jTable2);
@@ -936,29 +1127,36 @@ public class Principal extends javax.swing.JFrame {
 
         jLabel27.setFont(new java.awt.Font("Tahoma", 0, 10));
 
+        jLabel32.setFont(new java.awt.Font("Tahoma", 1, 10));
+        jLabel32.setHorizontalAlignment(javax.swing.SwingConstants.RIGHT);
+        jLabel32.setText("Precio Asumido:");
+
+        jLabel40.setFont(new java.awt.Font("Tahoma", 0, 10));
+
         javax.swing.GroupLayout jPanel16Layout = new javax.swing.GroupLayout(jPanel16);
         jPanel16.setLayout(jPanel16Layout);
         jPanel16Layout.setHorizontalGroup(
             jPanel16Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, jPanel16Layout.createSequentialGroup()
-                .addGap(43, 43, 43)
+                .addContainerGap()
                 .addGroup(jPanel16Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                    .addComponent(jLabel14, javax.swing.GroupLayout.Alignment.TRAILING)
-                    .addComponent(jLabel18, javax.swing.GroupLayout.Alignment.TRAILING)
+                    .addComponent(jLabel32, javax.swing.GroupLayout.Alignment.TRAILING, javax.swing.GroupLayout.PREFERRED_SIZE, 98, javax.swing.GroupLayout.PREFERRED_SIZE)
+                    .addComponent(jLabel26, javax.swing.GroupLayout.Alignment.TRAILING)
                     .addComponent(jLabel22, javax.swing.GroupLayout.Alignment.TRAILING)
-                    .addComponent(jLabel26, javax.swing.GroupLayout.Alignment.TRAILING))
+                    .addComponent(jLabel18, javax.swing.GroupLayout.Alignment.TRAILING)
+                    .addComponent(jLabel14, javax.swing.GroupLayout.Alignment.TRAILING))
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addGroup(jPanel16Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                    .addComponent(jLabel15, javax.swing.GroupLayout.PREFERRED_SIZE, 93, javax.swing.GroupLayout.PREFERRED_SIZE)
-                    .addComponent(jLabel19, javax.swing.GroupLayout.PREFERRED_SIZE, 93, javax.swing.GroupLayout.PREFERRED_SIZE)
+                    .addComponent(jLabel40, javax.swing.GroupLayout.PREFERRED_SIZE, 140, javax.swing.GroupLayout.PREFERRED_SIZE)
+                    .addComponent(jLabel27, javax.swing.GroupLayout.PREFERRED_SIZE, 93, javax.swing.GroupLayout.PREFERRED_SIZE)
                     .addComponent(jLabel23, javax.swing.GroupLayout.PREFERRED_SIZE, 93, javax.swing.GroupLayout.PREFERRED_SIZE)
-                    .addComponent(jLabel27, javax.swing.GroupLayout.PREFERRED_SIZE, 93, javax.swing.GroupLayout.PREFERRED_SIZE))
-                .addContainerGap(44, Short.MAX_VALUE))
+                    .addComponent(jLabel19, javax.swing.GroupLayout.PREFERRED_SIZE, 93, javax.swing.GroupLayout.PREFERRED_SIZE)
+                    .addComponent(jLabel15, javax.swing.GroupLayout.PREFERRED_SIZE, 93, javax.swing.GroupLayout.PREFERRED_SIZE))
+                .addContainerGap(19, Short.MAX_VALUE))
         );
         jPanel16Layout.setVerticalGroup(
             jPanel16Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(jPanel16Layout.createSequentialGroup()
-                .addContainerGap()
                 .addGroup(jPanel16Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                     .addComponent(jLabel14, javax.swing.GroupLayout.PREFERRED_SIZE, 13, javax.swing.GroupLayout.PREFERRED_SIZE)
                     .addComponent(jLabel15, javax.swing.GroupLayout.PREFERRED_SIZE, 14, javax.swing.GroupLayout.PREFERRED_SIZE))
@@ -974,7 +1172,10 @@ public class Principal extends javax.swing.JFrame {
                 .addGroup(jPanel16Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                     .addComponent(jLabel27, javax.swing.GroupLayout.PREFERRED_SIZE, 13, javax.swing.GroupLayout.PREFERRED_SIZE)
                     .addComponent(jLabel26))
-                .addContainerGap(25, Short.MAX_VALUE))
+                .addGap(0, 0, 0)
+                .addGroup(jPanel16Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
+                    .addComponent(jLabel40, javax.swing.GroupLayout.PREFERRED_SIZE, 14, javax.swing.GroupLayout.PREFERRED_SIZE)
+                    .addComponent(jLabel32)))
         );
 
         jPanel17.setBackground(new java.awt.Color(217, 224, 231));
@@ -1025,12 +1226,11 @@ public class Principal extends javax.swing.JFrame {
                     .addComponent(jLabel25, javax.swing.GroupLayout.PREFERRED_SIZE, 140, javax.swing.GroupLayout.PREFERRED_SIZE)
                     .addComponent(jLabel29, javax.swing.GroupLayout.PREFERRED_SIZE, 52, javax.swing.GroupLayout.PREFERRED_SIZE)
                     .addComponent(jLabel33, javax.swing.GroupLayout.PREFERRED_SIZE, 140, javax.swing.GroupLayout.PREFERRED_SIZE))
-                .addContainerGap(17, Short.MAX_VALUE))
+                .addGap(0, 10, Short.MAX_VALUE))
         );
         jPanel17Layout.setVerticalGroup(
             jPanel17Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(jPanel17Layout.createSequentialGroup()
-                .addContainerGap()
                 .addGroup(jPanel17Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                     .addComponent(jLabel16)
                     .addComponent(jLabel17, javax.swing.GroupLayout.PREFERRED_SIZE, 13, javax.swing.GroupLayout.PREFERRED_SIZE))
@@ -1049,8 +1249,7 @@ public class Principal extends javax.swing.JFrame {
                 .addGap(0, 0, 0)
                 .addGroup(jPanel17Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
                     .addComponent(jLabel33, javax.swing.GroupLayout.PREFERRED_SIZE, 14, javax.swing.GroupLayout.PREFERRED_SIZE)
-                    .addComponent(jLabel31))
-                .addContainerGap(12, Short.MAX_VALUE))
+                    .addComponent(jLabel31)))
         );
 
         jPanel29.setBackground(new java.awt.Color(217, 224, 231));
@@ -1077,7 +1276,7 @@ public class Principal extends javax.swing.JFrame {
                 .addContainerGap()
                 .addComponent(jLabel5, javax.swing.GroupLayout.PREFERRED_SIZE, 74, javax.swing.GroupLayout.PREFERRED_SIZE)
                 .addGap(10, 10, 10)
-                .addComponent(jScrollPane3, javax.swing.GroupLayout.DEFAULT_SIZE, 448, Short.MAX_VALUE)
+                .addComponent(jScrollPane3, javax.swing.GroupLayout.DEFAULT_SIZE, 441, Short.MAX_VALUE)
                 .addContainerGap())
         );
         jPanel29Layout.setVerticalGroup(
@@ -1089,7 +1288,7 @@ public class Principal extends javax.swing.JFrame {
                         .addComponent(jLabel5))
                     .addGroup(jPanel29Layout.createSequentialGroup()
                         .addContainerGap()
-                        .addComponent(jScrollPane3, javax.swing.GroupLayout.DEFAULT_SIZE, 42, Short.MAX_VALUE)))
+                        .addComponent(jScrollPane3, javax.swing.GroupLayout.DEFAULT_SIZE, 49, Short.MAX_VALUE)))
                 .addContainerGap())
         );
 
@@ -1104,16 +1303,14 @@ public class Principal extends javax.swing.JFrame {
                     .addGroup(jPanel10Layout.createSequentialGroup()
                         .addComponent(jPanel16, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                        .addComponent(jPanel17, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)))
-                .addContainerGap())
+                        .addComponent(jPanel17, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))))
         );
         jPanel10Layout.setVerticalGroup(
             jPanel10Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(jPanel10Layout.createSequentialGroup()
-                .addGap(11, 11, 11)
-                .addGroup(jPanel10Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING, false)
-                    .addComponent(jPanel17, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                    .addComponent(jPanel16, javax.swing.GroupLayout.Alignment.LEADING, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
+                .addGroup(jPanel10Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.CENTER)
+                    .addComponent(jPanel17, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                    .addComponent(jPanel16, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addComponent(jPanel29, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
         );
@@ -1126,20 +1323,22 @@ public class Principal extends javax.swing.JFrame {
             .addGroup(jPanel3Layout.createSequentialGroup()
                 .addContainerGap()
                 .addGroup(jPanel3Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
-                    .addComponent(jScrollPane2, javax.swing.GroupLayout.Alignment.LEADING, javax.swing.GroupLayout.DEFAULT_SIZE, 554, Short.MAX_VALUE)
-                    .addComponent(jPanel8, javax.swing.GroupLayout.Alignment.LEADING, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
+                    .addComponent(jPanel8, javax.swing.GroupLayout.Alignment.LEADING, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                    .addComponent(jScrollPane2, javax.swing.GroupLayout.Alignment.LEADING, javax.swing.GroupLayout.DEFAULT_SIZE, 545, Short.MAX_VALUE))
+                .addGap(12, 12, 12))
+            .addGroup(jPanel3Layout.createSequentialGroup()
+                .addComponent(jPanel10, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
                 .addContainerGap())
-            .addComponent(jPanel10, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
         );
         jPanel3Layout.setVerticalGroup(
             jPanel3Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(jPanel3Layout.createSequentialGroup()
                 .addComponent(jPanel7, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                .addGap(5, 5, 5)
                 .addComponent(jPanel8, javax.swing.GroupLayout.PREFERRED_SIZE, 32, javax.swing.GroupLayout.PREFERRED_SIZE)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                .addComponent(jScrollPane2, javax.swing.GroupLayout.DEFAULT_SIZE, 116, Short.MAX_VALUE)
-                .addGap(0, 0, 0)
+                .addComponent(jScrollPane2, javax.swing.GroupLayout.DEFAULT_SIZE, 107, Short.MAX_VALUE)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addComponent(jPanel10, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
         );
 
@@ -1159,7 +1358,7 @@ public class Principal extends javax.swing.JFrame {
         jPanel11.setLayout(jPanel11Layout);
         jPanel11Layout.setHorizontalGroup(
             jPanel11Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addComponent(jLabel6, javax.swing.GroupLayout.DEFAULT_SIZE, 410, Short.MAX_VALUE)
+            .addComponent(jLabel6, javax.swing.GroupLayout.DEFAULT_SIZE, 475, Short.MAX_VALUE)
         );
         jPanel11Layout.setVerticalGroup(
             jPanel11Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
@@ -1228,7 +1427,7 @@ public class Principal extends javax.swing.JFrame {
         jPanel24Layout.setVerticalGroup(
             jPanel24Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, jPanel24Layout.createSequentialGroup()
-                .addGroup(jPanel24Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                .addGroup(jPanel24Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.CENTER)
                     .addComponent(jLabel35, javax.swing.GroupLayout.PREFERRED_SIZE, 14, javax.swing.GroupLayout.PREFERRED_SIZE)
                     .addComponent(jLabel34))
                 .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
@@ -1242,7 +1441,7 @@ public class Principal extends javax.swing.JFrame {
                 .addContainerGap()
                 .addGroup(jPanel13Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                     .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, jPanel13Layout.createSequentialGroup()
-                        .addComponent(jScrollPane5, javax.swing.GroupLayout.DEFAULT_SIZE, 364, Short.MAX_VALUE)
+                        .addComponent(jScrollPane5, javax.swing.GroupLayout.DEFAULT_SIZE, 439, Short.MAX_VALUE)
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                         .addComponent(jLabel9)
                         .addContainerGap())
@@ -1252,7 +1451,7 @@ public class Principal extends javax.swing.JFrame {
                         .addComponent(jButton15)
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                         .addComponent(jButton16)
-                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 18, Short.MAX_VALUE)
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 93, Short.MAX_VALUE)
                         .addComponent(jPanel24, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                         .addGap(14, 14, 14))))
         );
@@ -1263,7 +1462,7 @@ public class Principal extends javax.swing.JFrame {
                     .addGroup(jPanel13Layout.createSequentialGroup()
                         .addGap(31, 31, 31)
                         .addComponent(jLabel9))
-                    .addComponent(jScrollPane5, javax.swing.GroupLayout.DEFAULT_SIZE, 114, Short.MAX_VALUE))
+                    .addComponent(jScrollPane5, javax.swing.GroupLayout.DEFAULT_SIZE, 122, Short.MAX_VALUE))
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addGroup(jPanel13Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
                     .addGroup(jPanel13Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
@@ -1293,6 +1492,11 @@ public class Principal extends javax.swing.JFrame {
         jScrollPane6.setViewportView(jTable5);
 
         jButton22.setText("Quitar");
+        jButton22.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jButton22ActionPerformed(evt);
+            }
+        });
 
         jButton21.setText("Guardar");
         jButton21.addActionListener(new java.awt.event.ActionListener() {
@@ -1322,10 +1526,10 @@ public class Principal extends javax.swing.JFrame {
         );
         jPanel15Layout.setVerticalGroup(
             jPanel15Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGroup(jPanel15Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                .addComponent(jButton20, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+            .addGroup(jPanel15Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.CENTER)
+                .addComponent(jButton22, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
                 .addComponent(jButton21, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                .addComponent(jButton22, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+                .addComponent(jButton20, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
         );
 
         jLabel38.setFont(new java.awt.Font("Tahoma", 1, 10));
@@ -1338,7 +1542,7 @@ public class Principal extends javax.swing.JFrame {
         jPanel28Layout.setHorizontalGroup(
             jPanel28Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(jPanel28Layout.createSequentialGroup()
-                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                .addContainerGap(85, Short.MAX_VALUE)
                 .addComponent(jLabel38, javax.swing.GroupLayout.PREFERRED_SIZE, 42, javax.swing.GroupLayout.PREFERRED_SIZE)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addComponent(jLabel39, javax.swing.GroupLayout.PREFERRED_SIZE, 89, javax.swing.GroupLayout.PREFERRED_SIZE))
@@ -1346,7 +1550,7 @@ public class Principal extends javax.swing.JFrame {
         jPanel28Layout.setVerticalGroup(
             jPanel28Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, jPanel28Layout.createSequentialGroup()
-                .addGroup(jPanel28Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                .addGroup(jPanel28Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.CENTER)
                     .addComponent(jLabel39, javax.swing.GroupLayout.PREFERRED_SIZE, 14, javax.swing.GroupLayout.PREFERRED_SIZE)
                     .addComponent(jLabel38))
                 .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
@@ -1362,7 +1566,7 @@ public class Principal extends javax.swing.JFrame {
                         .addContainerGap()
                         .addComponent(jLabel11)
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                        .addComponent(jScrollPane6, javax.swing.GroupLayout.DEFAULT_SIZE, 364, Short.MAX_VALUE))
+                        .addComponent(jScrollPane6, javax.swing.GroupLayout.DEFAULT_SIZE, 439, Short.MAX_VALUE))
                     .addGroup(javax.swing.GroupLayout.Alignment.LEADING, jPanel14Layout.createSequentialGroup()
                         .addGap(2, 2, 2)
                         .addComponent(jPanel15, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
@@ -1377,7 +1581,7 @@ public class Principal extends javax.swing.JFrame {
                     .addGroup(jPanel14Layout.createSequentialGroup()
                         .addContainerGap()
                         .addComponent(jLabel11))
-                    .addComponent(jScrollPane6, javax.swing.GroupLayout.PREFERRED_SIZE, 110, javax.swing.GroupLayout.PREFERRED_SIZE))
+                    .addComponent(jScrollPane6, javax.swing.GroupLayout.DEFAULT_SIZE, 112, Short.MAX_VALUE))
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addGroup(jPanel14Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                     .addComponent(jPanel15, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
@@ -1434,7 +1638,7 @@ public class Principal extends javax.swing.JFrame {
         jPanel25Layout.setHorizontalGroup(
             jPanel25Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(jPanel25Layout.createSequentialGroup()
-                .addContainerGap(12, Short.MAX_VALUE)
+                .addContainerGap(87, Short.MAX_VALUE)
                 .addComponent(jLabel36, javax.swing.GroupLayout.PREFERRED_SIZE, 42, javax.swing.GroupLayout.PREFERRED_SIZE)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addComponent(jLabel37, javax.swing.GroupLayout.PREFERRED_SIZE, 89, javax.swing.GroupLayout.PREFERRED_SIZE))
@@ -1442,7 +1646,7 @@ public class Principal extends javax.swing.JFrame {
         jPanel25Layout.setVerticalGroup(
             jPanel25Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, jPanel25Layout.createSequentialGroup()
-                .addGroup(jPanel25Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                .addGroup(jPanel25Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.CENTER)
                     .addComponent(jLabel37, javax.swing.GroupLayout.PREFERRED_SIZE, 14, javax.swing.GroupLayout.PREFERRED_SIZE)
                     .addComponent(jLabel36))
                 .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
@@ -1453,7 +1657,7 @@ public class Principal extends javax.swing.JFrame {
         jPanel12Layout.setHorizontalGroup(
             jPanel12Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, jPanel12Layout.createSequentialGroup()
-                .addContainerGap(388, Short.MAX_VALUE)
+                .addContainerGap(463, Short.MAX_VALUE)
                 .addComponent(jLabel7))
             .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, jPanel12Layout.createSequentialGroup()
                 .addGap(18, 18, 18)
@@ -1467,7 +1671,7 @@ public class Principal extends javax.swing.JFrame {
                 .addContainerGap())
             .addGroup(jPanel12Layout.createSequentialGroup()
                 .addContainerGap()
-                .addComponent(jScrollPane4, javax.swing.GroupLayout.DEFAULT_SIZE, 368, Short.MAX_VALUE)
+                .addComponent(jScrollPane4, javax.swing.GroupLayout.DEFAULT_SIZE, 443, Short.MAX_VALUE)
                 .addContainerGap())
         );
         jPanel12Layout.setVerticalGroup(
@@ -1475,7 +1679,7 @@ public class Principal extends javax.swing.JFrame {
             .addGroup(jPanel12Layout.createSequentialGroup()
                 .addGroup(jPanel12Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                     .addComponent(jLabel7)
-                    .addComponent(jScrollPane4, javax.swing.GroupLayout.DEFAULT_SIZE, 122, Short.MAX_VALUE))
+                    .addComponent(jScrollPane4, javax.swing.GroupLayout.DEFAULT_SIZE, 120, Short.MAX_VALUE))
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addGroup(jPanel12Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                     .addGroup(jPanel12Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
@@ -1490,18 +1694,15 @@ public class Principal extends javax.swing.JFrame {
         jPanel4Layout.setHorizontalGroup(
             jPanel4Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addComponent(jPanel11, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-            .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, jPanel4Layout.createSequentialGroup()
-                .addGap(4, 4, 4)
-                .addComponent(jPanel14, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                .addContainerGap())
-            .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, jPanel4Layout.createSequentialGroup()
-                .addGap(4, 4, 4)
-                .addComponent(jPanel12, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                .addContainerGap())
             .addGroup(jPanel4Layout.createSequentialGroup()
                 .addGap(4, 4, 4)
-                .addComponent(jPanel13, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                .addContainerGap())
+                .addComponent(jPanel13, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+            .addGroup(jPanel4Layout.createSequentialGroup()
+                .addGap(4, 4, 4)
+                .addComponent(jPanel12, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+            .addGroup(jPanel4Layout.createSequentialGroup()
+                .addGap(4, 4, 4)
+                .addComponent(jPanel14, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
         );
         jPanel4Layout.setVerticalGroup(
             jPanel4Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
@@ -1510,9 +1711,9 @@ public class Principal extends javax.swing.JFrame {
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addComponent(jPanel13, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                .addComponent(jPanel12, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addComponent(jPanel12, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                .addComponent(jPanel14, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
+                .addComponent(jPanel14, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
         );
 
         javax.swing.GroupLayout jPanel1Layout = new javax.swing.GroupLayout(jPanel1);
@@ -1520,12 +1721,12 @@ public class Principal extends javax.swing.JFrame {
         jPanel1Layout.setHorizontalGroup(
             jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(jPanel1Layout.createSequentialGroup()
-                .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
-                    .addComponent(jPanel2, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                    .addComponent(jPanel3, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+                .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                    .addComponent(jPanel3, 0, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                    .addComponent(jPanel2, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addComponent(jPanel4, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                .addGap(8, 8, 8))
+                .addContainerGap())
         );
         jPanel1Layout.setVerticalGroup(
             jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
@@ -1533,7 +1734,7 @@ public class Principal extends javax.swing.JFrame {
                 .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
                     .addComponent(jPanel4, javax.swing.GroupLayout.Alignment.LEADING, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
                     .addGroup(jPanel1Layout.createSequentialGroup()
-                        .addComponent(jPanel2, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                        .addComponent(jPanel2, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                         .addComponent(jPanel3, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)))
                 .addContainerGap())
@@ -1637,20 +1838,6 @@ public class Principal extends javax.swing.JFrame {
         });
         jToolBar1.add(jButton28);
 
-        jButton3.setBackground(new java.awt.Color(245, 244, 244));
-        jButton3.setIcon(new javax.swing.ImageIcon(getClass().getResource("/winspapus/imagenes/imprimir.png"))); // NOI18N
-        jButton3.setToolTipText("Imprimir Análisis de Precio Unitario");
-        jButton3.setEnabled(false);
-        jButton3.setFocusable(false);
-        jButton3.setHorizontalTextPosition(javax.swing.SwingConstants.CENTER);
-        jButton3.setVerticalTextPosition(javax.swing.SwingConstants.BOTTOM);
-        jButton3.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
-                jButton3ActionPerformed(evt);
-            }
-        });
-        jToolBar1.add(jButton3);
-
         jButton30.setIcon(new javax.swing.ImageIcon(getClass().getResource("/winspapus/imagenes/recalcula1.fw.png"))); // NOI18N
         jButton30.setToolTipText("Recalcular Tabulador");
         jButton30.setFocusable(false);
@@ -1667,18 +1854,18 @@ public class Principal extends javax.swing.JFrame {
         jInternalFrame1.getContentPane().setLayout(jInternalFrame1Layout);
         jInternalFrame1Layout.setHorizontalGroup(
             jInternalFrame1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addComponent(jToolBar1, javax.swing.GroupLayout.DEFAULT_SIZE, 1004, Short.MAX_VALUE)
-            .addComponent(jScrollPane8, javax.swing.GroupLayout.Alignment.TRAILING, javax.swing.GroupLayout.DEFAULT_SIZE, 1004, Short.MAX_VALUE)
+            .addComponent(jScrollPane8, javax.swing.GroupLayout.Alignment.TRAILING, javax.swing.GroupLayout.DEFAULT_SIZE, 1064, Short.MAX_VALUE)
+            .addComponent(jToolBar1, javax.swing.GroupLayout.DEFAULT_SIZE, 1064, Short.MAX_VALUE)
         );
         jInternalFrame1Layout.setVerticalGroup(
             jInternalFrame1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(jInternalFrame1Layout.createSequentialGroup()
-                .addComponent(jToolBar1, javax.swing.GroupLayout.PREFERRED_SIZE, 45, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addComponent(jToolBar1, javax.swing.GroupLayout.PREFERRED_SIZE, 46, javax.swing.GroupLayout.PREFERRED_SIZE)
                 .addGap(0, 0, 0)
-                .addComponent(jScrollPane8, javax.swing.GroupLayout.DEFAULT_SIZE, 589, Short.MAX_VALUE))
+                .addComponent(jScrollPane8, javax.swing.GroupLayout.DEFAULT_SIZE, 588, Short.MAX_VALUE))
         );
 
-        jInternalFrame1.setBounds(0, 0, 1020, 660);
+        jInternalFrame1.setBounds(0, 0, 1080, 660);
         jDesktopPane1.add(jInternalFrame1, javax.swing.JLayeredPane.DEFAULT_LAYER);
         try {
             jInternalFrame1.setMaximum(true);
@@ -1690,7 +1877,7 @@ public class Principal extends javax.swing.JFrame {
         jMenu1.setText("Precios Referenciales");
         jMenu1.setName("tabuladores"); // NOI18N
 
-        jMenuItem1.setAccelerator(javax.swing.KeyStroke.getKeyStroke(java.awt.event.KeyEvent.VK_G, java.awt.event.InputEvent.CTRL_MASK));
+        jMenuItem1.setAccelerator(javax.swing.KeyStroke.getKeyStroke(java.awt.event.KeyEvent.VK_T, java.awt.event.InputEvent.CTRL_MASK));
         jMenuItem1.setIcon(new javax.swing.ImageIcon(getClass().getResource("/winspapus/imagenes/listar.png"))); // NOI18N
         jMenuItem1.setText("Gestionar");
         jMenuItem1.addMouseListener(new java.awt.event.MouseAdapter() {
@@ -1705,6 +1892,7 @@ public class Principal extends javax.swing.JFrame {
         });
         jMenu1.add(jMenuItem1);
 
+        jMenuItem2.setAccelerator(javax.swing.KeyStroke.getKeyStroke(java.awt.event.KeyEvent.VK_G, java.awt.event.InputEvent.CTRL_MASK));
         jMenuItem2.setIcon(new javax.swing.ImageIcon(getClass().getResource("/winspapus/imagenes/partidas.fw.png"))); // NOI18N
         jMenuItem2.setText("Grupo de Partidas");
         jMenuItem2.addActionListener(new java.awt.event.ActionListener() {
@@ -1717,6 +1905,7 @@ public class Principal extends javax.swing.JFrame {
         jMenu3.setIcon(new javax.swing.ImageIcon(getClass().getResource("/winspapus/imagenes/maquinas.fw.png"))); // NOI18N
         jMenu3.setText("Matriz de Costos");
 
+        jMenuItem3.setAccelerator(javax.swing.KeyStroke.getKeyStroke(java.awt.event.KeyEvent.VK_M, java.awt.event.InputEvent.CTRL_MASK));
         jMenuItem3.setIcon(new javax.swing.ImageIcon(getClass().getResource("/winspapus/imagenes/material.png"))); // NOI18N
         jMenuItem3.setText("Materiales");
         jMenuItem3.addActionListener(new java.awt.event.ActionListener() {
@@ -1726,6 +1915,7 @@ public class Principal extends javax.swing.JFrame {
         });
         jMenu3.add(jMenuItem3);
 
+        jMenuItem4.setAccelerator(javax.swing.KeyStroke.getKeyStroke(java.awt.event.KeyEvent.VK_E, java.awt.event.InputEvent.CTRL_MASK));
         jMenuItem4.setIcon(new javax.swing.ImageIcon(getClass().getResource("/winspapus/imagenes/maquinaria.png"))); // NOI18N
         jMenuItem4.setText("Equipos");
         jMenuItem4.addActionListener(new java.awt.event.ActionListener() {
@@ -1735,6 +1925,7 @@ public class Principal extends javax.swing.JFrame {
         });
         jMenu3.add(jMenuItem4);
 
+        jMenuItem5.setAccelerator(javax.swing.KeyStroke.getKeyStroke(java.awt.event.KeyEvent.VK_O, java.awt.event.InputEvent.CTRL_MASK));
         jMenuItem5.setIcon(new javax.swing.ImageIcon(getClass().getResource("/winspapus/imagenes/casco.png"))); // NOI18N
         jMenuItem5.setText("Mano de Obra");
         jMenuItem5.addActionListener(new java.awt.event.ActionListener() {
@@ -1745,6 +1936,7 @@ public class Principal extends javax.swing.JFrame {
         jMenu3.add(jMenuItem5);
         jMenu3.add(jSeparator5);
 
+        jMenuItem45.setAccelerator(javax.swing.KeyStroke.getKeyStroke(java.awt.event.KeyEvent.VK_M, java.awt.event.InputEvent.ALT_MASK));
         jMenuItem45.setIcon(new javax.swing.ImageIcon(getClass().getResource("/winspapus/imagenes/apu.png"))); // NOI18N
         jMenuItem45.setText("Matriz de Costos");
         jMenuItem45.addActionListener(new java.awt.event.ActionListener() {
@@ -1756,6 +1948,7 @@ public class Principal extends javax.swing.JFrame {
 
         jMenu1.add(jMenu3);
 
+        jMenuItem9.setAccelerator(javax.swing.KeyStroke.getKeyStroke(java.awt.event.KeyEvent.VK_C, java.awt.event.InputEvent.ALT_MASK));
         jMenuItem9.setIcon(new javax.swing.ImageIcon(getClass().getResource("/winspapus/imagenes/capitulos.png"))); // NOI18N
         jMenuItem9.setText("Capítulos");
         jMenuItem9.addActionListener(new java.awt.event.ActionListener() {
@@ -1766,6 +1959,7 @@ public class Principal extends javax.swing.JFrame {
         jMenu1.add(jMenuItem9);
         jMenu1.add(jSeparator6);
 
+        jMenuItem38.setAccelerator(javax.swing.KeyStroke.getKeyStroke(java.awt.event.KeyEvent.VK_R, java.awt.event.InputEvent.ALT_MASK));
         jMenuItem38.setIcon(new javax.swing.ImageIcon(getClass().getResource("/winspapus/imagenes/recalcula.fw.png"))); // NOI18N
         jMenuItem38.setText("Recalcular Tabuladores");
         jMenuItem38.addActionListener(new java.awt.event.ActionListener() {
@@ -1775,10 +1969,29 @@ public class Principal extends javax.swing.JFrame {
         });
         jMenu1.add(jMenuItem38);
 
+        jMenuItem43.setIcon(new javax.swing.ImageIcon(getClass().getResource("/winspapus/imagenes/reporte.png"))); // NOI18N
+        jMenuItem43.setText("General de Partidas");
+        jMenuItem43.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jMenuItem43ActionPerformed(evt);
+            }
+        });
+        jMenu1.add(jMenuItem43);
+
+        jMenuItem44.setIcon(new javax.swing.ImageIcon(getClass().getResource("/winspapus/imagenes/imprimir.png"))); // NOI18N
+        jMenuItem44.setText("Imprimir Análisis de Precio Unitario");
+        jMenuItem44.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jMenuItem44ActionPerformed(evt);
+            }
+        });
+        jMenu1.add(jMenuItem44);
+
         jMenuBar1.add(jMenu1);
 
         jMenu2.setText("Presupuestos");
 
+        jMenuItem6.setAccelerator(javax.swing.KeyStroke.getKeyStroke(java.awt.event.KeyEvent.VK_P, java.awt.event.InputEvent.ALT_MASK));
         jMenuItem6.setIcon(new javax.swing.ImageIcon(getClass().getResource("/winspapus/imagenes/obra.png"))); // NOI18N
         jMenuItem6.setText("Trabajar Presupuesto");
         jMenuItem6.addActionListener(new java.awt.event.ActionListener() {
@@ -1798,7 +2011,7 @@ public class Principal extends javax.swing.JFrame {
         });
         jMenu2.add(jMenuItem46);
 
-        jMenuItem10.setAccelerator(javax.swing.KeyStroke.getKeyStroke(java.awt.event.KeyEvent.VK_T, java.awt.event.InputEvent.CTRL_MASK));
+        jMenuItem10.setAccelerator(javax.swing.KeyStroke.getKeyStroke(java.awt.event.KeyEvent.VK_R, java.awt.event.InputEvent.CTRL_MASK));
         jMenuItem10.setIcon(new javax.swing.ImageIcon(getClass().getResource("/winspapus/imagenes/cambiar.fw.png"))); // NOI18N
         jMenuItem10.setText("Cambiar Presupuesto");
         jMenuItem10.setToolTipText("");
@@ -1810,6 +2023,7 @@ public class Principal extends javax.swing.JFrame {
         });
         jMenu2.add(jMenuItem10);
 
+        jMenuItem7.setAccelerator(javax.swing.KeyStroke.getKeyStroke(java.awt.event.KeyEvent.VK_V, java.awt.event.InputEvent.ALT_MASK));
         jMenuItem7.setIcon(new javax.swing.ImageIcon(getClass().getResource("/winspapus/imagenes/listar2.png"))); // NOI18N
         jMenuItem7.setText("Valuaciones");
         jMenuItem7.setEnabled(false);
@@ -1824,6 +2038,7 @@ public class Principal extends javax.swing.JFrame {
         jMenu15.setText("Matriz de Costos");
         jMenu15.setEnabled(false);
 
+        jMenuItem33.setAccelerator(javax.swing.KeyStroke.getKeyStroke(java.awt.event.KeyEvent.VK_M, java.awt.event.InputEvent.ALT_MASK));
         jMenuItem33.setIcon(new javax.swing.ImageIcon(getClass().getResource("/winspapus/imagenes/materialbarra.png"))); // NOI18N
         jMenuItem33.setText("Materiales");
         jMenuItem33.addActionListener(new java.awt.event.ActionListener() {
@@ -1833,6 +2048,7 @@ public class Principal extends javax.swing.JFrame {
         });
         jMenu15.add(jMenuItem33);
 
+        jMenuItem34.setAccelerator(javax.swing.KeyStroke.getKeyStroke(java.awt.event.KeyEvent.VK_E, java.awt.event.InputEvent.ALT_MASK));
         jMenuItem34.setIcon(new javax.swing.ImageIcon(getClass().getResource("/winspapus/imagenes/equipobarra.png"))); // NOI18N
         jMenuItem34.setText("Equipos");
         jMenuItem34.addActionListener(new java.awt.event.ActionListener() {
@@ -1842,6 +2058,7 @@ public class Principal extends javax.swing.JFrame {
         });
         jMenu15.add(jMenuItem34);
 
+        jMenuItem35.setAccelerator(javax.swing.KeyStroke.getKeyStroke(java.awt.event.KeyEvent.VK_O, java.awt.event.InputEvent.ALT_MASK));
         jMenuItem35.setIcon(new javax.swing.ImageIcon(getClass().getResource("/winspapus/imagenes/barracasco.png"))); // NOI18N
         jMenuItem35.setText("Mano de Obra");
         jMenuItem35.addActionListener(new java.awt.event.ActionListener() {
@@ -1852,12 +2069,14 @@ public class Principal extends javax.swing.JFrame {
         jMenu15.add(jMenuItem35);
         jMenu15.add(jSeparator3);
 
+        jMenuItem36.setAccelerator(javax.swing.KeyStroke.getKeyStroke(java.awt.event.KeyEvent.VK_P, java.awt.event.InputEvent.ALT_MASK));
         jMenuItem36.setIcon(new javax.swing.ImageIcon(getClass().getResource("/winspapus/imagenes/imprimir.png"))); // NOI18N
         jMenuItem36.setText("Imprimir Matriz");
         jMenu15.add(jMenuItem36);
 
         jMenu2.add(jMenu15);
 
+        jMenuItem8.setAccelerator(javax.swing.KeyStroke.getKeyStroke(java.awt.event.KeyEvent.VK_A, java.awt.event.InputEvent.ALT_MASK));
         jMenuItem8.setIcon(new javax.swing.ImageIcon(getClass().getResource("/winspapus/imagenes/aumentos.fw.png"))); // NOI18N
         jMenuItem8.setText("Aumentos y Disminuciones");
         jMenuItem8.setEnabled(false);
@@ -1868,6 +2087,7 @@ public class Principal extends javax.swing.JFrame {
         });
         jMenu2.add(jMenuItem8);
 
+        jMenuItem14.setAccelerator(javax.swing.KeyStroke.getKeyStroke(java.awt.event.KeyEvent.VK_C, java.awt.event.InputEvent.ALT_MASK));
         jMenuItem14.setIcon(new javax.swing.ImageIcon(getClass().getResource("/winspapus/imagenes/reloj.fw.png"))); // NOI18N
         jMenuItem14.setText("Cronograma de Actividades");
         jMenuItem14.setEnabled(false);
@@ -1878,6 +2098,7 @@ public class Principal extends javax.swing.JFrame {
         });
         jMenu2.add(jMenuItem14);
 
+        jMenuItem47.setAccelerator(javax.swing.KeyStroke.getKeyStroke(java.awt.event.KeyEvent.VK_R, java.awt.event.InputEvent.ALT_MASK));
         jMenuItem47.setIcon(new javax.swing.ImageIcon(getClass().getResource("/winspapus/imagenes/moneda.fw.png"))); // NOI18N
         jMenuItem47.setText("Reconsideración de Precios");
         jMenuItem47.setEnabled(false);
@@ -1888,6 +2109,7 @@ public class Principal extends javax.swing.JFrame {
         });
         jMenu2.add(jMenuItem47);
 
+        jMenuItem15.setAccelerator(javax.swing.KeyStroke.getKeyStroke(java.awt.event.KeyEvent.VK_M, java.awt.event.InputEvent.ALT_MASK | java.awt.event.InputEvent.CTRL_MASK));
         jMenuItem15.setIcon(new javax.swing.ImageIcon(getClass().getResource("/winspapus/imagenes/memo.fw.png"))); // NOI18N
         jMenuItem15.setText("Memoria Descriptiva");
         jMenuItem15.setEnabled(false);
@@ -1898,9 +2120,15 @@ public class Principal extends javax.swing.JFrame {
         });
         jMenu2.add(jMenuItem15);
 
+        jMenuItem37.setAccelerator(javax.swing.KeyStroke.getKeyStroke(java.awt.event.KeyEvent.VK_R, java.awt.event.InputEvent.ALT_MASK | java.awt.event.InputEvent.CTRL_MASK));
         jMenuItem37.setIcon(new javax.swing.ImageIcon(getClass().getResource("/winspapus/imagenes/recalcula.fw.png"))); // NOI18N
         jMenuItem37.setText("Recalcular Presupuesto");
         jMenuItem37.setEnabled(false);
+        jMenuItem37.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jMenuItem37ActionPerformed(evt);
+            }
+        });
         jMenu2.add(jMenuItem37);
         jMenu2.add(jSeparator4);
 
@@ -1915,9 +2143,22 @@ public class Principal extends javax.swing.JFrame {
             }
         });
         jMenu7.add(jMenuItem16);
+
+        jMenuItem12.setText("General De APU ");
+        jMenuItem12.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jMenuItem12ActionPerformed(evt);
+            }
+        });
+        jMenu7.add(jMenuItem12);
         jMenu7.add(jSeparator1);
 
         jMenuItem19.setText("Montos por Capitulos");
+        jMenuItem19.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jMenuItem19ActionPerformed(evt);
+            }
+        });
         jMenu7.add(jMenuItem19);
 
         jMenuItem20.setText("Computos Metrícos");
@@ -1931,12 +2172,27 @@ public class Principal extends javax.swing.JFrame {
         jMenu12.setText("Resúmenes");
 
         jMenuItem21.setText("Materiales");
+        jMenuItem21.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jMenuItem21ActionPerformed(evt);
+            }
+        });
         jMenu12.add(jMenuItem21);
 
         jMenuItem22.setText("Equipo");
+        jMenuItem22.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jMenuItem22ActionPerformed(evt);
+            }
+        });
         jMenu12.add(jMenuItem22);
 
         jMenuItem23.setText("Mano de Obra");
+        jMenuItem23.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jMenuItem23ActionPerformed(evt);
+            }
+        });
         jMenu12.add(jMenuItem23);
 
         jMenu7.add(jMenu12);
@@ -1944,21 +2200,38 @@ public class Principal extends javax.swing.JFrame {
         jMenu13.setText("Resúmenes Detallados");
 
         jMenuItem24.setText("Materiales");
+        jMenuItem24.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jMenuItem24ActionPerformed(evt);
+            }
+        });
         jMenu13.add(jMenuItem24);
 
         jMenuItem25.setText("Equipo");
+        jMenuItem25.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jMenuItem25ActionPerformed(evt);
+            }
+        });
         jMenu13.add(jMenuItem25);
 
         jMenuItem26.setText("Mano de Obra");
+        jMenuItem26.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jMenuItem26ActionPerformed(evt);
+            }
+        });
         jMenu13.add(jMenuItem26);
 
         jMenu7.add(jMenu13);
 
         jMenuItem27.setText("Resúmen General");
+        jMenuItem27.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jMenuItem27ActionPerformed(evt);
+            }
+        });
         jMenu7.add(jMenuItem27);
-
-        jMenuItem28.setText("Resúmen de Pago");
-        jMenu7.add(jMenuItem28);
         jMenu7.add(jSeparator2);
 
         jMenuItem29.setText("Cuadro de Cierre");
@@ -1976,9 +2249,19 @@ public class Principal extends javax.swing.JFrame {
         jMenu14.setEnabled(false);
 
         jMenuItem30.setText("Acta de Inicio");
+        jMenuItem30.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jMenuItem30ActionPerformed(evt);
+            }
+        });
         jMenu14.add(jMenuItem30);
 
         jMenuItem31.setText("Acta de Terminación");
+        jMenuItem31.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jMenuItem31ActionPerformed(evt);
+            }
+        });
         jMenu14.add(jMenuItem31);
 
         jMenu2.add(jMenu14);
@@ -2009,32 +2292,98 @@ public class Principal extends javax.swing.JFrame {
 
         jMenu16.setText("Herramientas");
 
-        jMenu17.setIcon(new javax.swing.ImageIcon(getClass().getResource("/winspapus/imagenes/moneda.png"))); // NOI18N
-        jMenu17.setText("Tabuladores");
+        jMenu18.setIcon(new javax.swing.ImageIcon(getClass().getResource("/winspapus/imagenes/obra.png"))); // NOI18N
+        jMenu18.setText("Presupuestos");
 
-        jMenuItem39.setText("Recuperar");
+        jMenuItem11.setText("Recuperar Presupuesto Winspapu");
+        jMenuItem11.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jMenuItem11ActionPerformed(evt);
+            }
+        });
+        jMenu18.add(jMenuItem11);
+
+        jMenuItem32.setText("Respaldar Presupuesto Activo");
+        jMenuItem32.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jMenuItem32ActionPerformed(evt);
+            }
+        });
+        jMenu18.add(jMenuItem32);
+
+        jMenuItem39.setText("Recuperar Presupuesto Spapu");
         jMenuItem39.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
                 jMenuItem39ActionPerformed(evt);
             }
         });
-        jMenu17.add(jMenuItem39);
-
-        jMenu16.add(jMenu17);
-
-        jMenu18.setIcon(new javax.swing.ImageIcon(getClass().getResource("/winspapus/imagenes/obra.png"))); // NOI18N
-        jMenu18.setText("Presupuestos");
-
-        jMenuItem42.setText("Respaldar");
-        jMenu18.add(jMenuItem42);
+        jMenu18.add(jMenuItem39);
 
         jMenu16.add(jMenu18);
 
-        jMenuItem44.setIcon(new javax.swing.ImageIcon(getClass().getResource("/winspapus/imagenes/usuarios.fw.png"))); // NOI18N
-        jMenuItem44.setText("Usuarios");
-        jMenu16.add(jMenuItem44);
+        jMenu17.setIcon(new javax.swing.ImageIcon(getClass().getResource("/winspapus/imagenes/maquinas.fw.png"))); // NOI18N
+        jMenu17.setText("Tabuladores");
+
+        jMenuItem28.setText("Recuperar Tabulador WinSpapu");
+        jMenuItem28.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jMenuItem28ActionPerformed(evt);
+            }
+        });
+        jMenu17.add(jMenuItem28);
+
+        jMenuItem41.setText("Respaldar Tabulador Spapu");
+        jMenuItem41.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jMenuItem41ActionPerformed(evt);
+            }
+        });
+        jMenu17.add(jMenuItem41);
+
+        jMenuItem42.setText("Recuperar Tabulador Spapu");
+        jMenuItem42.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jMenuItem42ActionPerformed(evt);
+            }
+        });
+        jMenu17.add(jMenuItem42);
+
+        jMenu16.add(jMenu17);
+
+        jMenu19.setIcon(new javax.swing.ImageIcon(getClass().getResource("/winspapus/imagenes/respaldo.fw.png"))); // NOI18N
+        jMenu19.setText("Respaldos");
+
+        jMenuItem48.setText("Exportar Datos");
+        jMenu19.add(jMenuItem48);
+
+        jMenuItem49.setText("Importar Datos");
+        jMenu19.add(jMenuItem49);
+
+        jMenu16.add(jMenu19);
 
         jMenuBar1.add(jMenu16);
+
+        jMenu6.setText("Configuración");
+
+        jMenuItem13.setAccelerator(javax.swing.KeyStroke.getKeyStroke(java.awt.event.KeyEvent.VK_P, java.awt.event.InputEvent.ALT_MASK | java.awt.event.InputEvent.CTRL_MASK));
+        jMenuItem13.setIcon(new javax.swing.ImageIcon(getClass().getResource("/winspapus/imagenes/compuj.fw.png"))); // NOI18N
+        jMenuItem13.setText("Información del Equipo");
+        jMenu6.add(jMenuItem13);
+
+        jMenuItem50.setIcon(new javax.swing.ImageIcon(getClass().getResource("/winspapus/imagenes/respaldo.fw.png"))); // NOI18N
+        jMenuItem50.setText("Configurar BD");
+        jMenuItem50.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jMenuItem50ActionPerformed(evt);
+            }
+        });
+        jMenu6.add(jMenuItem50);
+
+        jMenuItem40.setIcon(new javax.swing.ImageIcon(getClass().getResource("/winspapus/imagenes/acercade.fw.png"))); // NOI18N
+        jMenuItem40.setText("Acerca de");
+        jMenu6.add(jMenuItem40);
+
+        jMenuBar1.add(jMenu6);
 
         setJMenuBar(jMenuBar1);
 
@@ -2042,7 +2391,7 @@ public class Principal extends javax.swing.JFrame {
         getContentPane().setLayout(layout);
         layout.setHorizontalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addComponent(jDesktopPane1, javax.swing.GroupLayout.Alignment.TRAILING, javax.swing.GroupLayout.DEFAULT_SIZE, 1017, Short.MAX_VALUE)
+            .addComponent(jDesktopPane1, javax.swing.GroupLayout.Alignment.TRAILING, javax.swing.GroupLayout.DEFAULT_SIZE, 1091, Short.MAX_VALUE)
         );
         layout.setVerticalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
@@ -2063,17 +2412,17 @@ public class Principal extends javax.swing.JFrame {
             Statement st2 = (Statement) conexion.createStatement();
             st1.execute(actualiza);
             st2.execute(actualiza0);
-            super.setTitle("WinSpapu Sistema de Presupuesto y Análisis de Precio Unitario, Tabulador Activo: "+seleccionado);
+            super.setTitle("SPAPU 3.0.2 - Sistema de Presupuesto y Análisis de Precio Unitario, Tabulador Activo: "+seleccionado);
         } catch (SQLException ex) {
             Logger.getLogger(Principal.class.getName()).log(Level.SEVERE, null, ex);
         }
        }
     }
-    private void jTable1MouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_jTable1MouseClicked
-        
+    private void selectTab(int fila)
+    {
+               
         row=-1;
-        jButton3.setEnabled(false);
-        fila = jTable1.rowAtPoint(evt.getPoint());
+        jButton3.setEnabled(false);        
         buscapartidas(fila);
         DefaultTableModel mtabs = new DefaultTableModel();
         mtabs.setRowCount(0);
@@ -2110,8 +2459,13 @@ public class Principal extends javax.swing.JFrame {
        jButton5.setEnabled(true);
        jButton6.setEnabled(true);
        jLabel33.setText("");
-       int filas = jTable1.rowAtPoint(evt.getPoint());
-       activatab(filas);
+       isoficial=isoficial();
+       jButton33.setEnabled(true);
+       desbloquearBotones(!isbloquedmtabu());
+       activatab(fila);
+    }
+    private void jTable1MouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_jTable1MouseClicked
+        selectTab(jTable1.rowAtPoint(evt.getPoint()));
        
     }//GEN-LAST:event_jTable1MouseClicked
     
@@ -2153,8 +2507,8 @@ public class Principal extends javax.swing.JFrame {
 
     
     public void buscamat(){
-        float valor;
-        contmat =0;
+        BigDecimal valor;
+        contmat = new BigDecimal("0.00");
         Statement part=null;
         try {
             part = (Statement) conexion.createStatement();
@@ -2167,17 +2521,13 @@ public class Principal extends javax.swing.JFrame {
              return true;
          }
          return false;
-     }
-        
-        
-       
-       
+     }       
  };
         jTable4.setModel(mmtabs);
         try {
             Statement s1 = (Statement) conexion.createStatement();
             String sql="SELECT mm.id, mm.descri, mm.precio, dm.cantidad, mm.unidad, mm.desperdi,"
-                    + " ((mm.precio+(mm.precio*(mm.desperdi/100)))*dm.cantidad) as total FROM mmtabs as mm, "
+                    + " ROUND(((mm.precio+(mm.precio*(mm.desperdi/100)))*dm.cantidad),2) as total FROM mmtabs as mm, "
                     + "dmtabs as dm, mptabs as mp WHERE dm.mtabus_id='"+cadena+"' AND mm.mtabus_id=dm.mtabus_id "
                     + "AND dm.numepart=mp.numero "
                    + "AND mp.numero='"+num+"' AND dm.mmtab_id=mm.id GROUP BY mm.id";
@@ -2195,10 +2545,10 @@ public class Principal extends javax.swing.JFrame {
                     if(i==6){
                        
                             
-                            valor = (float) (Math.rint(Float.valueOf(rs1.getObject(i+1).toString())*100)/100);
-                            filas[i]=Float.toString(valor);
+                            valor = rs1.getBigDecimal(i+1);
+                            filas[i]=valor.toString();
                         
-                       contmat += valor; 
+                       contmat=contmat.add(valor); 
                     }else {
                         filas[i]=rs1.getObject(i+1);
                     }
@@ -2206,18 +2556,17 @@ public class Principal extends javax.swing.JFrame {
                     
                 }
                
-                mmtabs.addRow(filas);
-               
+                mmtabs.addRow(filas);         
                 
             }
              
         } catch (SQLException ex) {
             Logger.getLogger(Principal.class.getName()).log(Level.SEVERE, null, ex);
         }
-         float auxcontmat;
-                auxcontmat = (float) (Math.rint((contmat+0.000001)*100)/100);
-        jLabel35.setText(Float.toString(auxcontmat));
-        System.out.println("contmat: "+contmat);
+        BigDecimal auxcontmat;
+                auxcontmat =  contmat;                
+        jLabel35.setText(auxcontmat.toString());
+        System.out.println("contmat sin redondear: "+contmat+" contmat redondeado: "+auxcontmat);
         if(buscala==1){
             try {
                 actualizaprecio();
@@ -2230,8 +2579,8 @@ public class Principal extends javax.swing.JFrame {
     }
     
     public void buscaequip(){
-         float valor, cont=0, modulo=0;
-         conteq=0;
+         BigDecimal valor;
+         conteq= new BigDecimal("0.00");
         DefaultTableModel metabs = new DefaultTableModel(){@Override
      public boolean isCellEditable (int row, int column) {
         if(column==4) {
@@ -2239,10 +2588,6 @@ public class Principal extends javax.swing.JFrame {
          }
          return false;
      }
-        
-        
-       
-       
  };
          jTable3.setModel(metabs);
           try {
@@ -2259,20 +2604,20 @@ public class Principal extends javax.swing.JFrame {
             }
              
              while (rs2.next()) {
-                 System.out.println(" deprecia: "+rs2.getObject(4));
+                //System.out.println(" deprecia: "+rs2.getObject(4));
                  Object[] filas = new Object[cantidadColumnas];
                 for (int i = 0; i < cantidadColumnas; i++) {
                    if(i==5){
                         if(rs2.getObject(4).toString()==null || Float.valueOf(rs2.getObject(4).toString())==0.00){
-                            valor = (float) (Math.rint(Float.valueOf(rs2.getObject(3).toString())*Float.valueOf(rs2.getObject(5).toString())*100)/100);
+                            valor = redondear.redondearDosDecimales((rs2.getBigDecimal(3).multiply(rs2.getBigDecimal(5))));
                            
-                            filas[i]= Float.toString(valor);
+                            filas[i]= valor.toString();
                         }else{
                             
-                            valor = (float) (Math.rint(Float.valueOf(rs2.getObject(i+1).toString())*100)/100);
-                            filas[i]=Float.toString(valor);
+                            valor = redondear.redondearDosDecimales(rs2.getBigDecimal(i+1));
+                            filas[i]=valor.toString();
                         }
-                       conteq += valor; 
+                       conteq = conteq.add(valor); 
                     }else {
                         filas[i]=rs2.getObject(i+1);
                     }
@@ -2283,14 +2628,15 @@ public class Principal extends javax.swing.JFrame {
         } catch (SQLException ex) {
             Logger.getLogger(Principal.class.getName()).log(Level.SEVERE, null, ex);
         }
-          float auxconteq;
-          float rendimi = Float.valueOf(jLabel23.getText().toString());
-          if(rendimi==0)
-              rendimi=1;
-          conteq = conteq / (rendimi);
+          BigDecimal auxconteq;
+          BigDecimal rendimi = new BigDecimal(jLabel23.getText().toString());
+          if(rendimi.doubleValue()==0.00)
+              rendimi=new BigDecimal("1.00");
+          conteq = conteq.divide(rendimi, 2, BigDecimal.ROUND_HALF_UP);
           System.out.println("contequip: "+conteq);
-          auxconteq= (float) (Math.rint((conteq+0.000001)*100)/100);
-          jLabel37.setText(Float.toString(auxconteq));
+          auxconteq= conteq;
+          System.out.println("contequip redondeado: "+auxconteq);
+          jLabel37.setText(auxconteq.toString());
            if(buscala==1){
             try {
                 actualizaprecio();
@@ -2303,10 +2649,10 @@ public class Principal extends javax.swing.JFrame {
     }
     
     public void buscamano(){
-        contmano=0;
-        float cant=0;
-        float bono=0, subsid=0, auxcontmano;
-        float valor;
+        contmano=new BigDecimal("0.00");
+        BigDecimal cant=new BigDecimal("0.00");
+        BigDecimal bono=new BigDecimal("0.00"), subsid=new BigDecimal("0.00"), auxcontmano;
+        BigDecimal valor;
         DefaultTableModel motabs = new DefaultTableModel(){@Override
      public boolean isCellEditable (int row, int column) {
         if(column==2) {
@@ -2324,7 +2670,7 @@ public class Principal extends javax.swing.JFrame {
             Statement s1 = (Statement) conexion.createStatement();
             ResultSet rs3 = s1.executeQuery("SELECT mm.id, mm.descri, "
                     + "dm.cantidad, mm.bono, mm.subsid, mm.salario, "
-                    + "(mm.salario*dm.cantidad) as total FROM mmotabs as mm,"
+                    + "ROUND((mm.salario*dm.cantidad),2) as total FROM mmotabs as mm,"
                     + " dmoptabs as dm WHERE dm.mtabus_id='"+cadena+"' AND "
                     + "dm.numero='"+num+"' AND dm.mmotab_id=mm.id AND "
                     + "dm.mtabus_id=mm.mtabus_id GROUP BY mm.id");
@@ -2337,23 +2683,23 @@ public class Principal extends javax.swing.JFrame {
             
              while (rs3.next()) {
                  Object[] filas = new Object[cantidadColumnas];
-                 bono = Float.valueOf(rs3.getObject(4).toString());
-                subsid= Float.valueOf(rs3.getObject(5).toString());
+                 bono = rs3.getBigDecimal(4);
+                subsid= rs3.getBigDecimal(5);
                 for (int i = 0; i < cantidadColumnas; i++) {
                     if(i==2){
-                        cant = cant + Float.valueOf(rs3.getObject(3).toString());
+                        cant = cant.add(rs3.getBigDecimal(3));
                     }
                     if(i==6){
-                        if(Float.valueOf(rs3.getObject(7).toString())==0.00){
-                            valor = (float) (Math.rint(Float.valueOf(rs3.getObject(6).toString())*Float.valueOf(rs3.getObject(3).toString())*100)/100);
+                        if(new BigDecimal(rs3.getObject(7).toString())==new BigDecimal("0.00")){
+                            valor =  redondear.redondearDosDecimales(rs3.getBigDecimal(6).multiply(rs3.getBigDecimal(3)));
                            
-                            filas[i]= Float.toString(valor);
+                            filas[i]= valor.toString();
                         }else{
                             
-                            valor = (float) (Math.rint(Float.valueOf(rs3.getObject(i+1).toString())*100)/100);
-                            filas[i]=Float.toString(valor);
+                            valor = rs3.getBigDecimal(i+1);
+                            filas[i]=valor.toString();
                         }
-                       contmano += valor; 
+                       contmano=contmano.add(valor); 
                        
                     }else {
                         filas[i]=rs3.getObject(i+1);
@@ -2366,23 +2712,24 @@ public class Principal extends javax.swing.JFrame {
         } catch (SQLException ex) {
             Logger.getLogger(Principal.class.getName()).log(Level.SEVERE, null, ex);
         }
-            float prestaciones = Float.valueOf(jLabel29.getText().toString())/100;
+            BigDecimal prestaciones = new BigDecimal(jLabel29.getText().toString()).divide(new BigDecimal("100"));
             auxcontmano = contmano;
             System.out.println("auxcontmano "+auxcontmano);
-            prestaciones = contmano * prestaciones;
+            prestaciones = redondear.redondearDosDecimales(contmano.multiply(prestaciones));
              System.out.println("prestaciones "+prestaciones);
-            bono = cant * bono;
-             subsid = cant * subsid;
-             auxcontmano = contmano + prestaciones + bono + subsid;
+            bono = redondear.redondearDosDecimales(cant.multiply(bono));
+             subsid = redondear.redondearDosDecimales(cant.multiply(subsid));
+             auxcontmano = contmano.add(prestaciones).add(bono).add(subsid);
               System.out.println("auxcontmano+prestaciones+bono+subsid "+auxcontmano);
-             float auxcont;
-             float rendimi = Float.valueOf(jLabel23.getText().toString());
-          if(rendimi==0)
-              rendimi=1;
-             contmano = auxcontmano /  (rendimi); //RENDIMIENTO
-            auxcont= (float) (Math.rint((contmano+0.000001)*100)/100);
-            System.out.println("contmano: "+contmano);
-            jLabel39.setText(Float.toString(auxcont));
+             BigDecimal auxcont;
+             BigDecimal rendimi = new BigDecimal(jLabel23.getText());
+          if(rendimi.intValue()==0)
+              rendimi=new BigDecimal("1.00");
+             contmano = auxcontmano.divide(rendimi, 2, BigDecimal.ROUND_HALF_UP); //RENDIMIENTO
+             System.out.println("contmano antes de redondear/rendimi: "+contmano);
+            auxcont= redondear.redondearDosDecimales(contmano);
+            System.out.println("contmano redondeado: "+auxcont);
+            jLabel39.setText(auxcont.toString());
              if(buscala==1){
             try {
                 actualizaprecio();
@@ -2395,29 +2742,30 @@ public class Principal extends javax.swing.JFrame {
     }
     
     
-    public void buscapartida() throws SQLException{
-        contmat=conteq=contmano=0;
+    public void buscapartida() throws SQLException
+    {
+        contmat=conteq=contmano=new BigDecimal("0.00");
         Statement st = (Statement) conexion.createStatement();
         ResultSet rst = st.executeQuery("SELECT mb.descri, mp.unidad, mp.rendimi, mp.porcgad, mp.porcpre,"
-                + " mp.porcutil,mp.redondeo FROM mbdats mb, mptabs mp WHERE mp.mtabus_id='"+cadena+"'"
-                + " AND mp.numero="+num+" AND mp.mbdat_id=mb.id");
-          
+                + " mp.porcutil,mp.redondeo, mp.precunit, mp.precasu FROM mbdats mb, mptabs mp WHERE "
+                + "mp.mtabus_id='"+cadena+"'"
+                + " AND mp.numero="+num+" AND mp.mbdat_id=mb.id");          
         
-        while (rst.next()) {
-                 
-                
-                    jLabel19.setText(rst.getObject(1).toString());
-                    jLabel21.setText(rst.getObject(2).toString());    
-                    jLabel23.setText(rst.getObject(3).toString()); 
-                    jLabel25.setText(rst.getObject(4).toString());       
-                    jLabel29.setText(rst.getObject(5).toString());   
-                    jLabel27.setText(rst.getObject(6).toString());
-                    noredondeo = rst.getInt("redondeo");
-                
-            }
+        while (rst.next()) 
+        {                      
+                jLabel19.setText(rst.getObject(1).toString());
+                jLabel21.setText(rst.getObject(2).toString());    
+                jLabel23.setText(rst.getObject(3).toString()); 
+                jLabel25.setText(rst.getObject(4).toString());       
+                jLabel29.setText(rst.getObject(5).toString());   
+                jLabel27.setText(rst.getObject(6).toString());
+                jLabel33.setText(rst.getString(8));
+                jLabel40.setText(rst.getString(9));
+                noredondeo = rst.getInt("redondeo");                
+        }
     }
     public void selecpartida(){
-            contmat=conteq=contmano=0;
+            contmat=conteq=contmano=new BigDecimal("0.00");
             jButton15.setEnabled(false);
             jButton16.setEnabled(false);
             jButton19.setEnabled(false);
@@ -2428,16 +2776,17 @@ public class Principal extends javax.swing.JFrame {
            descri = jTable2.getValueAt(row,1).toString();
            num = jTable2.getValueAt(row,2).toString();
            num2 = jTable2.getValueAt(row,3).toString();
-           jLabel33.setText(jTable2.getValueAt(row, 5).toString());
+           
           
            jTextArea1.setText(descri); 
-           jButton8.setEnabled(true);
-           jButton9.setEnabled(true);
-           jButton10.setEnabled(true);
-           jButton11.setEnabled(true);
-          jButton14.setEnabled(true);
-          jButton17.setEnabled(true);
-          jButton20.setEnabled(true);
+           jButton3.setEnabled(true);
+           jButton8.setEnabled(!isbloquedmtabu());
+           jButton9.setEnabled(!isbloquedmtabu());
+           jButton10.setEnabled(!isbloquedmtabu());
+           jButton11.setEnabled(!isbloquedmtabu());
+          jButton14.setEnabled(!isbloquedmtabu());
+          jButton17.setEnabled(!isbloquedmtabu());
+          jButton20.setEnabled(!isbloquedmtabu());
          
           jLabel15.setText(codicove);
           jLabel17.setText(num2);
@@ -2460,8 +2809,9 @@ public class Principal extends javax.swing.JFrame {
     }
     private void jTable2MouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_jTable2MouseClicked
             //jButton28.setEnabled(true);
-            jButton3.setEnabled(true);
-            jButton24.setEnabled(true);
+          
+            jButton3.setEnabled(!isbloquedmtabu());
+            jButton24.setEnabled(!isbloquedmtabu());
             row = jTable2.rowAtPoint(evt.getPoint());
             noredondeo=1;
           
@@ -2469,40 +2819,38 @@ public class Principal extends javax.swing.JFrame {
                
     }//GEN-LAST:event_jTable2MouseClicked
     public void actualizaprecio() throws SQLException{
-        contotal = contmat+conteq+contmano;
-           float auxcontotal, admin, financiero, impuesto, util;
+        contotal = contmat.add(conteq).add(contmano);
+           BigDecimal auxcontotal, admin, financiero, impuesto, util;
            auxcontotal = contotal;
-           auxcontotal = (float) auxcontotal;
            System.out.println("conttotal: "+contotal);
-           admin = Float.valueOf(jLabel25.getText().toString())/100;
+           admin = new BigDecimal(jLabel25.getText().toString()).divide(new BigDecimal("100"));
         
-           admin = contotal * admin;
-           admin = (float) (admin);
+           admin = redondear.redondearDosDecimales(contotal.multiply(admin));          
           System.out.println("admin: "+admin);
-           util = Float.valueOf(jLabel27.getText().toString())/100;
+           util = new BigDecimal(jLabel27.getText().toString()).divide(new BigDecimal("100"));
          
-           util = (contotal+admin) * util;
+           util = redondear.redondearDosDecimales((contotal.add(admin)).multiply(util));
          System.out.println("utilidad: "+util);
-           auxcontotal = contotal+admin+util;
-           financiero=0;
+           auxcontotal = contotal.add(admin).add(util);
+           financiero=new BigDecimal("0.00");
            if(finanzas!=null){
-           financiero = Float.valueOf(finanzas.toString())/100;
+           financiero = new BigDecimal(finanzas).divide(new BigDecimal("100"), 2, BigDecimal.ROUND_HALF_UP);
            
-           financiero = auxcontotal * financiero;
+           financiero = redondear.redondearDosDecimales(auxcontotal.multiply(financiero));
            System.out.println("financiero: "+financiero);
            }
           if(impu!=null) 
-           impuesto = Float.valueOf(this.impu)/100;
+           impuesto = new BigDecimal(this.impu).divide(new BigDecimal("100"), 2, BigDecimal.ROUND_HALF_UP);
            else
-              impuesto=0;
-           impuesto = auxcontotal * impuesto;
+              impuesto=new BigDecimal("0.00");
+           impuesto = redondear.redondearDosDecimales(auxcontotal.multiply(impuesto));
            System.out.println("impuesto: "+impuesto);
-           auxcontotal = auxcontotal + impuesto + financiero;
+           auxcontotal = auxcontotal.add(impuesto).add(financiero);
            System.out.println("auxcontotal antes de redondear: "+auxcontotal);
-           auxcontotal = (float) (Math.rint((auxcontotal+0.000001)*100)/100);
+           auxcontotal = redondear.redondearDosDecimales(auxcontotal);
            contotal = auxcontotal;
-           System.out.println("contotalsinredondeo: "+contotal);
-          contotal = (float) (Math.rint((contotal+0.000001)));
+           System.out.println("contotalconredondeo: "+contotal);
+          contotal = redondear.redondearDosDecimales(contotal);
           System.out.println("contotalfinal: "+contotal);
           
           
@@ -2510,7 +2858,7 @@ public class Principal extends javax.swing.JFrame {
           String letras="";
           jLabel33.setText(formatoNumero.format(auxcontotal));
           if(noredondeo==0){
-              contotal=0;
+              contotal=new BigDecimal("0.00");
          
           letras=nume.Convertir(String.valueOf(auxcontotal), true);
           }else{
@@ -2520,7 +2868,7 @@ public class Principal extends javax.swing.JFrame {
           
           System.out.println("numenletras "+letras);
            Statement actualiza = (Statement) conexion.createStatement();
-            String sql= "UPDATE mptabs set precasu="+contotal+", precunit="+auxcontotal+", redondeo="+noredondeo+", numenletra='"+letras+"' WHERE mtabus_id='"+cadena+"' AND numero="+num;
+            String sql= "UPDATE mptabs set precunit="+auxcontotal+", redondeo="+noredondeo+", numenletra='"+letras+"' WHERE mtabus_id='"+cadena+"' AND numero="+num;
            actualiza.execute(sql);
           
          
@@ -2708,25 +3056,11 @@ public class Principal extends javax.swing.JFrame {
     }//GEN-LAST:event_jButton2ActionPerformed
 
     private void jButton6ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton6ActionPerformed
-       DefaultTableModel mtabs = new DefaultTableModel();
-          Statement s= null;
-        try {
-            s = (Statement) conexion.createStatement();
-        } catch (SQLException ex) {
-            Logger.getLogger(Principal.class.getName()).log(Level.SEVERE, null, ex);
-        }
-        try {
-            s.execute("UPDATE Mtabus set status=0 WHERE id='"+cadena+"'");
-            mtabs.setRowCount(0);
-            jTable2.setModel(mtabs);
-            jTable3.setModel(mtabs);
-            jTable4.setModel(mtabs);
-            jTable5.setModel(mtabs);
-            JOptionPane.showMessageDialog(this, "El precio Referencial Código: "+cadena+" ha sido Respaldado");
-            buscatab();
-        } catch (SQLException ex) {
-            Logger.getLogger(Principal.class.getName()).log(Level.SEVERE, null, ex);
-        }
+    RespaldarTabulador respaldar = new RespaldarTabulador(this, true, cadena, conexion);
+    int xi= (this.getWidth()/2)-500/2;
+    int yi= (this.getHeight()/2)-350/2;
+    respaldar.setBounds(xi, yi, 500, 350);
+    respaldar.setVisible(true);   
     }//GEN-LAST:event_jButton6ActionPerformed
 
     private void jButton9ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton9ActionPerformed
@@ -2861,9 +3195,54 @@ public class Principal extends javax.swing.JFrame {
     private void jTable4MouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_jTable4MouseClicked
        
         filamate = jTable4.rowAtPoint(evt.getPoint());       
-        jButton15.setEnabled(true);
-        jButton16.setEnabled(true);
+        jButton15.setEnabled(!isbloquedmtabu());
+        jButton16.setEnabled(!isbloquedmtabu());
+        
         codimate = jTable4.getValueAt(filamate, 0).toString();
+         if (!jTable4.isEditing() && jTable4.editCellAt(jTable4.getSelectedRow(),
+                jTable4.getSelectedColumn())) {
+            
+            
+            JTextField field = ((JTextField)jTable4.getEditorComponent());
+            field.requestFocusInWindow();
+            if(jTable4.getCellEditor()!=null)
+                editor = jTable4.getCellEditor();
+            else
+                jTable4.setCellEditor(editor);
+            
+            field.selectAll();
+            
+            field.selectAll();
+            field.addKeyListener(
+                    new KeyAdapter() {
+                    @Override
+                    public void keyPressed(KeyEvent evt)
+                    {
+                        String codigomate, cantidad, sql;
+                        System.out.println("TECLAS: "+evt.getKeyCode());
+                        if((evt.getKeyCode()==9 || evt.getKeyCode()==10)&& !isbloquedmtabu()){
+                                codigomate=jTable4.getValueAt( filamate, 0).toString();
+                                cantidad = jTable4.getValueAt(filamate, 3).toString();
+                                jTable4.removeEditor();
+                                System.out.println("TECLAS: "+evt.getKeyCode());
+                                Statement stmate;
+                                try {
+                                    stmate = (Statement) conexion.createStatement();
+                                    sql = "UPDATE dmtabs set cantidad="+cantidad+" WHERE mtabus_id='"+cadena+"' AND numepart ="+num+" AND mmtab_id='"+codigomate+"'";
+                                stmate.execute(sql);
+                                     noredondeo=0;
+                                    buscaequip();
+                                    buscamano();
+                                    buscala = 1;
+                                    buscamat();
+                                } catch (SQLException ex) {
+                                    Logger.getLogger(Principal.class.getName()).log(Level.SEVERE, null, ex);
+                                }
+
+                        }
+                    }
+                    });
+         }
    
     }//GEN-LAST:event_jTable4MouseClicked
 
@@ -2907,14 +3286,12 @@ public class Principal extends javax.swing.JFrame {
     }//GEN-LAST:event_jButton15ActionPerformed
 
     private void jButton17ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton17ActionPerformed
-        equipos equi = new equipos(this,true, cadena, num, codicove, conexion);
+        equipos equi = new equipos(this,true, cadena, num, codicove, conexion, this);
         x=(this.getWidth()/2)-315;
             y=(this.getHeight()/2-275);
             equi.setBounds(x, y, 750,550);            
             equi.setVisible(true);
-            buscaequip();
-            
-          
+            buscaequip();          
             noredondeo=0;
               buscamat();
             buscamano();     
@@ -2926,16 +3303,15 @@ public class Principal extends javax.swing.JFrame {
     }//GEN-LAST:event_jButton17ActionPerformed
 
     private void jTable3MouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_jTable3MouseClicked
-       jButton18.setEnabled(true);
-       jButton19.setEnabled(true);
+       jButton18.setEnabled(!isbloquedmtabu());
+       jButton19.setEnabled(!isbloquedmtabu());
        filaequipo= jTable3.rowAtPoint(evt.getPoint());
-       codiequipo = (String) jTable3.getValueAt(filaequipo, 0);
-        
+       codiequipo = (String) jTable3.getValueAt(filaequipo, 0);      
     }//GEN-LAST:event_jTable3MouseClicked
 
     private void jButton18ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton18ActionPerformed
         String sql = "";
-        conteq=0;
+        conteq=new BigDecimal("0.00");
         int registros = jTable3.getRowCount();
         int columnas = jTable3.getColumnCount();
         String equipos [] = new String[registros], cantidades[] = new String[registros];
@@ -2972,7 +3348,7 @@ public class Principal extends javax.swing.JFrame {
     }//GEN-LAST:event_jButton18ActionPerformed
 
     private void jButton20ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton20ActionPerformed
-        manoobra mano = new manoobra(this,true, cadena, num, codicove, conexion);
+        manoobra mano = new manoobra(this,true, cadena, num, codicove, conexion,this);
          x=(this.getWidth()/2)-315;
             y=(this.getHeight()/2-275);
             mano.setBounds(x, y, 750,550);            
@@ -2990,14 +3366,15 @@ public class Principal extends javax.swing.JFrame {
     }//GEN-LAST:event_jButton20ActionPerformed
 
     private void jTable5MouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_jTable5MouseClicked
-        jButton21.setEnabled(true);
-        jButton22.setEnabled(true);
+        jButton21.setEnabled(!isbloquedmtabu());
+        jButton22.setEnabled(!isbloquedmtabu());
         filamano = jTable5.rowAtPoint(evt.getPoint());
+        codimano = (String) jTable5.getValueAt(filamano, 0);  
     }//GEN-LAST:event_jTable5MouseClicked
 
     private void jButton21ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton21ActionPerformed
         String sql = "";
-        contmano=0;
+        contmano=new BigDecimal("0.00");
         int registros = jTable5.getRowCount();
         int columnas = jTable5.getColumnCount();
         String mano [] = new String[registros], cantidades[] = new String[registros];
@@ -3026,8 +3403,8 @@ public class Principal extends javax.swing.JFrame {
             }
 
         }
-         noredondeo=0;
-        buscamat();
+        noredondeo=0;
+        buscamat();       
         buscaequip();
         buscala = 1;
         buscamano();
@@ -3057,7 +3434,7 @@ public class Principal extends javax.swing.JFrame {
          String sql="DELETE FROM deptabs WHERE mtabus_id='"+cadena+"' AND numero="+num+" AND metab_id='"+codiequipo+"'";
         try {
             Statement st = (Statement) conexion.createStatement();
-           int op = JOptionPane.showConfirmDialog(null, "Desea Elimar el equipo del Tabulador "+cadena+" de la partida número "+num2+" código"+codimate+"? ");
+           int op = JOptionPane.showConfirmDialog(null, "Desea Elimar el equipo del Tabulador "+cadena+" de la partida número "+num2+" código "+codiequipo+"? ");
           
           if(op==0){
            st.execute(sql);
@@ -3075,7 +3452,7 @@ public class Principal extends javax.swing.JFrame {
         grupo nuevo = new grupo(this, false, conexion, obj);
          x=(this.getWidth()/2)-295;
             y=(this.getHeight()/2-203);
-            nuevo.setBounds(x, y, 700,300);            
+            nuevo.setBounds(x, y, 700,350);            
            nuevo.setVisible(true);
           
     }//GEN-LAST:event_jMenuItem2ActionPerformed
@@ -3110,28 +3487,7 @@ public class Principal extends javax.swing.JFrame {
     }//GEN-LAST:event_jMenuItem5ActionPerformed
 
 private void jTable4KeyPressed(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_jTable4KeyPressed
-    String codigomate, cantidad, sql;
-    System.out.println("TECLAS: "+evt.getKeyCode());
-    if(evt.getKeyCode()==9 || evt.getKeyCode()==10){
-            codigomate=jTable4.getValueAt( filamate, 0).toString();
-            cantidad = jTable4.getValueAt(filamate, 3).toString();
-            jTable4.removeEditor();
-            System.out.println("TECLAS: "+evt.getKeyCode());
-            Statement stmate;
-            try {
-                stmate = (Statement) conexion.createStatement();
-                sql = "UPDATE dmtabs set cantidad="+cantidad+" WHERE mtabus_id='"+cadena+"' AND numepart ="+num+" AND mmtab_id='"+codigomate+"'";
-            stmate.execute(sql);
-                 noredondeo=0;
-                buscaequip();
-                buscamano();
-                buscala = 1;
-                buscamat();
-            } catch (SQLException ex) {
-                Logger.getLogger(Principal.class.getName()).log(Level.SEVERE, null, ex);
-            }
-            
-    }
+    
         
 }//GEN-LAST:event_jTable4KeyPressed
 
@@ -3167,7 +3523,7 @@ private void jTable4PropertyChange(java.beans.PropertyChangeEvent evt) {//GEN-FI
         private void jTable3KeyPressed(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_jTable3KeyPressed
            String codigomate, cantidad, sql;
     System.out.println("TECLAS: "+evt.getKeyCode());
-    if(evt.getKeyCode()==9 || evt.getKeyCode()==10){
+    if((evt.getKeyCode()==9 || evt.getKeyCode()==10) && !isbloquedmtabu()){
             codigomate=jTable3.getValueAt(filaequipo , 0).toString();
             cantidad = jTable3.getValueAt(filaequipo, 4).toString();
             jTable3.removeEditor();
@@ -3193,7 +3549,7 @@ private void jTable4PropertyChange(java.beans.PropertyChangeEvent evt) {//GEN-FI
     private void jTable5KeyPressed(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_jTable5KeyPressed
            String codigomate, cantidad, sql;
     System.out.println("TECLAS: "+evt.getKeyCode());
-    if(evt.getKeyCode()==9 || evt.getKeyCode()==10){
+    if((evt.getKeyCode()==9 || evt.getKeyCode()==10) && !isbloquedmtabu()){
             codigomate=jTable5.getValueAt( filamano, 0).toString();
             cantidad = jTable5.getValueAt(filamano,2).toString();
             jTable5.removeEditor();
@@ -3233,7 +3589,6 @@ private void jTable4PropertyChange(java.beans.PropertyChangeEvent evt) {//GEN-FI
 
     
     public void entrapres(){
-                
         if(entro==0){
             
              presupuesto = new Presupuesto(conexion, this);
@@ -3319,15 +3674,15 @@ private void jTable4PropertyChange(java.beans.PropertyChangeEvent evt) {//GEN-FI
             jMenuItem10.setEnabled(true);
             jMenuItem6.setEnabled(true);
             jButton26.setEnabled(true);
-        jMenuItem7.setEnabled(true);
-        jMenuItem15.setEnabled(true);
-        jMenu15.setEnabled(true);
-        jMenu7.setEnabled(true);
-        jMenu14.setEnabled(true);
-        jMenuItem8.setEnabled(true);
-        jMenuItem14.setEnabled(true);
-        jMenuItem18.setEnabled(true);
-        jMenuItem37.setEnabled(true);
+            jMenuItem7.setEnabled(true);
+            jMenuItem15.setEnabled(true);
+            jMenu15.setEnabled(true);
+            jMenu7.setEnabled(true);
+            jMenu14.setEnabled(true);
+            jMenuItem8.setEnabled(true);
+            jMenuItem14.setEnabled(true);
+            jMenuItem18.setEnabled(true);
+            jMenuItem37.setEnabled(true);
         try {
          
              presupuesto.setBounds(0, 0, jDesktopPane1.getWidth(), jDesktopPane1.getHeight());
@@ -3356,31 +3711,30 @@ private void jTable4PropertyChange(java.beans.PropertyChangeEvent evt) {//GEN-FI
         }   
     }
     public void entro(){
-        if(entro==0){
-            
+        if(entro==0)
+        {            
              presupuesto = new Presupuesto(conexion, this);
              presupuesto.setBounds(0, 0, jDesktopPane1.getWidth(), jDesktopPane1.getHeight());
              jDesktopPane1.add(presupuesto);
              entro=1;
              presupuesto.setVisible(true);
              x=(this.getWidth()/2)-350;
-             y=(this.getHeight()/2-250);
+             y=(this.getHeight()/2)-250;
              tabpresupuesto  pres = new tabpresupuesto(this, true, presupuesto, conexion, cadena,x,y);
              x=(this.getWidth()/2)-350;
-             y=(this.getHeight()/2-250);
+             y=(this.getHeight()/2)-250;
              pres.setBounds(x, y, 700,500);            
              pres.setVisible(true);
-             jMenuItem10.setEnabled(true);
-            
-        jMenuItem7.setEnabled(true);
-        jMenuItem15.setEnabled(true);
-        jMenu15.setEnabled(true);
-        jMenu7.setEnabled(true);
-        jMenu14.setEnabled(true);
-        jMenuItem8.setEnabled(true);
-        jMenuItem14.setEnabled(true);
-        jMenuItem18.setEnabled(true);
-        jMenuItem37.setEnabled(true);
+            jMenuItem10.setEnabled(true);            
+            jMenuItem7.setEnabled(true);
+            jMenuItem15.setEnabled(true);
+            jMenu15.setEnabled(true);
+            jMenu7.setEnabled(true);
+            jMenu14.setEnabled(true);
+            jMenuItem8.setEnabled(true);
+            jMenuItem14.setEnabled(true);
+            jMenuItem18.setEnabled(true);
+            jMenuItem37.setEnabled(true);
         try {
              presupuesto.setSelected(true);
              presupuesto.setMaximum(true);
@@ -3391,6 +3745,7 @@ private void jTable4PropertyChange(java.beans.PropertyChangeEvent evt) {//GEN-FI
         }else{
             try {
                 presupuesto.setSelected(true);
+                presupuesto.setMaximum(true);
             } catch (PropertyVetoException ex) {
                 Logger.getLogger(Principal.class.getName()).log(Level.SEVERE, null, ex);
             }
@@ -3401,21 +3756,19 @@ private void jTable4PropertyChange(java.beans.PropertyChangeEvent evt) {//GEN-FI
     }//GEN-LAST:event_jButton26ActionPerformed
 
     private void jButton27ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton27ActionPerformed
-        capitulos cap = new capitulos(this, true, conexion, cadena);
+        capitulos cap = new capitulos(this, true, conexion, cadena, this);
         x=(this.getWidth()/2)-(700/2);
         y=(this.getHeight()/2)-(600/2);
         cap.setBounds(x, y, 700, 600);
-        cap.setVisible(true);
-        
+        cap.setVisible(true);        
     }//GEN-LAST:event_jButton27ActionPerformed
 
     private void jMenuItem10ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jMenuItem10ActionPerformed
-       x=(this.getWidth()/2)-350;
-             y=(this.getHeight()/2-250);
-        tabpresupuesto  pres = new tabpresupuesto(this, true, presupuesto, conexion, cadena,x,y);
-             
-             pres.setBounds(x, y, 700,500);            
-             pres.setVisible(true);
+        x=(this.getWidth()/2)-350;
+        y=(this.getHeight()/2)-250;
+        tabpresupuesto  pres = new tabpresupuesto(this, true, presupuesto, conexion, cadena,x,y);             
+         pres.setBounds(x, y, 700,500);            
+         pres.setVisible(true);
     }//GEN-LAST:event_jMenuItem10ActionPerformed
 
     private void jMenuItem15ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jMenuItem15ActionPerformed
@@ -3427,12 +3780,11 @@ private void jTable4PropertyChange(java.beans.PropertyChangeEvent evt) {//GEN-FI
     }//GEN-LAST:event_jMenuItem15ActionPerformed
 
     private void jMenuItem17ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jMenuItem17ActionPerformed
-        propietario prop = new propietario(this, true, conexion);
-        int xi = (this.getWidth()/2)-800/2;
+          propietario prop = new propietario(this, true, conexion);
+          int xi = (this.getWidth()/2)-800/2;
           int yi = (this.getHeight()/2)-400/2;
           prop.setBounds(xi, yi, 800, 400);
-          prop.setVisible(true);
-        
+          prop.setVisible(true);        
     }//GEN-LAST:event_jMenuItem17ActionPerformed
 
     private void formWindowClosed(java.awt.event.WindowEvent evt) {//GEN-FIRST:event_formWindowClosed
@@ -3451,9 +3803,9 @@ private void jTable4PropertyChange(java.beans.PropertyChangeEvent evt) {//GEN-FI
     private void jMenuItem45ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jMenuItem45ActionPerformed
         confirmarmatriz conf = new confirmarmatriz(this, false,conexion, cadena,this);
          int xi = (this.getWidth()/2)-100;
-          int yi = (this.getHeight()/2)-100;
-          conf.setBounds(xi, yi, 250, 300);
-          conf.setVisible(true);
+         int yi = (this.getHeight()/2)-100;
+         conf.setBounds(xi, yi, 250, 300);
+         conf.setVisible(true);
         
         // TODO add your handling code here:
     }//GEN-LAST:event_jMenuItem45ActionPerformed
@@ -3463,20 +3815,12 @@ private void jTable4PropertyChange(java.beans.PropertyChangeEvent evt) {//GEN-FI
     }//GEN-LAST:event_jMenuItem46ActionPerformed
 
     private void jMenuItem9ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jMenuItem9ActionPerformed
-        capitulos cap = new capitulos(this, true, conexion, cadena);
+        capitulos cap = new capitulos(this, true, conexion, cadena,this);
         x=(this.getWidth()/2)-(700/2);
         y=(this.getHeight()/2)-(600/2);
         cap.setBounds(x, y, 700, 600);
         cap.setVisible(true);
     }//GEN-LAST:event_jMenuItem9ActionPerformed
-
-private void jMenuItem39ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jMenuItem39ActionPerformed
-    RecuperarTab recu=new RecuperarTab(this, true,conexion, this);
-    int xi=(this.getWidth()/2)-600/2;
-    int yi=(this.getHeight()/2)-200/2;
-    recu.setBounds(xi, yi, 600, 250);
-    recu.setVisible(true);        
-}//GEN-LAST:event_jMenuItem39ActionPerformed
 
     private void jTextField2FocusGained(java.awt.event.FocusEvent evt) {//GEN-FIRST:event_jTextField2FocusGained
 jTextField2.setText("");    
@@ -3484,11 +3828,11 @@ busqueda="";// TODO add your handling code here:
     }//GEN-LAST:event_jTextField2FocusGained
 
 private void jMenuItem7ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jMenuItem7ActionPerformed
-        valuacion val = new valuacion(this, true, conexion, presup);
+        valuacion valu = new valuacion(this, true, conexion, presup,presupuesto);
         int xv = (this.getWidth()/2)-375;
         int yv = (this.getHeight()/2)-700/2;
-        val.setBounds(xv, yv, 800, 700);
-        val.setVisible(true);
+        valu.setBounds(xv, yv, 800, 700);
+        valu.setVisible(true);
 }//GEN-LAST:event_jMenuItem7ActionPerformed
 
     private void jMenuItem38ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jMenuItem38ActionPerformed
@@ -3500,20 +3844,16 @@ recalcula();        // TODO add your handling code here:
     }//GEN-LAST:event_jButton30ActionPerformed
 
     private void jMenuItem8ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jMenuItem8ActionPerformed
-        float total = (float) presupuesto.gettotal();
+        BigDecimal total = presupuesto.gettotal();
         aumentosdismi aumento = new aumentosdismi(this, true, presup, conexion,total);
-        int xi = (this.getWidth()/2)-1200/2;
-        int yi = (this.getHeight()/2)-650/2;
-        aumento.setBounds(xi, yi, 1250, 700);
-        aumento.setVisible(true);
-        
-        
-        
-                // TODO add your handling code here:
+        int xi = (this.getWidth()/2)-950/2;
+        int yi = (this.getHeight()/2)-720/2;
+        aumento.setBounds(xi, yi,950, 720);
+        aumento.setVisible(true);  
     }//GEN-LAST:event_jMenuItem8ActionPerformed
 
     private void jMenuItem14ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jMenuItem14ActionPerformed
-               float total = (float) presupuesto.gettotal();
+        BigDecimal total = presupuesto.gettotal();
         diagrama cron = new diagrama(this, true,conexion,presup,total);
         int xi = (this.getWidth()/2)-1150/2;
         int yi = (this.getHeight()/2)-720/2;
@@ -3552,8 +3892,8 @@ String select = "SELECT count(*) FROM mppres WHERE tipo='VP' AND ("
             if(cuen>0){
             parametrorecon para = new parametrorecon(this, true, conexion, presup, "1", presup+" VP-1");
             int xi = (this.getWidth()/2)-550/2;
-        int yi = (this.getHeight()/2)-600/2;
-        para.setBounds(xi, yi, 550, 600);
+        int yi = (this.getHeight()/2)-750/2;
+        para.setBounds(xi, yi, 550, 750);
         para.setVisible(true);
             }else{
                 JOptionPane.showMessageDialog(rootPane, "Debe hacer por lo menos una valuación para poder reconsiderarla");
@@ -3572,11 +3912,11 @@ String select = "SELECT count(*) FROM mppres WHERE tipo='VP' AND ("
             Logger.getLogger(Presupuesto.class.getName()).log(Level.SEVERE, null, ex);
         }
         if(count1>0){
-        reconsideraciones recon = new reconsideraciones(this, true, presup, conexion, presupuesto,this);
-       int xi = (this.getWidth()/2)-800/2;
-        int yi = (this.getHeight()/2)-600/2;
-        recon.setBounds(xi, yi, 800, 600);
-        recon.setVisible(true);
+            reconsideraciones recon = new reconsideraciones(this, true, presup, conexion, presupuesto,this);
+            int xi = (this.getWidth()/2)-800/2;
+            int yi = (this.getHeight()/2)-700/2;
+            recon.setBounds(xi, yi, 800, 700);
+            recon.setVisible(true);
         try {
             presupuesto.buscapartida();
         } catch (SQLException ex) {
@@ -3600,7 +3940,7 @@ String select = "SELECT count(*) FROM mppres WHERE tipo='VP' AND ("
     }//GEN-LAST:event_jMenuItem33ActionPerformed
 
     private void jMenuItem16ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jMenuItem16ActionPerformed
-        double totalpres = presupuesto.gettotal();
+        BigDecimal totalpres = presupuesto.gettotal();
         reportepresupuesto report = new reportepresupuesto(this, false, conexion, presup,totalpres);
          int xi = (this.getWidth()/2)-700/2;
         int yi = (this.getHeight()/2)-450/2;
@@ -3639,13 +3979,11 @@ private void jMenuItem35ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-F
     }//GEN-LAST:event_formWindowClosing
 
     private void jMenuItem20ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jMenuItem20ActionPerformed
-
         reportecomputos compu = new reportecomputos(this, false, conexion, presup);
         int xi = (this.getWidth()/2)-450/2;
         int yi = (this.getHeight()/2)-200/2;
-        compu.setBounds(xi, yi, 450, 200);
+        compu.setBounds(xi, yi, 450, 220);
         compu.setVisible(true);
-        // TODO add your handling code here:
     }//GEN-LAST:event_jMenuItem20ActionPerformed
 
     private void jButton31ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton31ActionPerformed
@@ -3703,12 +4041,623 @@ private void jMenuItem35ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-F
 
     private void jMenuItem29ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jMenuItem29ActionPerformed
         reportecuadrocierre cierre = new reportecuadrocierre(this, false, conexion, presup);
-        int xi=(this.getWidth()/2)-500/2;
-        int yi = (this.getHeight()/2)-300/2;
-        cierre.setBounds(xi, yi, 500, 300);
+        int xi=(this.getWidth()/2)-600/2;
+        int yi = (this.getHeight()/2)-550/2;
+        cierre.setBounds(xi, yi, 600, 550);
         cierre.setVisible(true);
         // TODO add your handling code here:
     }//GEN-LAST:event_jMenuItem29ActionPerformed
+public void generarpdf(String file) throws DocumentException{
+        try {
+              FileInputStream input=null;
+            try {
+                input = new FileInputStream(new File(file));
+            } catch (FileNotFoundException ex) {
+                Logger.getLogger(reporteinicio.class.getName()).log(Level.SEVERE, null, ex);
+            }
+           
+            JasperDesign design = null; 
+            try {
+                design = JRXmlLoader.load(input);
+            } catch (JRException ex) {
+                Logger.getLogger(reporteinicio.class.getName()).log(Level.SEVERE, null, ex);
+            }
+            JasperReport report = JasperCompileManager.compileReport(design);
+            Map parameters = new HashMap();
+            
+       
+            
+             parameters.put("mpres", presup);
+            JasperPrint print = JasperFillManager.fillReport(report, parameters, conexion);
+           
+            
+            JasperViewer.viewReport(print, false);
+            
+        } catch (JRException ex) {
+            JOptionPane.showMessageDialog(null, "No se logró abrir el archivo "+ex.getMessage());
+            Logger.getLogger(reporteinicio.class.getName()).log(Level.SEVERE, null, ex);
+        }
+    }
+    private void jMenuItem21ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jMenuItem21ActionPerformed
+        try {
+            generarpdf("materialespres.jrxml");
+        } catch (DocumentException ex) {
+            Logger.getLogger(Principal.class.getName()).log(Level.SEVERE, null, ex);
+        }
+        // TODO add your handling code here:
+    }//GEN-LAST:event_jMenuItem21ActionPerformed
+
+private void jMenuItem11ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jMenuItem11ActionPerformed
+    RecuperarPre recu = new RecuperarPre(this, false, conexion, this);
+     int xi=(this.getWidth()/2)-600/2;
+        int yi = (this.getHeight()/2)-300/2;
+        recu.setBounds(xi, yi, 600, 300);
+        recu.setVisible(true);    
+}//GEN-LAST:event_jMenuItem11ActionPerformed
+
+private void jMenuItem30ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jMenuItem30ActionPerformed
+    reporteinicio inicio = new reporteinicio(this, false, conexion, presup);
+    int xi= (this.getWidth()/2)-700/2;
+    int yi= (this.getHeight()/2)-600/2;
+    inicio.setBounds(xi, yi, 700, 600);
+    inicio.setVisible(true);
+}//GEN-LAST:event_jMenuItem30ActionPerformed
+    public boolean isoficial()
+    {      
+        boolean isoficialt=false;
+        String select = "SELECT oficial FROM mtabus WHERE id='"+cadena+"'";
+        int oficial=0;
+        try {
+            Statement st = (Statement) conexion.createStatement();
+            ResultSet rst = st.executeQuery(select);
+            while(rst.next()){
+                oficial=rst.getInt(1);
+            }
+        } catch (SQLException ex) {
+            Logger.getLogger(Principal.class.getName()).log(Level.SEVERE, null, ex);
+        }
+        if(oficial==0){
+            isoficialt=false;
+        }else{
+            isoficialt=true;
+        }
+        return isoficialt;
+    }
+
+private void jMenuItem37ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jMenuItem37ActionPerformed
+    presupuestos.recalcula recal = new presupuestos.recalcula(this, true, conexion, presup,presupuesto);
+       int xi = (this.getWidth()/2)-350/2;
+       int yi = (this.getHeight()/2)-450/2;
+       recal.setBounds(xi, yi, 370, 470);
+       recal.setVisible(true);    
+}//GEN-LAST:event_jMenuItem37ActionPerformed
+
+private void jMenuItem12ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jMenuItem12ActionPerformed
+ reporteapu2 report = new reporteapu2(this, false, conexion, presup);
+         int xi = (this.getWidth()/2)-500/2;
+        int yi = (this.getHeight()/2)-300/2;
+         report.setBounds(xi, yi, 500, 300);
+        report.setVisible(true);    
+    // TODO add your handling code here:
+}//GEN-LAST:event_jMenuItem12ActionPerformed
+
+private void jButton33ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton33ActionPerformed
+    pideclave();
+    if(desbloqueado)
+    {
+        if(isbloquedmtabu())
+        { //Desbloquear Mtabus
+            int op = JOptionPane.showConfirmDialog(presupuesto, "Desea Desbloquear Listado de Precios Refenciales Oficial?","Desbloquear Tabulador", JOptionPane.YES_NO_OPTION);
+            if(op==JOptionPane.YES_OPTION)
+            {
+                
+                    updateBloqueo(0);
+                    desbloquearBotones(true); //desbloquea botones
+            }
+        }else
+        {
+                int op = JOptionPane.showConfirmDialog(presupuesto, "Desea Bloquear Listado de Precios Refenciales Oficial?","Bloquear Tabulador", JOptionPane.YES_NO_OPTION);
+            if(op==JOptionPane.YES_OPTION)
+            {
+                    updateBloqueo(1);
+                    desbloquearBotones(false); //bloquea botones
+            }
+        }
+    }    
+    // TODO add your handling code here:
+}//GEN-LAST:event_jButton33ActionPerformed
+
+private void jButton22ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton22ActionPerformed
+         String sql="DELETE FROM dmoptabs WHERE mtabus_id='"+cadena+"' AND numero="+num+" AND mmotab_id='"+codimano+"'";
+        try {
+            Statement st = (Statement) conexion.createStatement();
+           int op = JOptionPane.showConfirmDialog(null, "Desea Eliminar la mano de obra del Tabulador "+cadena+" de la partida número "+num2+" código "+codimano+"? ");
+          
+          if(op==0){
+           st.execute(sql);
+          
+           JOptionPane.showMessageDialog(null, "Se ha eliminado el detalle de mano de obra");
+           buscala = 1;
+           buscamano();
+        }
+        } catch (SQLException ex) {
+            Logger.getLogger(Principal.class.getName()).log(Level.SEVERE, null, ex);
+        }
+    
+    // TODO add your handling code here:
+}//GEN-LAST:event_jButton22ActionPerformed
+
+private void jMenuItem22ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jMenuItem22ActionPerformed
+        try {
+            generarpdf("equipospres.jrxml");
+        } catch (DocumentException ex) {
+            Logger.getLogger(Principal.class.getName()).log(Level.SEVERE, null, ex);
+        }
+    // TODO add your handling code here:
+}//GEN-LAST:event_jMenuItem22ActionPerformed
+
+private void jMenuItem23ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jMenuItem23ActionPerformed
+        try {
+            generarpdf("manospres.jrxml");
+        } catch (DocumentException ex) {
+            Logger.getLogger(Principal.class.getName()).log(Level.SEVERE, null, ex);
+        }    // TODO add your handling code here:
+}//GEN-LAST:event_jMenuItem23ActionPerformed
+
+private void jMenuItem24ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jMenuItem24ActionPerformed
+    try {
+            generarpdf("matpresdet.jrxml");
+        } catch (DocumentException ex) {
+            Logger.getLogger(Principal.class.getName()).log(Level.SEVERE, null, ex);
+        }   
+    
+    // TODO add your handling code here:
+}//GEN-LAST:event_jMenuItem24ActionPerformed
+
+private void jMenuItem25ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jMenuItem25ActionPerformed
+try {
+            generarpdf("eqpresdet.jrxml");
+        } catch (DocumentException ex) {
+            Logger.getLogger(Principal.class.getName()).log(Level.SEVERE, null, ex);
+        }      
+    
+    // TODO add your handling code here:
+}//GEN-LAST:event_jMenuItem25ActionPerformed
+
+private void jMenuItem26ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jMenuItem26ActionPerformed
+try {
+            generarpdf("manopresdet.jrxml");
+        } catch (DocumentException ex) {
+            Logger.getLogger(Principal.class.getName()).log(Level.SEVERE, null, ex);
+        }   
+    // TODO add your handling code here:
+}//GEN-LAST:event_jMenuItem26ActionPerformed
+
+private void jMenuItem28ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jMenuItem28ActionPerformed
+   pideclave();    
+   if(desbloqueado)
+   {
+        RecuperarTab tab = new RecuperarTab(this, true, conexion, this);
+        int xi = (this.getWidth()/2)-700/2;
+        int yi = (this.getHeight()/2)-250/2;
+        tab.setBounds(xi, yi, 700, 250);
+        tab.setVisible(true);
+        buscatab();
+    }
+    
+    // TODO add your handling code here:
+}//GEN-LAST:event_jMenuItem28ActionPerformed
+
+    private void generarpdfPagos(String file){
+         try {
+              FileInputStream input=null;
+            try {
+                input = new FileInputStream(new File(file));
+            } catch (FileNotFoundException ex) {
+                Logger.getLogger(reporteinicio.class.getName()).log(Level.SEVERE, null, ex);
+            }
+           
+            JasperDesign design = null; 
+            try {
+                design = JRXmlLoader.load(input);
+            } catch (JRException ex) {
+                Logger.getLogger(reporteinicio.class.getName()).log(Level.SEVERE, null, ex);
+            }
+            JasperReport report = JasperCompileManager.compileReport(design);
+            Map parameters = new HashMap();            
+            parameters.put("mpres", presup);   
+            parameters.put("totalmat", totalMatPres());
+            parameters.put("totaleq", totalEqPres());
+            parameters.put("totalmano", totalManoPres());
+            parameters.put("totalBono", totalBono());
+            parameters.put("totalAsumidos", totalAsum());
+            JasperPrint print = JasperFillManager.fillReport(report, parameters, conexion);           
+            JasperViewer.viewReport(print, false);            
+        } catch (JRException ex) {
+            JOptionPane.showMessageDialog(null, "No se logró abrir el archivo "+ex.getMessage());
+            Logger.getLogger(reporteinicio.class.getName()).log(Level.SEVERE, null, ex);
+        }
+    }
+    private BigDecimal totalAsum(){
+        BigDecimal asumido=new BigDecimal("0.00");
+        String sql = "SELECT SUM(ROUND(IF(precasu!=0,precasu,0),2)*cantidad) "
+                + "FROM mppres WHERE mpre_id='"+presup+"' OR "
+                + " mpre_id IN (SELECT id FROM mpres WHERE mpres_id='"+presup+"')";
+        try {
+            Statement st = (Statement) conexion.createStatement();
+            ResultSet rst = st.executeQuery(sql);
+            while(rst.next())
+            {
+                asumido = rst.getBigDecimal(1);
+            }                        
+        } catch (SQLException ex) {
+            Logger.getLogger(Principal.class.getName()).log(Level.SEVERE, null, ex);
+        }
+        return asumido;
+    }
+    private BigDecimal totalBono(){
+        String sql = "SELECT (SUM(dmoppres.`cantidad`)* mmopres.`bono`) AS mmopres_bono FROM "
+                + "mppres,`mmopres` mmopres INNER JOIN `dmoppres` dmoppres ON mmopres.`id` = dmoppres.`mmopre_id`"
+                + " INNER JOIN `mpres` mpres ON dmoppres.`mpre_id` = mpres.`id` AND mpres.`id` = mmopres.`mpre_id`"
+                + " WHERE (mmopres.mpre_id = '"+presup+"' OR mmopres.mpre_id IN (SELECT id FROM mpres WHERE mpres_id='"+presup+"')) "
+                + "AND (dmoppres.mpre_id = '"+presup+"' OR dmoppres.mpre_id IN (SELECT id FROM mpres WHERE mpres_id='"+presup+"')) "
+                + "AND mppres.mpre_id=dmoppres.mpre_id AND mppres.numero = dmoppres.numero GROUP BY mmopres.id, mmopres.salario";
+        BigDecimal totalMat=new BigDecimal("0.00");
+        try {
+            Statement st = (Statement) conexion.createStatement();
+            ResultSet rst = st.executeQuery(sql);
+            while(rst.next())
+            {
+                totalMat = totalMat.add(rst.getBigDecimal(1));
+            }
+        } catch (SQLException ex) {
+            Logger.getLogger(Principal.class.getName()).log(Level.SEVERE, null, ex);
+        }
+        
+        return totalMat;
+    }
+    private BigDecimal totalManoPres(){
+        String sql = "SELECT (SUM(dmoppres.`cantidad`)*mmopres.`salario`) FROM "
+                + "mppres,`mmopres` mmopres INNER JOIN `dmoppres` dmoppres ON mmopres.`id` = dmoppres.`mmopre_id`"
+                + " INNER JOIN `mpres` mpres ON dmoppres.`mpre_id` = mpres.`id` AND mpres.`id` = mmopres.`mpre_id`"
+                + " WHERE (mmopres.mpre_id = '"+presup+"' OR mmopres.mpre_id IN (SELECT id FROM mpres WHERE mpres_id='"+presup+"')) "
+                + "AND (dmoppres.mpre_id = '"+presup+"' OR dmoppres.mpre_id IN (SELECT id FROM mpres WHERE mpres_id='"+presup+"')) "
+                + "AND mppres.mpre_id=dmoppres.mpre_id AND mppres.numero = dmoppres.numero GROUP BY mmopres.id, mmopres.salario";
+        BigDecimal totalMat=new BigDecimal("0.00");
+        try {
+            Statement st = (Statement) conexion.createStatement();
+            ResultSet rst = st.executeQuery(sql);
+            while(rst.next())
+            {
+                totalMat = totalMat.add(rst.getBigDecimal(1));
+            }
+        } catch (SQLException ex) {
+            Logger.getLogger(Principal.class.getName()).log(Level.SEVERE, null, ex);
+        }
+        
+        return totalMat;
+    }
+    private BigDecimal totalEqPres(){
+        String sql = "SELECT (mmpres.precio*mmpres.deprecia)*(SUM(dmpres.`cantidad`)) as montopres"
+                + " FROM mppres, `deppres` dmpres INNER JOIN `mepres` mmpres ON dmpres.`mepre_id` = mmpres.`id` "
+                + "WHERE  (dmpres.mpre_id='"+presup+"' OR dmpres.mpre_id IN (SELECT id FROM mpres WHERE mpres_id='"+presup+"')) "
+                + "AND mmpres.mpre_id=dmpres.mpre_id AND (mppres.mpre_id=dmpres.mpre_id AND mppres.numero = dmpres.numero)  GROUP BY  mmpres.`id`";
+        BigDecimal totalEq=new BigDecimal("0.00");
+        try {
+            Statement st = (Statement) conexion.createStatement();
+            ResultSet rst = st.executeQuery(sql);
+            while(rst.next())
+            {
+                totalEq = totalEq.add(rst.getBigDecimal(1));
+            }
+        } catch (SQLException ex) {
+            Logger.getLogger(Principal.class.getName()).log(Level.SEVERE, null, ex);
+        }
+        
+        return totalEq;
+    }
+    
+    private BigDecimal totalMatPres(){
+        String sql = "SELECT mmpres.precio*SUM(dmpres.`cantidad`)*SUM(mppres.cantidad) as montopres FROM mppres, "
+                + "`dmpres` dmpres INNER JOIN `mmpres` mmpres ON dmpres.`mmpre_id` = mmpres.`id` WHERE  "
+                + "(dmpres.mpre_id ='"+presup+"' OR dmpres.mpre_id IN (SELECT id FROM mpres WHERE mpres_id='"+presup+"')) AND "
+                + "mmpres.mpre_id=dmpres.mpre_id AND mppres.mpre_id = dmpres.mpre_id AND mppres.numero = dmpres.numepart  "
+                + "GROUP BY  mmpres.`id`, mmpres.precio";
+        BigDecimal totalMat=new BigDecimal("0.00");
+        try {
+            Statement st = (Statement) conexion.createStatement();
+            ResultSet rst = st.executeQuery(sql);
+            while(rst.next())
+            {
+                totalMat = totalMat.add(rst.getBigDecimal(1));
+            }
+        } catch (SQLException ex) {
+            Logger.getLogger(Principal.class.getName()).log(Level.SEVERE, null, ex);
+        }
+        
+        return totalMat;
+    }
+private void jMenuItem27ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jMenuItem27ActionPerformed
+            generarpdfPagos("generalPago.jrxml");
+}//GEN-LAST:event_jMenuItem27ActionPerformed
+
+private void jMenuItem31ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jMenuItem31ActionPerformed
+    reporteactacierre inicio = new reporteactacierre(this, false, conexion, presup);
+    int xi= (this.getWidth()/2)-700/2;
+    int yi= (this.getHeight()/2)-600/2;
+    inicio.setBounds(xi, yi, 700, 600);
+    inicio.setVisible(true);        
+    
+    // TODO add your handling code here:
+}//GEN-LAST:event_jMenuItem31ActionPerformed
+
+private void jMenuItem32ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jMenuItem32ActionPerformed
+    RespaldarPresupuesto respaldar = new RespaldarPresupuesto(this, true, conexion, presup);
+    int xi= (this.getWidth()/2)-500/2;
+    int yi= (this.getHeight()/2)-350/2;
+    respaldar.setBounds(xi, yi, 500, 350);
+    respaldar.setVisible(true);  
+    
+    // TODO add your handling code here:
+}//GEN-LAST:event_jMenuItem32ActionPerformed
+
+private void jMenuItem39ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jMenuItem39ActionPerformed
+ RecuperarPresupuesto recuperar = new RecuperarPresupuesto(this, true, conexion);
+    int xi= (this.getWidth()/2)-500/2;
+    int yi= (this.getHeight()/2)-350/2;
+    recuperar.setBounds(xi, yi, 500, 350);
+    recuperar.setVisible(true); 
+    verificarpres();
+    // TODO add your handling code here:
+}//GEN-LAST:event_jMenuItem39ActionPerformed
+
+private void jMenuItem41ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jMenuItem41ActionPerformed
+
+    pideclave();    
+   if(desbloqueado)
+   {
+       RespaldarTabulador respaldar = new RespaldarTabulador(this, true, cadena, conexion);
+    int xi= (this.getWidth()/2)-500/2;
+    int yi= (this.getHeight()/2)-350/2;
+    respaldar.setBounds(xi, yi, 500, 350);
+    respaldar.setVisible(true);   
+   }
+    // TODO add your handling code here:
+}//GEN-LAST:event_jMenuItem41ActionPerformed
+
+private void jMenuItem42ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jMenuItem42ActionPerformed
+ pideclave();    
+   if(desbloqueado)
+   {
+    RecuperarTabulador recuperar = new RecuperarTabulador(this, true, conexion);
+    int xi= (this.getWidth()/2)-500/2;
+    int yi= (this.getHeight()/2)-350/2;
+    recuperar.setBounds(xi, yi, 500, 350);
+    recuperar.setVisible(true);     
+   }
+}//GEN-LAST:event_jMenuItem42ActionPerformed
+
+private void jTable2KeyPressed(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_jTable2KeyPressed
+           
+    // TODO add your handling code here:
+}//GEN-LAST:event_jTable2KeyPressed
+
+private void jTable2KeyTyped(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_jTable2KeyTyped
+
+     
+}//GEN-LAST:event_jTable2KeyTyped
+
+private void jTable2KeyReleased(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_jTable2KeyReleased
+jButton3.setEnabled(!isbloquedmtabu());
+            jButton24.setEnabled(!isbloquedmtabu());
+            row = jTable2.getSelectedRow();
+            noredondeo=1;
+          
+            selecpartida();// TODO add your handling code here:    // TODO add your handling code here:
+}//GEN-LAST:event_jTable2KeyReleased
+
+private void jTextField2KeyTyped(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_jTextField2KeyTyped
+    val.validaText(evt);
+    
+    // TODO add your handling code here:
+}//GEN-LAST:event_jTextField2KeyTyped
+
+private void jTextField1KeyTyped(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_jTextField1KeyTyped
+val.validaText(evt);    // TODO add your handling code here:
+}//GEN-LAST:event_jTextField1KeyTyped
+
+private void jButton34ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton34ActionPerformed
+    reporteGeneralPartidas report = new reporteGeneralPartidas(this, false, conexion, cadena);
+    int xi = (this.getWidth()/2)-600/2;
+    int yi = (this.getHeight()/2)-270/2;
+    report.setBounds(xi, yi, 600, 270);
+    report.setVisible(true);
+}//GEN-LAST:event_jButton34ActionPerformed
+
+private void jMenuItem43ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jMenuItem43ActionPerformed
+        reporteGeneralPartidas cron = new reporteGeneralPartidas(this, false, conexion, cadena);
+        int xi = (this.getWidth()/2)-500/2;
+        int yi = (this.getHeight()/2)-300/2;
+        cron.setBounds(xi, yi,500, 300);
+        cron.setVisible(true);
+}//GEN-LAST:event_jMenuItem43ActionPerformed
+
+private void jMenuItem44ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jMenuItem44ActionPerformed
+    todosAPU cron = new todosAPU(this, false, conexion, cadena);
+        int xi = (this.getWidth()/2)-450/2;
+        int yi = (this.getHeight()/2)-300/2;
+        cron.setBounds(xi, yi,450, 300);
+        cron.setVisible(true);
+}//GEN-LAST:event_jMenuItem44ActionPerformed
+private BigDecimal montoTotalCapitulo()
+{
+    BigDecimal total= new BigDecimal("0.00");
+    String sql = "SELECT "
+            + "SUM(ROUND(IF(mppres.`precasu`=0,mppres.`precunit`,precasu)*cantidad,2)) AS total"
+            + " FROM `mpres` mpres INNER JOIN `mppres` mppres ON mpres.`id` = mppres.`mpre_id`      "
+            + "INNER JOIN `mconts` mconts ON mpres.`codcon` = mconts.`id`      INNER JOIN `mprops` mprops ON mpres.`codpro` = mprops.`id` LEFT JOIN cmpres ON mppres.capitulo = cmpres.id "
+            + "WHERE      (mppres.mpre_id = '"+presup+"' OR mppres.mpre_id IN "
+            + "(SELECT id FROM mpres WHERE mpres_id='"+presup+"')) ";
+        try {
+            Statement st = (Statement) conexion.createStatement();
+            ResultSet rst = st.executeQuery(sql);
+            while(rst.next())
+            {
+                total = rst.getBigDecimal(1);
+            }
+        } catch (SQLException ex) {
+            Logger.getLogger(Principal.class.getName()).log(Level.SEVERE, null, ex);
+        }
+    
+    return total;
+}
+public void reportePorCapitulo(String file) throws DocumentException{
+        try
+        {
+              FileInputStream input=null;
+            try 
+            {
+                input = new FileInputStream(new File(file));
+            } catch (FileNotFoundException ex) 
+            {
+                Logger.getLogger(reporteinicio.class.getName()).log(Level.SEVERE, null, ex);
+            }
+           
+            JasperDesign design = null; 
+            try 
+            {
+                design = JRXmlLoader.load(input);
+            } catch (JRException ex) {
+                Logger.getLogger(reporteinicio.class.getName()).log(Level.SEVERE, null, ex);
+            }
+            JasperReport report = JasperCompileManager.compileReport(design);
+            Map parameters = new HashMap();
+            
+       
+            denumeroaletra nume = new denumeroaletra();
+            BigDecimal bd = montoTotalCapitulo().setScale(2, BigDecimal.ROUND_HALF_EVEN); 
+
+        
+          String letras=nume.Convertir(String.valueOf(bd), true);
+            parameters.put("totalenletra",letras);
+             parameters.put("mpres", presup);
+             montoTotalCapitulo();
+            JasperPrint print = JasperFillManager.fillReport(report, parameters, conexion);
+           
+            
+            JasperViewer.viewReport(print, false);
+            
+        } catch (JRException ex) {
+            JOptionPane.showMessageDialog(null, "No se logró abrir el archivo "+ex.getMessage());
+            Logger.getLogger(reporteinicio.class.getName()).log(Level.SEVERE, null, ex);
+        }
+    }
+private void jMenuItem19ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jMenuItem19ActionPerformed
+        try {
+            reportePorCapitulo("porcapitulo.jrxml");
+        } catch (DocumentException ex) {
+            Logger.getLogger(Principal.class.getName()).log(Level.SEVERE, null, ex);
+        }
+        
+}//GEN-LAST:event_jMenuItem19ActionPerformed
+
+private void jMenuItem50ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jMenuItem50ActionPerformed
+    pideclave();
+    if(desbloqueado)
+    {
+          configuracionBD bd = new configuracionBD(this, true);
+          int x = (screenSize.width/2)-(450/2);
+        int y = (screenSize.height/2)-(350/2);
+        bd.setBounds(x, y, 450, 350);
+        bd.setVisible(true);
+    }        
+}//GEN-LAST:event_jMenuItem50ActionPerformed
+
+        protected final void desbloquearBotones(boolean bloquea){
+               jButton13.setEnabled(bloquea);
+               jButton4.setEnabled(bloquea);
+               jButton5.setEnabled(bloquea);
+               jButton6.setEnabled(bloquea);
+               jButton31.setEnabled(bloquea);
+               jButton32.setEnabled(bloquea);
+               jButton8.setEnabled(bloquea);
+               jButton12.setEnabled(bloquea);
+               jButton9.setEnabled(bloquea);
+               jButton11.setEnabled(bloquea);
+               jButton10.setEnabled(bloquea);
+               jButton24.setEnabled(bloquea);
+               jButton14.setEnabled(bloquea);
+               jButton15.setEnabled(bloquea);
+               jButton16.setEnabled(bloquea);
+               jButton17.setEnabled(bloquea);
+               jButton18.setEnabled(bloquea);
+               jButton19.setEnabled(bloquea);
+               jButton20.setEnabled(bloquea);
+               jButton21.setEnabled(bloquea);
+               jButton22.setEnabled(bloquea);
+               jButton30.setEnabled(bloquea);
+               if(bloquea==true){
+                   jButton33.setIcon(new javax.swing.ImageIcon(getClass().getResource("/winspapus/imagenes/candado.fw.png")));                        
+                    jButton33.setToolTipText("Bloquear Tabulador");
+               }
+               else{
+                   jButton33.setIcon(new javax.swing.ImageIcon(getClass().getResource("/winspapus/imagenes/candadoabierto.fw.png")));
+                    jButton33.setToolTipText("Desbloquear Tabulador");
+               }
+        }
+protected final void updateBloqueo(int bloqueo){
+    try {
+        String update = "UPDATE mtabus SET bloqueado="+bloqueo+" WHERE id='"+cadena+"'";
+        Statement st = (Statement) conexion.createStatement();
+        st.execute(update);
+    } catch (SQLException ex) {
+        Logger.getLogger(Principal.class.getName()).log(Level.SEVERE, null, ex);
+    }
+}
+public final boolean isbloquedmtabu(){
+    boolean val=false;
+    String select = "SELECT bloqueado FROM mtabus WHERE id='"+cadena+"'";
+        try {
+            Statement st = (Statement) conexion.createStatement();
+            ResultSet rst = st.executeQuery(select);
+            while(rst.next()){
+                if(rst.getInt(1)==0)
+                    val=false;
+                else
+                    val=true;
+            }
+        } catch (SQLException ex) {
+            Logger.getLogger(Principal.class.getName()).log(Level.SEVERE, null, ex);
+        }
+    return val;
+}   
+public final boolean isbloquedmtabu(String tabu){
+    boolean val=false;
+    String select = "SELECT bloqueado FROM mtabus WHERE id='"+tabu+"'";
+        try {
+            Statement st = (Statement) conexion.createStatement();
+            ResultSet rst = st.executeQuery(select);
+            while(rst.next()){
+                if(rst.getInt(1)==0)
+                    val=false;
+                else
+                    val=true;
+            }
+        } catch (SQLException ex) {
+            Logger.getLogger(Principal.class.getName()).log(Level.SEVERE, null, ex);
+        }
+    return val;
+}   
+protected void desbloqueo(boolean desbloqueo){
+        desbloqueado=desbloqueo;
+    }
+private void pideclave(){
+        claveAdmin admin = new claveAdmin(null, true,this);
+        int xi=(int)(this.getWidth()/2)-400/2;
+        int yi = (int) (this.getHeight()/2)-200/2;
+        admin.setBounds(xi, yi, 400, 200);
+        admin.setVisible(true);
+    }
     public void recalcula()
     {
        recalcula recal = new recalcula(this, true, conexion, cadena);
@@ -3717,12 +4666,10 @@ private void jMenuItem35ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-F
        recal.setBounds(xi, yi, 370, 470);
        recal.setVisible(true);
        partida();
-    }
-    /**
-     * @param args the command line arguments
-     */
+    }   
+    
     public static void main(String args[]) {
-   try {
+    try {
             for (javax.swing.UIManager.LookAndFeelInfo info : javax.swing.UIManager.getInstalledLookAndFeels()) {
                 if ("Nimbus".equals(info.getName())) {
                     javax.swing.UIManager.setLookAndFeel(info.getClassName());
@@ -3778,6 +4725,8 @@ private void jMenuItem35ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-F
     private javax.swing.JButton jButton30;
     private javax.swing.JButton jButton31;
     private javax.swing.JButton jButton32;
+    private javax.swing.JButton jButton33;
+    private javax.swing.JButton jButton34;
     private javax.swing.JButton jButton4;
     private javax.swing.JButton jButton5;
     private javax.swing.JButton jButton6;
@@ -3808,6 +4757,7 @@ private void jMenuItem35ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-F
     private javax.swing.JLabel jLabel29;
     private javax.swing.JLabel jLabel3;
     private javax.swing.JLabel jLabel31;
+    private javax.swing.JLabel jLabel32;
     private javax.swing.JLabel jLabel33;
     private javax.swing.JLabel jLabel34;
     private javax.swing.JLabel jLabel35;
@@ -3816,6 +4766,7 @@ private void jMenuItem35ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-F
     private javax.swing.JLabel jLabel38;
     private javax.swing.JLabel jLabel39;
     private javax.swing.JLabel jLabel4;
+    private javax.swing.JLabel jLabel40;
     private javax.swing.JLabel jLabel5;
     private javax.swing.JLabel jLabel6;
     private javax.swing.JLabel jLabel7;
@@ -3830,10 +4781,12 @@ private void jMenuItem35ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-F
     private javax.swing.JMenu jMenu16;
     private javax.swing.JMenu jMenu17;
     private javax.swing.JMenu jMenu18;
+    private javax.swing.JMenu jMenu19;
     private javax.swing.JMenu jMenu2;
     private javax.swing.JMenu jMenu3;
     private javax.swing.JMenu jMenu4;
     private javax.swing.JMenu jMenu5;
+    private javax.swing.JMenu jMenu6;
     private javax.swing.JMenu jMenu7;
     private javax.swing.JMenu jMenu8;
     private javax.swing.JMenu jMenu9;
@@ -3842,6 +4795,9 @@ private void jMenuItem35ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-F
     private javax.swing.JMenuBar jMenuBar3;
     private javax.swing.JMenuItem jMenuItem1;
     private javax.swing.JMenuItem jMenuItem10;
+    private javax.swing.JMenuItem jMenuItem11;
+    private javax.swing.JMenuItem jMenuItem12;
+    private javax.swing.JMenuItem jMenuItem13;
     private javax.swing.JMenuItem jMenuItem14;
     private javax.swing.JMenuItem jMenuItem15;
     private javax.swing.JMenuItem jMenuItem16;
@@ -3862,6 +4818,7 @@ private void jMenuItem35ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-F
     private javax.swing.JMenuItem jMenuItem3;
     private javax.swing.JMenuItem jMenuItem30;
     private javax.swing.JMenuItem jMenuItem31;
+    private javax.swing.JMenuItem jMenuItem32;
     private javax.swing.JMenuItem jMenuItem33;
     private javax.swing.JMenuItem jMenuItem34;
     private javax.swing.JMenuItem jMenuItem35;
@@ -3870,12 +4827,18 @@ private void jMenuItem35ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-F
     private javax.swing.JMenuItem jMenuItem38;
     private javax.swing.JMenuItem jMenuItem39;
     private javax.swing.JMenuItem jMenuItem4;
+    private javax.swing.JMenuItem jMenuItem40;
+    private javax.swing.JMenuItem jMenuItem41;
     private javax.swing.JMenuItem jMenuItem42;
+    private javax.swing.JMenuItem jMenuItem43;
     private javax.swing.JMenuItem jMenuItem44;
     private javax.swing.JMenuItem jMenuItem45;
     private javax.swing.JMenuItem jMenuItem46;
     private javax.swing.JMenuItem jMenuItem47;
+    private javax.swing.JMenuItem jMenuItem48;
+    private javax.swing.JMenuItem jMenuItem49;
     private javax.swing.JMenuItem jMenuItem5;
+    private javax.swing.JMenuItem jMenuItem50;
     private javax.swing.JMenuItem jMenuItem6;
     private javax.swing.JMenuItem jMenuItem7;
     private javax.swing.JMenuItem jMenuItem8;
@@ -3900,7 +4863,6 @@ private void jMenuItem35ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-F
     private javax.swing.JPanel jPanel29;
     private javax.swing.JPanel jPanel3;
     private javax.swing.JPanel jPanel4;
-    private javax.swing.JPanel jPanel5;
     private javax.swing.JPanel jPanel6;
     private javax.swing.JPanel jPanel7;
     private javax.swing.JPanel jPanel8;
@@ -4108,11 +5070,6 @@ private void jMenuItem35ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-F
         } catch (SQLException ex) {
             Logger.getLogger(Principal.class.getName()).log(Level.SEVERE, null, ex);
         }
-        
-      
-
-        
-
              jTable2.getColumnModel().getColumn(2).setMaxWidth(0);
 
              jTable2.getColumnModel().getColumn(2).setMinWidth(0);
@@ -4164,8 +5121,6 @@ private void jMenuItem35ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-F
                
                partida();
         }
-       
-        
     }
  
     

@@ -9,13 +9,14 @@
  * Created on 30/08/2013, 11:13:44 AM
  */
 package presupuestos;
-
-import com.mysql.jdbc.Connection;
+import java.sql.Connection;
 import com.mysql.jdbc.ResultSetMetaData;
 import com.mysql.jdbc.Statement;
+import config.Redondeo;
 import java.awt.Dimension;
 import java.awt.event.ActionEvent;
 import java.awt.event.KeyEvent;
+import java.math.BigDecimal;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.logging.Level;
@@ -41,6 +42,7 @@ public class importarpartidas extends javax.swing.JDialog {
     public static final int RET_CANCEL = 0;
     private Connection conex;
     String pres, seleccionado;
+    Redondeo redon = new Redondeo();
     /** A return status code - returned if OK button has been pressed */
     public static final int RET_OK = 1;
     int auxcont = 0;
@@ -53,7 +55,7 @@ public class importarpartidas extends javax.swing.JDialog {
     private int nuevonumegrup;
     private int insertar;
     private String rendimi;
-    float contmano=0, contequip=0, contmat=0;
+    BigDecimal contmano=new BigDecimal("0.00"), contequip=new BigDecimal("0.00"), contmat=new BigDecimal("0.00");
     private String numero;
     Presupuesto presu;
     /** Creates new form importarpartidas */
@@ -87,7 +89,7 @@ public class importarpartidas extends javax.swing.JDialog {
         });
     }
     public final void hacemodelo(){
-        String consulta = "SELECT id FROM mpres where status=1 AND id!='"+seleccionado+"'";
+        String consulta = "SELECT id FROM mpres where status=1 AND id!='"+seleccionado+"' AND mpres_id IS NULL";
         try {
             Statement st = (Statement) conex.createStatement();
             ResultSet rst = st.executeQuery(consulta);
@@ -150,7 +152,7 @@ public class importarpartidas extends javax.swing.JDialog {
                 Object[] fila = new Object[cantidadColumnas];
                 enc=false;
                     for(int j=0;j<auxcont;j++){
-                         if(rs.getObject(1).toString().equals(auxpart[j])){
+                         if(rs.getObject(3).toString().equals(auxpart[j])){
                                   enc=true;
                          }
                     }
@@ -244,7 +246,7 @@ public class importarpartidas extends javax.swing.JDialog {
         jPanel3.setBackground(new java.awt.Color(100, 100, 100));
 
         jLabel1.setBackground(new java.awt.Color(91, 91, 95));
-        jLabel1.setFont(new java.awt.Font("Tahoma", 1, 11)); // NOI18N
+        jLabel1.setFont(new java.awt.Font("Tahoma", 1, 11));
         jLabel1.setForeground(new java.awt.Color(255, 255, 255));
         jLabel1.setHorizontalAlignment(javax.swing.SwingConstants.CENTER);
         jLabel1.setText("Importar Partidas de Presupuestos");
@@ -348,7 +350,7 @@ public class importarpartidas extends javax.swing.JDialog {
             }
         });
 
-        okButton.setIcon(new javax.swing.ImageIcon(getClass().getResource("/winspapus/imagenes/anade.fw.png"))); // NOI18N
+        okButton.setIcon(new javax.swing.ImageIcon(getClass().getResource("/winspapus/imagenes/asignar.fw.png"))); // NOI18N
         okButton.setToolTipText("Importar Partidas");
         okButton.addMouseListener(new java.awt.event.MouseAdapter() {
             public void mouseClicked(java.awt.event.MouseEvent evt) {
@@ -401,11 +403,11 @@ public class importarpartidas extends javax.swing.JDialog {
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                         .addComponent(jButton1, javax.swing.GroupLayout.PREFERRED_SIZE, 30, javax.swing.GroupLayout.PREFERRED_SIZE)
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                        .addComponent(jButton4, javax.swing.GroupLayout.PREFERRED_SIZE, 30, javax.swing.GroupLayout.PREFERRED_SIZE)
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                         .addComponent(jButton2, javax.swing.GroupLayout.PREFERRED_SIZE, 30, javax.swing.GroupLayout.PREFERRED_SIZE)
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                        .addComponent(jButton3, javax.swing.GroupLayout.PREFERRED_SIZE, 30, javax.swing.GroupLayout.PREFERRED_SIZE)
-                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                        .addComponent(jButton4, javax.swing.GroupLayout.PREFERRED_SIZE, 30, javax.swing.GroupLayout.PREFERRED_SIZE))
+                        .addComponent(jButton3, javax.swing.GroupLayout.PREFERRED_SIZE, 30, javax.swing.GroupLayout.PREFERRED_SIZE))
                     .addComponent(jPanel1, javax.swing.GroupLayout.Alignment.TRAILING, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
                 .addContainerGap())
         );
@@ -416,10 +418,11 @@ public class importarpartidas extends javax.swing.JDialog {
                 .addGroup(jPanel5Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                     .addGroup(jPanel5Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.CENTER)
                         .addComponent(jButton1, javax.swing.GroupLayout.PREFERRED_SIZE, 30, javax.swing.GroupLayout.PREFERRED_SIZE)
-                        .addComponent(jTextField1, javax.swing.GroupLayout.PREFERRED_SIZE, 30, javax.swing.GroupLayout.PREFERRED_SIZE))
-                    .addComponent(jButton2, javax.swing.GroupLayout.PREFERRED_SIZE, 30, javax.swing.GroupLayout.PREFERRED_SIZE)
-                    .addComponent(jButton3, javax.swing.GroupLayout.PREFERRED_SIZE, 30, javax.swing.GroupLayout.PREFERRED_SIZE)
-                    .addComponent(jButton4, javax.swing.GroupLayout.PREFERRED_SIZE, 30, javax.swing.GroupLayout.PREFERRED_SIZE)
+                        .addComponent(jTextField1, javax.swing.GroupLayout.PREFERRED_SIZE, 30, javax.swing.GroupLayout.PREFERRED_SIZE)
+                        .addGroup(jPanel5Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                            .addComponent(jButton4, javax.swing.GroupLayout.PREFERRED_SIZE, 30, javax.swing.GroupLayout.PREFERRED_SIZE)
+                            .addComponent(jButton2, javax.swing.GroupLayout.PREFERRED_SIZE, 30, javax.swing.GroupLayout.PREFERRED_SIZE)
+                            .addComponent(jButton3, javax.swing.GroupLayout.PREFERRED_SIZE, 30, javax.swing.GroupLayout.PREFERRED_SIZE)))
                     .addGroup(jPanel5Layout.createSequentialGroup()
                         .addGap(8, 8, 8)
                         .addComponent(jLabel3)))
@@ -608,7 +611,7 @@ Object obj1 = jTable1.getValueAt(i, 3);
     public void agregaequipo(String partidas){
         String cantidad, precio ;
            int cuantos=0;
-           float valor=0;
+           BigDecimal valor=new BigDecimal("0.00");
            String codiequip = null, mtabu = "", descri, desperdi, unidad;
         
            
@@ -633,7 +636,7 @@ Object obj1 = jTable1.getValueAt(i, 3);
                 Statement str = (Statement) conex.createStatement();
                 ResultSet rstr = str.executeQuery(select);
                 while(rstr.next()){
-                    contequip+=rstr.getFloat(1);
+                    contequip = contequip.add(redon.redondearDosDecimales(rstr.getBigDecimal(1)));
                     codiequip = rstr.getString(2);
                     
                     int cuenta=0;
@@ -670,7 +673,7 @@ Object obj1 = jTable1.getValueAt(i, 3);
      public void agregamano(String partidas){
         String cantidad, precio ;
            int cuantos=0;
-           float valor=0;
+           BigDecimal valor=new BigDecimal("0.00");
            String codimano = null, mtabu = "", descri, desperdi, unidad;
         
            
@@ -694,7 +697,7 @@ Object obj1 = jTable1.getValueAt(i, 3);
                 Statement str = (Statement) conex.createStatement();
                 ResultSet rstr = str.executeQuery(select);
                 while(rstr.next()){
-                    contmano+=rstr.getFloat(1);
+                    contmano = contmano.add(redon.redondearDosDecimales(rstr.getBigDecimal(1)));
                     codimano = rstr.getString(2);
                      int cuenta=0;
                 String busca = "SELECT count(*) FROM mmopres WHERE mpre_id='"+seleccionado+"' AND"
@@ -730,7 +733,7 @@ Object obj1 = jTable1.getValueAt(i, 3);
     public void agregarmat(String partidas){
         String cantidad, precio ;
            int cuantos=0;
-           float valor=0;
+           BigDecimal valor=new BigDecimal("0.00");
            String codimate = null, mtabu = "", descri, desperdi, unidad;
         
            
@@ -754,7 +757,7 @@ Object obj1 = jTable1.getValueAt(i, 3);
                 Statement str = (Statement) conex.createStatement();
                 ResultSet rstr = str.executeQuery(select);
                 while(rstr.next()){
-                    contmat+=rstr.getFloat(1);
+                    contmat= contmat.add(redon.redondearDosDecimales(rstr.getBigDecimal(1)));
                     codimate = rstr.getString(2);
                     int cuenta=0;
                 String busca = "SELECT count(*) FROM mmpres WHERE mpre_id='"+seleccionado+"' AND"

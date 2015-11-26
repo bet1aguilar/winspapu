@@ -12,6 +12,7 @@ package winspapus.materiales;
 
 import com.mysql.jdbc.Connection;
 import com.mysql.jdbc.Statement;
+import herramienta.Validacion;
 import java.awt.Rectangle;
 import java.awt.event.ActionEvent;
 import java.awt.event.KeyEvent;
@@ -34,6 +35,7 @@ import javax.swing.SpinnerListModel;
  */
 public class nuevosmateriales extends javax.swing.JDialog {
     private int edita=0;
+    public final String tableName="mmtabs";
     private String codigomate="";
     /** A return status code - returned if Cancel button has been pressed */
     public static final int RET_CANCEL = 0;
@@ -42,6 +44,7 @@ public class nuevosmateriales extends javax.swing.JDialog {
     private Connection conex;
     private String mtabu;
     int nuevo=0;
+    Validacion val ;
     private String primero;
     /** Creates new form nuevosmateriales */
     public nuevosmateriales(java.awt.Frame parent, boolean modal, Connection conex, String mtabu) {
@@ -49,7 +52,7 @@ public class nuevosmateriales extends javax.swing.JDialog {
         initComponents();
         this.mtabu = mtabu;
         this.conex = conex;
-        
+        val = new Validacion(conex);
         jLabel9.setVisible(false);
         jLabel10.setVisible(false);
         jLabel20.setVisible(false);
@@ -77,6 +80,7 @@ public class nuevosmateriales extends javax.swing.JDialog {
         this.codigomate = codimate;
         this.edita=1;
         jTextField1.setVisible(false);
+        val = new Validacion(conex);
         super.setTitle("Modificar Material");
         jLabel1.setText("Modificar Material");
         jLabel9.setVisible(false);
@@ -123,17 +127,7 @@ public class nuevosmateriales extends javax.swing.JDialog {
             Logger.getLogger(nuevosmateriales.class.getName()).log(Level.SEVERE, null, ex);
         }
     }
-      public void validafloat( java.awt.event.KeyEvent evt,String valor){
-        char car = evt.getKeyChar();
-        
-        int repite = new StringTokenizer(valor,".").countTokens() - 1;
-        if ((car<'0' || car>'9') && car!='.') {            
-            evt.consume();
-        }
-        if(car=='.'&& repite==1){
-             evt.consume();
-        }
-    }
+      
      public final void nuevo(){
      Rectangle rect = new Rectangle();
         jSpinner1.setVisible(false);
@@ -208,12 +202,10 @@ public class nuevosmateriales extends javax.swing.JDialog {
             }
         });
 
-        jPanel1.setBorder(javax.swing.BorderFactory.createBevelBorder(javax.swing.border.BevelBorder.RAISED, java.awt.Color.darkGray, java.awt.Color.lightGray, java.awt.Color.gray, java.awt.Color.lightGray));
-
         jPanel2.setBackground(new java.awt.Color(100, 100, 100));
 
         jLabel1.setBackground(new java.awt.Color(91, 91, 95));
-        jLabel1.setFont(new java.awt.Font("Tahoma", 1, 11)); // NOI18N
+        jLabel1.setFont(new java.awt.Font("Tahoma", 1, 11));
         jLabel1.setForeground(new java.awt.Color(255, 255, 255));
         jLabel1.setHorizontalAlignment(javax.swing.SwingConstants.CENTER);
         jLabel1.setText("Agregar Material");
@@ -235,7 +227,7 @@ public class nuevosmateriales extends javax.swing.JDialog {
         jLabel2.setFont(new java.awt.Font("Tahoma", 1, 11));
         jLabel2.setText("Código *:");
 
-        jTextField1.setToolTipText("Ingrese Código del Tabulador");
+        jTextField1.setToolTipText("Código del Material");
         jTextField1.addKeyListener(new java.awt.event.KeyAdapter() {
             public void keyTyped(java.awt.event.KeyEvent evt) {
                 jTextField1KeyTyped(evt);
@@ -248,15 +240,33 @@ public class nuevosmateriales extends javax.swing.JDialog {
         jLabel5.setFont(new java.awt.Font("Tahoma", 1, 11));
         jLabel5.setText("Desperdicio:");
 
-        jTextField3.setToolTipText("Ingrese Código del Tabulador");
+        jTextField3.setHorizontalAlignment(javax.swing.JTextField.RIGHT);
+        jTextField3.setText("0.00");
+        jTextField3.setToolTipText("Desperdicio de Material");
+        jTextField3.addFocusListener(new java.awt.event.FocusAdapter() {
+            public void focusGained(java.awt.event.FocusEvent evt) {
+                jTextField3FocusGained(evt);
+            }
+        });
+        jTextField3.addKeyListener(new java.awt.event.KeyAdapter() {
+            public void keyTyped(java.awt.event.KeyEvent evt) {
+                jTextField3KeyTyped(evt);
+            }
+        });
 
-        jTextField5.setToolTipText("Ingrese Código del Tabulador");
+        jTextField5.setHorizontalAlignment(javax.swing.JTextField.RIGHT);
+        jTextField5.setToolTipText("Unidad de Medida");
+        jTextField5.addKeyListener(new java.awt.event.KeyAdapter() {
+            public void keyTyped(java.awt.event.KeyEvent evt) {
+                jTextField5KeyTyped(evt);
+            }
+        });
 
         jLabel9.setFont(new java.awt.Font("Tahoma", 0, 14));
         jLabel9.setForeground(new java.awt.Color(255, 0, 0));
         jLabel9.setText("*");
 
-        jTextField8.setToolTipText("Ingrese Código del Tabulador");
+        jTextField8.setToolTipText("Descripción del Material");
         jTextField8.addKeyListener(new java.awt.event.KeyAdapter() {
             public void keyTyped(java.awt.event.KeyEvent evt) {
                 jTextField8KeyTyped(evt);
@@ -276,7 +286,9 @@ public class nuevosmateriales extends javax.swing.JDialog {
         jLabel12.setFont(new java.awt.Font("Tahoma", 1, 11));
         jLabel12.setText("Precio:");
 
-        jTextField7.setToolTipText("Ingrese Código del Tabulador");
+        jTextField7.setHorizontalAlignment(javax.swing.JTextField.RIGHT);
+        jTextField7.setText("0.00");
+        jTextField7.setToolTipText("Precio del Material");
 
         okButton.setIcon(new javax.swing.ImageIcon(getClass().getResource("/winspapus/imagenes/guardar.png"))); // NOI18N
         okButton.setToolTipText("Guardar");
@@ -303,6 +315,11 @@ public class nuevosmateriales extends javax.swing.JDialog {
         jSpinner1.addChangeListener(new javax.swing.event.ChangeListener() {
             public void stateChanged(javax.swing.event.ChangeEvent evt) {
                 jSpinner1StateChanged(evt);
+            }
+        });
+        jSpinner1.addKeyListener(new java.awt.event.KeyAdapter() {
+            public void keyTyped(java.awt.event.KeyEvent evt) {
+                jSpinner1KeyTyped(evt);
             }
         });
 
@@ -375,7 +392,7 @@ public class nuevosmateriales extends javax.swing.JDialog {
                     .addComponent(jLabel11))
                 .addGap(18, 18, 18)
                 .addComponent(jLabel20)
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 23, Short.MAX_VALUE)
                 .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                     .addComponent(cancelButton, javax.swing.GroupLayout.PREFERRED_SIZE, 45, javax.swing.GroupLayout.PREFERRED_SIZE)
                     .addComponent(okButton, javax.swing.GroupLayout.PREFERRED_SIZE, 45, javax.swing.GroupLayout.PREFERRED_SIZE))
@@ -468,18 +485,32 @@ public class nuevosmateriales extends javax.swing.JDialog {
     }//GEN-LAST:event_okButtonMouseClicked
 
 private void jTextField1KeyTyped(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_jTextField1KeyTyped
- Character c = evt.getKeyChar();
-                if(Character.isLetter(c)) {
-                    evt.setKeyChar(Character.toUpperCase(c));
-                }// TODO add your handling code here:
+val.validaText(evt);
+val.sizeField("id", tableName, evt, jTextField1.getText());
+// TODO add your handling code here:
 }//GEN-LAST:event_jTextField1KeyTyped
 
 private void jTextField8KeyTyped(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_jTextField8KeyTyped
- Character c = evt.getKeyChar();
-                if(Character.isLetter(c)) {
-                    evt.setKeyChar(Character.toUpperCase(c));
-                }// TODO add your handling code here:
+val.validaText(evt);
+val.sizeField("descri", tableName, evt, jTextField8.getText());// TODO add your handling code here:
 }//GEN-LAST:event_jTextField8KeyTyped
+
+private void jTextField3KeyTyped(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_jTextField3KeyTyped
+val.validaFloat(jTextField3.getText(), evt);    // TODO add your handling code here:
+}//GEN-LAST:event_jTextField3KeyTyped
+
+private void jTextField3FocusGained(java.awt.event.FocusEvent evt) {//GEN-FIRST:event_jTextField3FocusGained
+val.focusGained(jTextField3);    // TODO add your handling code here:
+}//GEN-LAST:event_jTextField3FocusGained
+
+private void jTextField5KeyTyped(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_jTextField5KeyTyped
+val.validaText(evt);
+    // TODO add your handling code here:
+}//GEN-LAST:event_jTextField5KeyTyped
+
+private void jSpinner1KeyTyped(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_jSpinner1KeyTyped
+    val.sizeField("id", tableName, evt, jSpinner1.getValue().toString());
+}//GEN-LAST:event_jSpinner1KeyTyped
     
     private void doClose(int retStatus) {
         returnStatus = retStatus;

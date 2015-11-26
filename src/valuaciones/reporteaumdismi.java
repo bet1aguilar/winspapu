@@ -10,7 +10,7 @@
  */
 package valuaciones;
 
-import com.mysql.jdbc.Connection;
+import java.sql.Connection;
 import com.mysql.jdbc.Statement;
 import java.awt.event.ActionEvent;
 import java.awt.event.KeyEvent;
@@ -95,7 +95,7 @@ public class reporteaumdismi extends javax.swing.JDialog {
     
     public void generarreporte()
     {
-        Double totalpres=0.00;
+        BigDecimal totalpres=new BigDecimal("0.00");
         try {
             JasperPrint print=null;
          
@@ -103,16 +103,18 @@ public class reporteaumdismi extends javax.swing.JDialog {
             try {
                 if(jRadioButton1.isSelected()){
                 input = new FileInputStream(new File("aumento.jrxml"));
-                   String subtotal = "SELECT (if(mp.precasu=0,mp.precunit,mp.precasu)*aum.aumento) AS cantidad "
-                           + "FROM mppres as mp, admppres as aum WHERE aum.mpre_id='"+mpres+"' AND (mp.mpre_id='"+mpres+"' "
-                           + "OR mp.mpre_id IN (SELECT id FROM mpres WHERE mpres_id='"+mpres+"'))"
-                           + " AND aum.payd_id='"+numpres+"'";      
+                   String subtotal = "SELECT ROUND(if(mp.precasu=0,mp.precunit,mp.precasu)*aum.aumento,2) AS cantidad "
+                           + "FROM mppres as mp, admppres as aum WHERE "
+                           + "(aum.mpre_id='"+mpres+"' OR aum.mpre_id IN (SELECT id FROM mpres WHERE mpres_id='"+mpres+"')) "
+                           + "AND (mp.mpre_id='"+mpres+"' OR mp.mpre_id IN (SELECT id FROM mpres WHERE mpres_id='"+mpres+"'))"
+                           + " AND aum.payd_id="+numpres+" "
+                           + "AND mp.mpre_id = aum.mpre_id AND mp.numero = aum.numepart AND aum.aumento>0 ORDER BY numegrup";      
                     try {
                         Statement st = (Statement) conex.createStatement();
                         ResultSet rst = st.executeQuery(subtotal);
                         while(rst.next())
                         {
-                            totalpres += rst.getDouble(1);
+                            totalpres = totalpres.add(rst.getBigDecimal(1));
                         }
                     } catch (SQLException ex) {
                         Logger.getLogger(reporteaumdismi.class.getName()).log(Level.SEVERE, null, ex);
@@ -121,15 +123,17 @@ public class reporteaumdismi extends javax.swing.JDialog {
                 if(jRadioButton2.isSelected()){
                      input = new FileInputStream(new File("dismi.jrxml"));
                      String subtotal = "SELECT (if(mp.precasu=0,mp.precunit,mp.precasu)*aum.disminucion) AS cantidad "
-                           + "FROM mppres as mp, admppres as aum WHERE aum.mpre_id='"+mpres+"' AND (mp.mpre_id='"+mpres+"' "
-                           + "OR mp.mpre_id IN (SELECT id FROM mpres WHERE mpres_id='"+mpres+"'))"
-                           + " AND aum.payd_id='"+numpres+"'";      
+                           + "FROM mppres as mp, admppres as aum WHERE "
+                             + "(aum.mpre_id='"+mpres+"' OR aum.mpre_id IN (SELECT id FROM mpres WHERE mpres_id='"+mpres+"'))"
+                             + "AND (mp.mpre_id='"+mpres+"' OR mp.mpre_id IN (SELECT id FROM mpres WHERE mpres_id='"+mpres+"'))"
+                           + " AND aum.payd_id='"+numpres+"' AND mp.mpre_id = aum.mpre_id AND mp.numero = aum.numepart AND "
+                             + "aum.disminucion>0 ORDER BY numegrup";      
                     try {
                         Statement st = (Statement) conex.createStatement();
                         ResultSet rst = st.executeQuery(subtotal);
                         while(rst.next())
                         {
-                            totalpres += rst.getDouble(1);
+                            totalpres = totalpres.add(rst.getBigDecimal(1));
                         }
                     } catch (SQLException ex) {
                         Logger.getLogger(reporteaumdismi.class.getName()).log(Level.SEVERE, null, ex);
@@ -140,12 +144,12 @@ public class reporteaumdismi extends javax.swing.JDialog {
                 Logger.getLogger(reporteaumdismi.class.getName()).log(Level.SEVERE, null, ex);
             }
             String porcentaje = "SELECT porimp FROM mpres WHERE id='"+mpres+"'";
-            Double porimp=0.00;
+            BigDecimal porimp=new BigDecimal("0.00");
             try {
                 Statement stporcentaje = (Statement) conex.createStatement();
                 ResultSet rstp = stporcentaje.executeQuery(porcentaje);
                 while(rstp.next()){
-                    porimp=rstp.getDouble(1);
+                    porimp=rstp.getBigDecimal(1);
                 }
             } catch (SQLException ex) {
                 Logger.getLogger(reporteaumdismi.class.getName()).log(Level.SEVERE, null, ex);
@@ -159,14 +163,14 @@ public class reporteaumdismi extends javax.swing.JDialog {
             
              
              String timpuesto="Impuesto:";
-            Double imp=0.00;
+            BigDecimal imp=new BigDecimal("0.00");
             
             if(jCheckBox4.isSelected()){
                 parameters.put("tituloimp", timpuesto);
-                imp=totalpres*porimp/100;
+                imp=(totalpres.multiply(porimp.divide(new BigDecimal("100")))).setScale(2, BigDecimal.ROUND_HALF_UP);
                  parameters.put("imp", imp);
-                 double total=0.00;
-                 total=totalpres+imp;
+                 BigDecimal total=new BigDecimal("0.00");
+                 total=totalpres.add(imp);
                  totalpres=total;
                  parameters.put("titulototal", "Total:");
                   parameters.put("totaltotal", total);
@@ -175,8 +179,8 @@ public class reporteaumdismi extends javax.swing.JDialog {
             if(jCheckBox5.isSelected()){
                 parameters.put("ajustetitulo", "Ajuste por Redondeo:");
                   parameters.put("ajuste", jTextField3.getText().toString());
-                  double ajuste = Double.valueOf(jTextField3.getText().toString());
-                  totalpres=totalpres+ajuste;
+                  BigDecimal ajuste = new BigDecimal(jTextField3.getText().toString());
+                  totalpres=totalpres.add(ajuste);
                   parameters.put("titulototal", "Total:");
                   parameters.put("totaltotal", totalpres);
             }
@@ -184,14 +188,21 @@ public class reporteaumdismi extends javax.swing.JDialog {
                 denumeroaletra nume = new denumeroaletra();
               String letras="";
                int decimalPlaces = 2; 
-          BigDecimal bd = new BigDecimal(totalpres); 
-          bd = bd.setScale(decimalPlaces, BigDecimal.ROUND_HALF_EVEN); 
+          BigDecimal bd = totalpres; 
+          bd = bd.setScale(decimalPlaces, BigDecimal.ROUND_HALF_UP); 
 
         
           letras=nume.Convertir(String.valueOf(bd), true);
               if(!jCheckBox6.isSelected()){
                   letras="";
               }
+            if(jCheckBox3.isSelected()){
+                jDateChooser1.setEnabled(true);
+                fecha = format.format(jDateChooser1.getDate());
+            }else{
+                jDateChooser1.setEnabled(false);
+                fecha="";
+            }
               parameters.put("mpres", mpres);
               parameters.put("presaumdis", numpres);
               parameters.put("totalenletra", letras);
@@ -312,7 +323,7 @@ public class reporteaumdismi extends javax.swing.JDialog {
         jPanel3.setBackground(new java.awt.Color(100, 100, 100));
 
         jLabel1.setBackground(new java.awt.Color(91, 91, 95));
-        jLabel1.setFont(new java.awt.Font("Tahoma", 1, 11)); // NOI18N
+        jLabel1.setFont(new java.awt.Font("Tahoma", 1, 11));
         jLabel1.setForeground(new java.awt.Color(255, 255, 255));
         jLabel1.setHorizontalAlignment(javax.swing.SwingConstants.CENTER);
         jLabel1.setText("Reporte de Aumentos y Disminución");
@@ -363,6 +374,11 @@ public class reporteaumdismi extends javax.swing.JDialog {
         jCheckBox3.addChangeListener(new javax.swing.event.ChangeListener() {
             public void stateChanged(javax.swing.event.ChangeEvent evt) {
                 jCheckBox3StateChanged(evt);
+            }
+        });
+        jCheckBox3.addItemListener(new java.awt.event.ItemListener() {
+            public void itemStateChanged(java.awt.event.ItemEvent evt) {
+                jCheckBox3ItemStateChanged(evt);
             }
         });
 
@@ -553,14 +569,7 @@ public class reporteaumdismi extends javax.swing.JDialog {
     }//GEN-LAST:event_jButton1ActionPerformed
 
     private void jCheckBox3StateChanged(javax.swing.event.ChangeEvent evt) {//GEN-FIRST:event_jCheckBox3StateChanged
-        if(jCheckBox3.isSelected()){
-            jDateChooser1.setEnabled(true);
-            fecha = format.format(jDateChooser1.getDate());
-        }else{
-            jDateChooser1.setEnabled(false);
-              fecha="";
-        }
-        
+
         // TODO add your handling code here:
     }//GEN-LAST:event_jCheckBox3StateChanged
 
@@ -601,6 +610,16 @@ public class reporteaumdismi extends javax.swing.JDialog {
     private void jCheckBox6ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jCheckBox6ActionPerformed
         // TODO add your handling code here:
     }//GEN-LAST:event_jCheckBox6ActionPerformed
+
+    private void jCheckBox3ItemStateChanged(java.awt.event.ItemEvent evt) {//GEN-FIRST:event_jCheckBox3ItemStateChanged
+        if(jCheckBox3.isSelected()){
+            jDateChooser1.setEnabled(true);
+            fecha = format.format(jDateChooser1.getDate());
+        }else{
+            jDateChooser1.setEnabled(false);
+              fecha="";
+        }        // TODO add your handling code here:
+    }//GEN-LAST:event_jCheckBox3ItemStateChanged
     
     private void doClose(int retStatus) {
         returnStatus = retStatus;

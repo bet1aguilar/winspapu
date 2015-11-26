@@ -9,10 +9,10 @@
  * Created on 11/09/2013, 10:12:15 PM
  */
 package valuaciones;
-
-import com.mysql.jdbc.Connection;
+import java.sql.Connection;
 import com.mysql.jdbc.ResultSetMetaData;
 import com.mysql.jdbc.Statement;
+import java.awt.Dimension;
 import java.awt.event.ActionEvent;
 import java.awt.event.KeyEvent;
 import java.sql.ResultSet;
@@ -43,7 +43,7 @@ public class disminucionparcial extends javax.swing.JDialog {
     public static final int RET_CANCEL = 0;
     /** A return status code - returned if OK button has been pressed */
     public static final int RET_OK = 1;
-    Connection conex;
+    private Connection conex;
     String pres, numaumydis;
     String [] auxpart;
     private int partida;
@@ -65,6 +65,12 @@ public class disminucionparcial extends javax.swing.JDialog {
         this.conex=conex;
         this.numaumydis=numpread;
         cargapartidas();
+        jTable1.setOpaque(true);
+    jTable1.setShowHorizontalLines(true);
+    jTable1.setShowVerticalLines(false);
+    jTable1.getTableHeader().setSize(new Dimension(25,40));
+    jTable1.getTableHeader().setPreferredSize(new Dimension(30,40));
+    jTable1.setRowHeight(25);
         this.setTitle("Partidas que no están en ninguna Valuación para disminución Parcial");
         // Close the dialog when Esc is pressed
         String cancelName = "cancel";
@@ -72,7 +78,7 @@ public class disminucionparcial extends javax.swing.JDialog {
         inputMap.put(KeyStroke.getKeyStroke(KeyEvent.VK_ESCAPE, 0), cancelName);
         ActionMap actionMap = getRootPane().getActionMap();
         actionMap.put(cancelName, new AbstractAction() {
-
+            
             @Override
             public void actionPerformed(ActionEvent e) {
                 doClose(RET_CANCEL);
@@ -110,12 +116,18 @@ public class disminucionparcial extends javax.swing.JDialog {
                jTable1.setModel(mat);
        
         try {
-            Statement s = (Statement) conex.createStatement();
-            ResultSet rs = s.executeQuery("SELECT id, descri, numero, numegrup, precunit, cantidad, tipo FROM mppres "
+            String sql = "SELECT id, descri, numero, numegrup, precunit, cantidad, tipo FROM mppres "
                     + "WHERE numero NOT "
-                    + "IN(SELECT numepart FROM dvalus WHERE (mpre_id='"+pres+"' OR mpre_id "
-                    + "IN (SELECT id FROM mpres WHERE mpres_id='"+pres+"'))) AND (mpre_id='"+pres+"' OR mpre_id IN "
-                    + "(SELECT id FROM mpres WHERE mpres_id='"+pres+"')) ORDER BY numegrup");
+                    + "IN (SELECT numepart FROM dvalus WHERE mvalu_id!=0 AND (mpre_id='"+pres+"' OR mpre_id "
+                    + "IN (SELECT id FROM mpres WHERE mpres_id='"+pres+"'))) "
+                    + "AND (mpre_id='"+pres+"' OR mpre_id IN "
+                    + "(SELECT id FROM mpres WHERE mpres_id='"+pres+"')) "
+                    + "AND numero NOT IN (SELECT numepart FROM admppres WHERE payd_id="+numaumydis+" AND (mpre_id='"+pres+"' "
+                    + "OR mpre_id IN (SELECT id FROM mpres WHERE mpres_id='"+pres+"')))"
+                    + " ORDER BY numegrup";
+            System.out.println(sql);
+            Statement s = (Statement) conex.createStatement();
+            ResultSet rs = s.executeQuery(sql);
             
             ResultSetMetaData rsMd = (ResultSetMetaData) rs.getMetaData();
             int cantidadColumnas = rsMd.getColumnCount()+1;
@@ -494,7 +506,7 @@ public void verificarcheck() {
                 SimpleDateFormat formato = new SimpleDateFormat("yyyy-MM-dd");
                 
                 String date = formato.format(fecha);
-                String insert = "INSERT INTO mvalus VALUES(0,'"+date+"', "
+                String insert = "INSERT INTO mvalus (id, desde, hasta, status, mpre_id, tipo, lapso) VALUES(0,'"+date+"', "
                         + "'"+date+"', 0, '"+pres+"', 'Parcial',1)";
                 Statement inserta = (Statement) conex.createStatement();
                 inserta.execute(insert);

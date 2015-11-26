@@ -31,6 +31,7 @@ import javax.swing.table.DefaultTableModel;
 import javax.swing.table.JTableHeader;
 import javax.swing.table.TableColumn;
 import javax.swing.table.TableColumnModel;
+import winspapus.Principal;
 
 /**
  *
@@ -42,16 +43,18 @@ public final class equipos extends javax.swing.JDialog {
     public static final int RET_CANCEL = 0;
     /** A return status code - returned if OK button has been pressed */
     public static final int RET_OK = 1;
-    Connection conex;
+    private Connection conex;
+    private Principal obj;
     int contsel=0;
     int equipo, auxcont=0;
     String[] equipos, auxequipo;
     String mtabu, numero, codicove;
     /** Creates new form equipos */
-    public equipos(java.awt.Frame parent, boolean modal, String mtabu, String num, String codicove, Connection conex) {
+    public equipos(java.awt.Frame parent, boolean modal, String mtabu, String num, String codicove, Connection conex, Principal prin) {
         super(parent, modal);
         initComponents();
         jTable1.setOpaque(true);
+        this.obj=prin;
     jTable1.setShowHorizontalLines(true);
     jTable1.setShowVerticalLines(false);
     jTable1.getTableHeader().setSize(new Dimension(25,40));
@@ -131,7 +134,8 @@ public final class equipos extends javax.swing.JDialog {
        
         try {
             Statement s = (Statement) conex.createStatement();
-            ResultSet rs = s.executeQuery("SELECT id,descri, deprecia, precio FROM Metabs WHERE mtabus_id='"+mtabu+"'");
+            ResultSet rs = s.executeQuery("SELECT id,descri, deprecia, precio FROM Metabs WHERE mtabus_id='"+mtabu+"' AND "
+                    + "id NOT IN (SELECT metab_id FROM deptabs WHERE numero="+numero+" AND mtabus_id='"+mtabu+"')");
             
             ResultSetMetaData rsMd = (ResultSetMetaData) rs.getMetaData();
             int cantidadColumnas = rsMd.getColumnCount()+1;
@@ -206,6 +210,7 @@ public final class equipos extends javax.swing.JDialog {
         jLabel1 = new javax.swing.JLabel();
         okButton = new javax.swing.JButton();
         cancelButton = new javax.swing.JButton();
+        jButton2 = new javax.swing.JButton();
 
         addWindowListener(new java.awt.event.WindowAdapter() {
             public void windowClosing(java.awt.event.WindowEvent evt) {
@@ -259,7 +264,7 @@ public final class equipos extends javax.swing.JDialog {
                 .addContainerGap())
         );
 
-        jTable1.setFont(new java.awt.Font("Tahoma", 0, 10));
+        jTable1.setFont(new java.awt.Font("Tahoma", 0, 10)); // NOI18N
         jTable1.setModel(new javax.swing.table.DefaultTableModel(
             new Object [][] {
 
@@ -279,7 +284,7 @@ public final class equipos extends javax.swing.JDialog {
         jPanel2.setBackground(new java.awt.Color(100, 100, 100));
 
         jLabel1.setBackground(new java.awt.Color(91, 91, 95));
-        jLabel1.setFont(new java.awt.Font("Tahoma", 1, 11)); // NOI18N
+        jLabel1.setFont(new java.awt.Font("Tahoma", 1, 11));
         jLabel1.setForeground(new java.awt.Color(255, 255, 255));
         jLabel1.setHorizontalAlignment(javax.swing.SwingConstants.CENTER);
         jLabel1.setText("Agregar Equipos");
@@ -296,7 +301,7 @@ public final class equipos extends javax.swing.JDialog {
             .addComponent(jLabel1, javax.swing.GroupLayout.PREFERRED_SIZE, 45, javax.swing.GroupLayout.PREFERRED_SIZE)
         );
 
-        okButton.setIcon(new javax.swing.ImageIcon(getClass().getResource("/winspapus/imagenes/guardar.png"))); // NOI18N
+        okButton.setIcon(new javax.swing.ImageIcon(getClass().getResource("/winspapus/imagenes/asignar.fw.png"))); // NOI18N
         okButton.setToolTipText("Agregar");
         okButton.addMouseListener(new java.awt.event.MouseAdapter() {
             public void mouseClicked(java.awt.event.MouseEvent evt) {
@@ -312,13 +317,23 @@ public final class equipos extends javax.swing.JDialog {
             }
         });
 
+        jButton2.setIcon(new javax.swing.ImageIcon(getClass().getResource("/winspapus/imagenes/anade.fw.png"))); // NOI18N
+        jButton2.setToolTipText("Nuevo Equipo");
+        jButton2.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jButton2ActionPerformed(evt);
+            }
+        });
+
         javax.swing.GroupLayout jPanel1Layout = new javax.swing.GroupLayout(jPanel1);
         jPanel1.setLayout(jPanel1Layout);
         jPanel1Layout.setHorizontalGroup(
             jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addComponent(jPanel2, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
             .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, jPanel1Layout.createSequentialGroup()
-                .addContainerGap(524, Short.MAX_VALUE)
+                .addContainerGap(473, Short.MAX_VALUE)
+                .addComponent(jButton2, javax.swing.GroupLayout.PREFERRED_SIZE, 45, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addComponent(okButton, javax.swing.GroupLayout.PREFERRED_SIZE, 45, javax.swing.GroupLayout.PREFERRED_SIZE)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addComponent(cancelButton, javax.swing.GroupLayout.PREFERRED_SIZE, 45, javax.swing.GroupLayout.PREFERRED_SIZE)
@@ -341,9 +356,11 @@ public final class equipos extends javax.swing.JDialog {
                 .addGap(18, 18, 18)
                 .addComponent(jScrollPane1, javax.swing.GroupLayout.DEFAULT_SIZE, 129, Short.MAX_VALUE)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                    .addComponent(okButton, javax.swing.GroupLayout.PREFERRED_SIZE, 45, javax.swing.GroupLayout.PREFERRED_SIZE)
-                    .addComponent(cancelButton, javax.swing.GroupLayout.PREFERRED_SIZE, 45, javax.swing.GroupLayout.PREFERRED_SIZE))
+                .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                    .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                        .addComponent(okButton, javax.swing.GroupLayout.PREFERRED_SIZE, 45, javax.swing.GroupLayout.PREFERRED_SIZE)
+                        .addComponent(cancelButton, javax.swing.GroupLayout.PREFERRED_SIZE, 45, javax.swing.GroupLayout.PREFERRED_SIZE))
+                    .addComponent(jButton2, javax.swing.GroupLayout.PREFERRED_SIZE, 45, javax.swing.GroupLayout.PREFERRED_SIZE))
                 .addGap(20, 20, 20))
         );
 
@@ -394,7 +411,8 @@ public final class equipos extends javax.swing.JDialog {
        
         try {
             Statement s = (Statement) conex.createStatement();
-            ResultSet rs = s.executeQuery("SELECT id,descri, deprecia, precio FROM Metabs WHERE mtabus_id='"+mtabu+"' AND (id LIKE'%"+busqueda+"%' || descri LIKE '%"+busqueda+"%')");
+            ResultSet rs = s.executeQuery("SELECT id,descri, deprecia, precio FROM Metabs WHERE mtabus_id='"+mtabu+"' AND (id LIKE'%"+busqueda+"%' || descri LIKE '%"+busqueda+"%')  AND "
+                    + "id NOT IN (SELECT metab_id FROM deptabs WHERE numero="+numero+" AND mtabus_id='"+mtabu+"')");
             
             ResultSetMetaData rsMd = (ResultSetMetaData) rs.getMetaData();
             int cantidadColumnas = rsMd.getColumnCount()+1;
@@ -502,6 +520,16 @@ public final class equipos extends javax.swing.JDialog {
         
         // TODO add your handling code here:
     }//GEN-LAST:event_jButton1ActionPerformed
+
+    private void jButton2ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton2ActionPerformed
+            Nuevo equip = new Nuevo(null, true, conex, mtabu);
+             int x=(obj.getWidth()/2)-350;
+            int y=(obj.getHeight()/2-200);
+            equip.setBounds(x, y, 750, 380);            
+           equip.setVisible(true);
+        busca();
+        // TODO add your handling code here:
+    }//GEN-LAST:event_jButton2ActionPerformed
     
     private void doClose(int retStatus) {
         returnStatus = retStatus;
@@ -516,6 +544,7 @@ public final class equipos extends javax.swing.JDialog {
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JButton cancelButton;
     private javax.swing.JButton jButton1;
+    private javax.swing.JButton jButton2;
     private javax.swing.JButton jButton3;
     private javax.swing.JLabel jLabel1;
     private javax.swing.JLabel jLabel4;

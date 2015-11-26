@@ -10,6 +10,7 @@
  */
 package winspapus.herramienta;
 
+import config.endesencripta;
 import java.awt.event.ActionEvent;
 import java.awt.event.KeyEvent;
 import java.io.File;
@@ -162,6 +163,12 @@ public class RecuperarTab extends javax.swing.JDialog {
 
         jLabel2.setText("Seleccionar Tabulador:");
 
+        jTextField1.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jTextField1ActionPerformed(evt);
+            }
+        });
+
         jButton1.setText("...");
         jButton1.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
@@ -187,10 +194,10 @@ public class RecuperarTab extends javax.swing.JDialog {
                 .addGap(88, 88, 88))
             .addGroup(jPanel1Layout.createSequentialGroup()
                 .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                    .addGroup(jPanel1Layout.createSequentialGroup()
-                        .addGap(80, 80, 80)
+                    .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, jPanel1Layout.createSequentialGroup()
+                        .addContainerGap()
                         .addComponent(jLabel3)
-                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                         .addComponent(jProgressBar1, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
                     .addGroup(jPanel1Layout.createSequentialGroup()
                         .addGap(60, 60, 60)
@@ -213,8 +220,8 @@ public class RecuperarTab extends javax.swing.JDialog {
                     .addGroup(jPanel1Layout.createSequentialGroup()
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 25, Short.MAX_VALUE)
                         .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
-                            .addComponent(jLabel3)
-                            .addComponent(jProgressBar1, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
+                            .addComponent(jProgressBar1, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                            .addComponent(jLabel3))
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                         .addComponent(jLabel4)
                         .addGap(19, 19, 19))
@@ -245,8 +252,7 @@ public class RecuperarTab extends javax.swing.JDialog {
             jLabel3.setVisible(true); 
             jLabel4.setVisible(true); 
              //BORRAR ANTERIOR
-            Statement carga= (Statement) conn.createStatement();
-            Statement escribir = (Statement) conexion.createStatement();
+            Statement carga= (Statement) conn.createStatement();            
             String sql = "Select * from Config";
             ResultSet rst = carga.executeQuery(sql);
             String mtabu;
@@ -290,6 +296,8 @@ public class RecuperarTab extends javax.swing.JDialog {
             hilo5.start();
             hilomanoobra hilo6=new hilomanoobra(conexion, conn,this,prin);
             hilo6.start();
+            hilodetmano hilo7=new hilodetmano(conexion, conn,this,prin, mtabu);
+            hilo7.start();
             // doClose(RET_OK);
         } catch (SQLException ex) {
             Logger.getLogger(RecuperarTab.class.getName()).log(Level.SEVERE, null, ex);
@@ -312,9 +320,11 @@ private void jButton1ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRS
        FileNameExtensionFilter filter = new FileNameExtensionFilter("MDB","mdb");
         fileChooser.setFileFilter(filter);
         int seleccion = fileChooser.showOpenDialog(jTextField1);
+        endesencripta desen = new endesencripta(conexion);
         if (seleccion == JFileChooser.APPROVE_OPTION)
         {
             try {
+                
                 fichero = fileChooser.getSelectedFile();
                 jTextField1.setText(fichero.getPath().toString());
                 Class.forName("sun.jdbc.odbc.JdbcOdbcDriver");
@@ -322,7 +332,8 @@ private void jButton1ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRS
                 System.out.println(myDB);
                 
                 try {
-                    conn = DriverManager.getConnection(myDB, "Administrador", "L15N04B22G147277RHWS");
+                    
+                    conn = DriverManager.getConnection(myDB, "Administrador", desen.getClaveAccess());
                    
                 } catch (SQLException ex) {
                     Logger.getLogger(RecuperarTab.class.getName()).log(Level.SEVERE, null, ex);
@@ -336,6 +347,10 @@ private void jButton1ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRS
         }
         // TODO add your handling code here:
 }//GEN-LAST:event_jButton1ActionPerformed
+
+private void jTextField1ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jTextField1ActionPerformed
+    // TODO add your handling code here:
+}//GEN-LAST:event_jTextField1ActionPerformed
     
   public void doClose(int retStatus) {
         returnStatus = retStatus;

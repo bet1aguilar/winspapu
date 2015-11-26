@@ -12,6 +12,7 @@ package winspapus.manos;
 
 import com.mysql.jdbc.Connection;
 import com.mysql.jdbc.Statement;
+import herramienta.Validacion;
 import java.awt.Rectangle;
 import java.awt.event.ActionEvent;
 import java.awt.event.KeyEvent;
@@ -40,6 +41,8 @@ public class nuevo extends javax.swing.JDialog {
     private Connection conex;
     String mtabu, codimano;
     int edita=0;
+    Validacion val;
+    public final String tableName = "mmotabs";
     private int nuevo;
     private String primero;
             /** Creates new form nuevo */
@@ -50,6 +53,7 @@ public class nuevo extends javax.swing.JDialog {
         jLabel9.setVisible(false);
         jLabel21.setVisible(false);
         this.conex = conex;
+        val = new Validacion(conex);
         this.mtabu = mtabu;
         nuevo();
         // Close the dialog when Esc is pressed
@@ -73,6 +77,7 @@ public class nuevo extends javax.swing.JDialog {
         jLabel9.setVisible(false);
         jLabel21.setVisible(false);
         this.conex = conex;
+        val = new Validacion(conex);
         edita = 1;
         this.mtabu = mtabu;
         this.codimano = codimano;
@@ -187,11 +192,16 @@ public class nuevo extends javax.swing.JDialog {
                 okButtonMouseClicked(evt);
             }
         });
+        okButton.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                okButtonActionPerformed(evt);
+            }
+        });
 
         jPanel7.setBackground(new java.awt.Color(100, 100, 100));
 
         jLabel6.setBackground(new java.awt.Color(91, 91, 95));
-        jLabel6.setFont(new java.awt.Font("Tahoma", 1, 11)); // NOI18N
+        jLabel6.setFont(new java.awt.Font("Tahoma", 1, 11));
         jLabel6.setForeground(new java.awt.Color(255, 255, 255));
         jLabel6.setHorizontalAlignment(javax.swing.SwingConstants.CENTER);
         jLabel6.setText("Agregar Mano de Obra");
@@ -239,13 +249,58 @@ public class nuevo extends javax.swing.JDialog {
 
         jLabel11.setText("Bono:");
 
-        jTextField2.setToolTipText("Ingrese Código de Equipo");
+        jTextField2.setHorizontalAlignment(javax.swing.JTextField.RIGHT);
+        jTextField2.setText("0.00");
+        jTextField2.setToolTipText("Bono Compensatorio");
+        jTextField2.addFocusListener(new java.awt.event.FocusAdapter() {
+            public void focusGained(java.awt.event.FocusEvent evt) {
+                jTextField2FocusGained(evt);
+            }
+            public void focusLost(java.awt.event.FocusEvent evt) {
+                jTextField2FocusLost(evt);
+            }
+        });
+        jTextField2.addKeyListener(new java.awt.event.KeyAdapter() {
+            public void keyTyped(java.awt.event.KeyEvent evt) {
+                jTextField2KeyTyped(evt);
+            }
+        });
 
-        jTextField3.setToolTipText("Ingrese Código de Equipo");
+        jTextField3.setHorizontalAlignment(javax.swing.JTextField.RIGHT);
+        jTextField3.setText("0.00");
+        jTextField3.setToolTipText("Salario");
+        jTextField3.addFocusListener(new java.awt.event.FocusAdapter() {
+            public void focusGained(java.awt.event.FocusEvent evt) {
+                jTextField3FocusGained(evt);
+            }
+            public void focusLost(java.awt.event.FocusEvent evt) {
+                jTextField3FocusLost(evt);
+            }
+        });
+        jTextField3.addKeyListener(new java.awt.event.KeyAdapter() {
+            public void keyTyped(java.awt.event.KeyEvent evt) {
+                jTextField3KeyTyped(evt);
+            }
+        });
 
         jLabel12.setText("Salario:");
 
-        jTextField4.setToolTipText("Ingrese Código de Equipo");
+        jTextField4.setHorizontalAlignment(javax.swing.JTextField.RIGHT);
+        jTextField4.setText("0.00");
+        jTextField4.setToolTipText("Subsidio");
+        jTextField4.addFocusListener(new java.awt.event.FocusAdapter() {
+            public void focusGained(java.awt.event.FocusEvent evt) {
+                jTextField4FocusGained(evt);
+            }
+            public void focusLost(java.awt.event.FocusEvent evt) {
+                jTextField4FocusLost(evt);
+            }
+        });
+        jTextField4.addKeyListener(new java.awt.event.KeyAdapter() {
+            public void keyTyped(java.awt.event.KeyEvent evt) {
+                jTextField4KeyTyped(evt);
+            }
+        });
 
         jLabel13.setText("Subsidio:");
 
@@ -253,6 +308,11 @@ public class nuevo extends javax.swing.JDialog {
         jSpinner1.addChangeListener(new javax.swing.event.ChangeListener() {
             public void stateChanged(javax.swing.event.ChangeEvent evt) {
                 jSpinner1StateChanged(evt);
+            }
+        });
+        jSpinner1.addKeyListener(new java.awt.event.KeyAdapter() {
+            public void keyTyped(java.awt.event.KeyEvent evt) {
+                jSpinner1KeyTyped(evt);
             }
         });
 
@@ -301,28 +361,25 @@ public class nuevo extends javax.swing.JDialog {
             .addGroup(jPanel1Layout.createSequentialGroup()
                 .addComponent(jPanel7, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                 .addGap(42, 42, 42)
-                .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
-                    .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                        .addComponent(jLabel9)
-                        .addComponent(jTextField1, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
-                    .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                        .addComponent(jLabel7)
-                        .addComponent(jSpinner1, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)))
+                .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.CENTER)
+                    .addComponent(jTextField1, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                    .addComponent(jLabel9)
+                    .addComponent(jSpinner1, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                    .addComponent(jLabel7))
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.CENTER)
                     .addComponent(jTextField8, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                    .addComponent(jLabel10)
                     .addComponent(jLabel8))
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.CENTER)
                     .addComponent(jTextField2, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                     .addComponent(jLabel11))
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.CENTER)
                     .addComponent(jTextField3, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                     .addComponent(jLabel12))
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.CENTER)
                     .addComponent(jTextField4, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                     .addComponent(jLabel13))
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
@@ -332,6 +389,10 @@ public class nuevo extends javax.swing.JDialog {
                     .addComponent(okButton, javax.swing.GroupLayout.PREFERRED_SIZE, 45, javax.swing.GroupLayout.PREFERRED_SIZE)
                     .addComponent(cancelButton, javax.swing.GroupLayout.PREFERRED_SIZE, 45, javax.swing.GroupLayout.PREFERRED_SIZE))
                 .addContainerGap())
+            .addGroup(jPanel1Layout.createSequentialGroup()
+                .addGap(113, 113, 113)
+                .addComponent(jLabel10)
+                .addGap(185, 185, 185))
         );
 
         getRootPane().setDefaultButton(okButton);
@@ -390,7 +451,7 @@ public class nuevo extends javax.swing.JDialog {
        int valida=0;
        String sql="";
        
-       if(jTextField1.getText().toString().equals("") || jTextField8.getText().toString().equals("")){
+       if(jTextField1.getText().isEmpty() || jTextField8.getText().isEmpty()){
            valida=1;
        }
        
@@ -433,18 +494,58 @@ public class nuevo extends javax.swing.JDialog {
     }//GEN-LAST:event_okButtonMouseClicked
 
 private void jTextField1KeyTyped(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_jTextField1KeyTyped
- Character c = evt.getKeyChar();
-                if(Character.isLetter(c)) {
-                    evt.setKeyChar(Character.toUpperCase(c));
-                }// TODO add your handling code here:
+val.validaText(evt);
+val.sizeField("id", tableName, evt, jTextField1.getText());// TODO add your handling code here:
 }//GEN-LAST:event_jTextField1KeyTyped
 
 private void jTextField8KeyTyped(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_jTextField8KeyTyped
- Character c = evt.getKeyChar();
-                if(Character.isLetter(c)) {
-                    evt.setKeyChar(Character.toUpperCase(c));
-                }// TODO add your handling code here:
+ val.validaText(evt);
+val.sizeField("descri", tableName, evt, jTextField8.getText());// TODO add your handling code here:
 }//GEN-LAST:event_jTextField8KeyTyped
+
+private void jTextField2FocusGained(java.awt.event.FocusEvent evt) {//GEN-FIRST:event_jTextField2FocusGained
+    val.focusGained(jTextField2);    // TODO add your handling code here:
+}//GEN-LAST:event_jTextField2FocusGained
+
+private void jTextField2FocusLost(java.awt.event.FocusEvent evt) {//GEN-FIRST:event_jTextField2FocusLost
+val.focusLost(jTextField2);    // TODO add your handling code here:
+}//GEN-LAST:event_jTextField2FocusLost
+
+private void jTextField2KeyTyped(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_jTextField2KeyTyped
+val.validaFloat(jTextField2.getText(), evt);    // TODO add your handling code here:
+}//GEN-LAST:event_jTextField2KeyTyped
+
+private void jTextField3FocusGained(java.awt.event.FocusEvent evt) {//GEN-FIRST:event_jTextField3FocusGained
+val.focusGained(jTextField3);    // TODO add your handling code here:
+}//GEN-LAST:event_jTextField3FocusGained
+
+private void jTextField3FocusLost(java.awt.event.FocusEvent evt) {//GEN-FIRST:event_jTextField3FocusLost
+val.focusLost(jTextField3);    // TODO add your handling code here:
+}//GEN-LAST:event_jTextField3FocusLost
+
+private void jTextField3KeyTyped(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_jTextField3KeyTyped
+val.validaFloat(jTextField3.getText(), evt);    // TODO add your handling code here:
+}//GEN-LAST:event_jTextField3KeyTyped
+
+private void jTextField4KeyTyped(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_jTextField4KeyTyped
+val.validaFloat(jTextField4.getText(), evt);    // TODO add your handling code here:
+}//GEN-LAST:event_jTextField4KeyTyped
+
+private void jTextField4FocusGained(java.awt.event.FocusEvent evt) {//GEN-FIRST:event_jTextField4FocusGained
+val.focusGained(jTextField4);    // TODO add your handling code here:
+}//GEN-LAST:event_jTextField4FocusGained
+
+private void jTextField4FocusLost(java.awt.event.FocusEvent evt) {//GEN-FIRST:event_jTextField4FocusLost
+val.focusLost(jTextField4);    // TODO add your handling code here:
+}//GEN-LAST:event_jTextField4FocusLost
+
+private void okButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_okButtonActionPerformed
+    // TODO add your handling code here:
+}//GEN-LAST:event_okButtonActionPerformed
+
+private void jSpinner1KeyTyped(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_jSpinner1KeyTyped
+val.sizeField("id", tableName, evt, jSpinner1.getValue().toString());
+}//GEN-LAST:event_jSpinner1KeyTyped
     
     private void doClose(int retStatus) {
         returnStatus = retStatus;

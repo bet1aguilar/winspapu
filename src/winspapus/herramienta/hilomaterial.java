@@ -55,7 +55,7 @@ public class hilomaterial extends Thread{
              while(rst6.next()){
                  descri=rst6.getString("Descripcion");
                  descri=descri.replace("'", "º");
-                 sql= "INSERT INTO mmtabs VALUES ('"+mtabu+"',"
+                 sql= "REPLACE INTO mmtabs VALUES ('"+mtabu+"',"
                                               + "'"+rst6.getString("IDMateriales")+"',"
                                               + "'"+descri+"',"
                                               + rst6.getFloat("Desperdicio")+","                                                         

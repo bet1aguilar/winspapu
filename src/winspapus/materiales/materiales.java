@@ -123,7 +123,8 @@ String [] materiales, auxmat;
        
         try {
             Statement s = (Statement) conexion.createStatement();
-            ResultSet rs = s.executeQuery("SELECT id,descri, desperdi, precio, unidad FROM Mmtabs WHERE mtabus_id='"+tabu+"'");
+            ResultSet rs = s.executeQuery("SELECT id,descri, desperdi, precio, unidad FROM Mmtabs WHERE mtabus_id='"+tabu+"' "
+                    + "AND id NOT IN (SELECT mmtab_id FROM dmtabs WHERE numepart="+numepart+" AND mtabus_id='"+tabu+"')");
             
             ResultSetMetaData rsMd = (ResultSetMetaData) rs.getMetaData();
             int cantidadColumnas = rsMd.getColumnCount()+1;
@@ -435,7 +436,8 @@ private void cambiarcabecera() {
        
         try {
             Statement s = (Statement) conexion.createStatement();
-            ResultSet rs = s.executeQuery("SELECT id,descri, desperdi, precio, unidad FROM Mmtabs WHERE mtabus_id='"+tabu+"' AND (id LIKE'%"+busqueda+"%' || descri LIKE '%"+busqueda+"%')");
+            ResultSet rs = s.executeQuery("SELECT id,descri, desperdi, precio, unidad FROM Mmtabs WHERE mtabus_id='"+tabu+"' AND (id LIKE'%"+busqueda+"%' || descri LIKE '%"+busqueda+"%') "
+                    + "AND id NOT IN (SELECT mmtab_id FROM dmtabs WHERE numepart="+numepart+" AND mtabus_id='"+tabu+"')");
             
             ResultSetMetaData rsMd = (ResultSetMetaData) rs.getMetaData();
             int cantidadColumnas = rsMd.getColumnCount()+1;
@@ -544,8 +546,8 @@ private void cambiarcabecera() {
     private void jButton1ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton1ActionPerformed
         nuevosmateriales nuevos = new nuevosmateriales(null, true, conexion, tabu);
           int x=(obje.getWidth()/2)-350;
-           int y=(obje.getHeight()/2-200);
-            nuevos.setBounds(x, y, 750, 380);            
+           int y=(obje.getHeight()/2-225);
+            nuevos.setBounds(x, y, 750, 450);            
            nuevos.setVisible(true);
         cargarmateriales();
         // TODO add your handling code here:

@@ -1,9 +1,12 @@
 package presupuestos;
-import com.mysql.jdbc.Connection;
 import com.mysql.jdbc.ResultSetMetaData;
 import com.mysql.jdbc.Statement;
+import config.Redondeo;
+import herramienta.Validacion;
 import java.awt.event.ActionEvent;
 import java.awt.event.KeyEvent;
+import java.math.BigDecimal;
+import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.text.NumberFormat;
@@ -17,9 +20,11 @@ import javax.swing.ActionMap;
 import javax.swing.InputMap;
 import javax.swing.JComponent;
 import javax.swing.JOptionPane;
+import javax.swing.JTextField;
 import javax.swing.KeyStroke;
 import javax.swing.SpinnerListModel;
 import javax.swing.table.DefaultTableModel;
+import valuaciones.reconsideraciones;
 import winspapus.Principal;
 
 /**
@@ -31,14 +36,18 @@ public class Partida extends javax.swing.JDialog {
     
     public static final int RET_CANCEL = 0;
     public static final int RET_OK = 1;
+    Validacion vali;
     Connection conex;
-    double totalprecunit=0, totalprecasu=0, totaltotal=0, totalcantidad=0;
+    BigDecimal totalprecunit= new BigDecimal("0.00"), totalprecasu=new BigDecimal("0.00"), totaltotal=new BigDecimal("0.00"), totalcantidad=new BigDecimal("0.00");
     String presupuesto;
     private List<Integer> id;
     private String numero1;
     private Integer entero;
     int edita=0;
+    Redondeo redondear = new Redondeo();
     String mbdat;
+    int reconsidera=0;
+    reconsideraciones recon;
     Principal p;
     String partida, numpartida;
     String [] partidas;
@@ -59,6 +68,7 @@ public class Partida extends javax.swing.JDialog {
         jLabel13.setVisible(false);
         jTextField2.setVisible(false);
         this.pres= pre;
+        vali = new Validacion(conex);
         this.total = total;
         this.conex = conex;
         this.p = prin;
@@ -99,6 +109,57 @@ public class Partida extends javax.swing.JDialog {
             }
         });
     }
+    public Partida(java.awt.Frame parent, boolean modal, Connection conex, String pres, Principal prin, int edita, int contar, String codicove, String partida, Presupuesto pre, String total, reconsideraciones recon) {
+       
+         super(parent, false);
+        initComponents();
+         this.edita = edita;
+          this.pres= pre;
+        this.conex = conex;
+        this.recon=recon;
+        reconsidera=1;
+        jSpinner1.setEnabled(true);
+        this.partida = codicove;
+        this.numpartida = partida;
+        vali = new Validacion(conex);
+        this.p = prin;
+        jLabel9.setVisible(false);
+        jLabel20.setVisible(false);
+        this.setTitle("Modifica Partida");
+        this.presupuesto = pres;
+        if(!jComboBox2.getSelectedItem().equals("No Prevista")){
+                jLabel13.setVisible(false);
+                jTextField2.setVisible(false);
+            }  
+        id = new ArrayList<Integer>();
+        try {
+            buscagrupo();
+            contar();
+            definemodelo();
+            buscapres();
+            llenavalores();
+           jTextField9.setText(String.valueOf(total));
+            
+            // System.out.println("numpartida "+numpartida);
+            
+        } catch (SQLException ex) {
+            Logger.getLogger(Partida.class.getName()).log(Level.SEVERE, null, ex);
+        }
+        // Close the dialog when Esc is pressed
+        String cancelName = "cancel";
+        InputMap inputMap = getRootPane().getInputMap(JComponent.WHEN_ANCESTOR_OF_FOCUSED_COMPONENT);
+        inputMap.put(KeyStroke.getKeyStroke(KeyEvent.VK_ESCAPE, 0), cancelName);
+        ActionMap actionMap = getRootPane().getActionMap();
+        actionMap.put(cancelName, new AbstractAction() {
+
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                doClose(RET_CANCEL);
+            }
+        });
+    }
+    
+   
 //*********************************EDITAAAAAAAAAAAAAA*******************************************/
     public Partida(java.awt.Frame parent, boolean modal, Connection conex, String pres, Principal prin, int edita, int contar, String codicove, String partida, Presupuesto pre, String total) {
        
@@ -110,7 +171,7 @@ public class Partida extends javax.swing.JDialog {
         jSpinner1.setEnabled(true);
         this.partida = codicove;
         this.numpartida = partida;
-        
+        vali = new Validacion(conex);
         this.p = prin;
         jLabel9.setVisible(false);
         jLabel20.setVisible(false);
@@ -190,11 +251,11 @@ public class Partida extends javax.swing.JDialog {
                 + "IFNULL(precunit,0.00) as precunit,"
                 + " IFNULL(precasu,0.00) as precasu, redondeo, porcpre, porcgad, "
                 + "rendimi, IFNULL(cantidad,0.00), unidad,numero, porcutil,tiponp FROM mppres WHERE "
-                + "numegrup='"+numpartida+"'"
+                + "numegrup='"+numpartida+"' "
                 + " AND (mpre_id='"+presupuesto+"' OR mpre_id IN "
                 + "(SELECT id from mpres where mpres_id='"+presupuesto+"' GROUP BY id)) ";
         int redondeo;
-        float precio; 
+       BigDecimal precio; 
         
       
         try {
@@ -219,9 +280,9 @@ public class Partida extends javax.swing.JDialog {
                 if(rsts.getObject(4)!=null) {
                     jTextField2.setText(rsts.getObject(4).toString());
                 }
-                float presta=rsts.getFloat("porcpre");
-                float admin = rsts.getFloat("porcgad");
-                float utili = rsts.getFloat("porcutil");
+                BigDecimal presta=rsts.getBigDecimal("porcpre");
+                BigDecimal admin = rsts.getBigDecimal("porcgad");
+                BigDecimal utili = rsts.getBigDecimal("porcutil");
              
                 jTextField5.setText(String.valueOf(presta));
                 jTextField6.setText(String.valueOf(utili));
@@ -230,8 +291,8 @@ public class Partida extends javax.swing.JDialog {
                 if(!mbdat.equals("")&&mbdat!=null){
                     jComboBox1.setSelectedIndex(Integer.parseInt(mbdat)-1);
                 }
-                double precunit = rsts.getDouble(7);
-                double precasu = rsts.getDouble(8);
+                BigDecimal precunit = rsts.getBigDecimal(7);
+                BigDecimal precasu = rsts.getBigDecimal(8);
                 NumberFormat formatoNumero = NumberFormat.getNumberInstance();
             formatoNumero.setMaximumFractionDigits(2);
             formatoNumero.setMinimumFractionDigits(2);
@@ -242,23 +303,22 @@ public class Partida extends javax.swing.JDialog {
                 redondeo = Integer.parseInt(rsts.getObject(9).toString());
                 if(redondeo==0){
                     jCheckBox1.setSelected(false);
-                    precio =(float) precunit;
+                    precio = precunit;
                 } else{
                     jCheckBox1.setSelected(true);
-                     precio = (float) precasu;
+                     precio =  precasu;
                 }
-                if(precunit==0)
-                    precio = (float) precasu;
+                if(precasu==new BigDecimal("0.00"))
+                    precio =  precunit;
                 totalprecasu = precasu;
                 totalprecunit = precunit;
                 jSpinner1.setValue(numpartida);
                 jTextField13.setText(rsts.getObject(12).toString());
                 jTextField10.setText(rsts.getObject(14).toString());
-                float cantidad = Float.valueOf(rsts.getObject(13).toString());
+                BigDecimal cantidad = rsts.getBigDecimal(13);
                 totalcantidad=cantidad;
                 jTextField7.setText(String.valueOf(formatoNumero.format(cantidad)));
-                precio = precio * cantidad;
-                precio = (float) Math.rint((precio*100))/100;                
+                precio = redondear.redondearDosDecimales(precio.multiply(cantidad));               
                 jTextField8.setText(String.valueOf(formatoNumero.format(precio)));
             }
         } catch (SQLException ex) {
@@ -268,7 +328,7 @@ public class Partida extends javax.swing.JDialog {
     }
     public final void definemodelo(){
         int i=0;
-        String sql = "SELECT numegrup from mppres WHERE mpre_id='"+presupuesto+"' OR mpre_id IN (SELECT id from mpres where mpres_id ='"+presupuesto+"' GROUP BY id) ORDER BY numegrup " ;
+        String sql = "SELECT numegrup from mppres WHERE mpre_id='"+presupuesto+"' OR mpre_id IN (SELECT id from mpres where mpres_id ='"+presupuesto+"' GROUP BY id) GROUP BY numegrup" ;
         try {
             Statement st = (Statement) conex.createStatement();
             ResultSet rst = st.executeQuery(sql);
@@ -276,32 +336,36 @@ public class Partida extends javax.swing.JDialog {
                 partidas[i] = rst.getObject(1).toString();
                 i++;
             }
+            
             SpinnerListModel modelo = new SpinnerListModel(partidas);
             jSpinner1.setModel(modelo);
         } catch (SQLException ex) {
             Logger.getLogger(Partida.class.getName()).log(Level.SEVERE, null, ex);
         }
     }
-    private void contar() throws SQLException{
+    private void contar() throws SQLException
+    {        
+       
         Statement cuenta = (Statement) conex.createStatement();
         ResultSet result = cuenta.executeQuery("Select numero FROM mppres WHERE mpre_id='"+presupuesto+"' "
                 + "OR mpre_id IN (SELECT id from mpres where mpres_id ='"+presupuesto+"' GROUP BY id)"
                 + " ORDER BY numero DESC LIMIT 1");
        numero1="0";
         while(result.next()){
-            numero1 = result.getObject(1).toString();
-            
+            numero1 = result.getObject(1).toString();            
         }
+        
         System.out.println(numero1);
         entero = Integer.valueOf(numero1);
         entero++;
-        numero1 = Integer.toString(entero);      
-       if(edita==0){
-            jSpinner1.setEnabled(false);
-            jSpinner1.setValue(entero);
-       }else{
-            partidas = new String[entero];
-      }
+        numero1 = Integer.toString(entero);   
+        String[] modelo={numero1};
+        SpinnerListModel modelos = new SpinnerListModel(modelo);
+        jSpinner1.setModel(modelos);
+       if(edita==0)
+            jSpinner1.setEnabled(false);           
+       else
+            partidas = new String[entero];      
     }  
     
 public final void buscagrupo() throws SQLException{
@@ -346,13 +410,11 @@ public final void buscagrupo() throws SQLException{
       
     }
      public void cargartotal(){
-        float subtotal1 = 0, subtotal2=0, subtotal,impuesto, total1;
+        BigDecimal subtotal1 = new BigDecimal("0.00"), subtotal2=new BigDecimal("0.00"), subtotal,impuesto, total1;
         String cargasinredondeo = "SELECT SUM(cantidad*precunit) FROM `winspapu`.`mppres` WHERE redondeo = 0"
-                + " AND tipo='Org' AND mpre_id='"+presupuesto+"' OR mpre_id IN (SELECT id from mpres where"
-                + " mpres_id='"+presupuesto+"')";
+                + " AND tipo='Org' AND mpre_id='"+presupuesto+"'";
         String cargaconredondeo = "SELECT SUM(cantidad*precasu) FROM `winspapu`.`mppres` WHERE redondeo = 1"
-                + " AND tipo='Org' AND mpre_id='"+presupuesto+"' OR mpre_id IN (SELECT id from mpres where"
-                + " mpres_id='"+presupuesto+"')";
+                + " AND tipo='Org' AND mpre_id='"+presupuesto+"'";
         //System.out.println("idpres="+id);
         try {
             Statement st1 = (Statement) conex.createStatement();
@@ -362,18 +424,18 @@ public final void buscagrupo() throws SQLException{
             
             while (rst1.next()){
                 if(rst1.getObject(1)!=null) {
-                    subtotal1 = Float.valueOf(rst1.getObject(1).toString());
+                    subtotal1 = rst1.getBigDecimal(1);
                 }
             }
             while (rst2.next()){
                 if(rst2.getObject(1)!=null) {
-                    subtotal2 = Float.valueOf(rst2.getObject(1).toString());
+                    subtotal2 = rst2.getBigDecimal(1);
                 }
             }
-            impuesto = Float.valueOf(imp);
-            subtotal = subtotal1+subtotal2;
-            impuesto = subtotal*(impuesto/100);
-            total1 = (float) (Math.rint(((subtotal+impuesto)+0.000001)*100)/100);
+            impuesto = new BigDecimal(imp);
+            subtotal = subtotal1.add(subtotal2);
+            impuesto = redondear.redondearDosDecimales(subtotal.multiply(impuesto.divide(new BigDecimal("100"))));
+            total1 = subtotal.add(impuesto);
             
            
         NumberFormat formatoNumero = NumberFormat.getNumberInstance();
@@ -388,15 +450,19 @@ public final void buscagrupo() throws SQLException{
     public void settotal(String total){
         
         
-        float precunit = Float.valueOf(total);
+        BigDecimal precunit = new BigDecimal(total);
         
         
-        float tota= precunit *(float) totalcantidad;
-        totalprecunit = precunit;
+        BigDecimal tota= redondear.redondearDosDecimales(precunit.multiply(totalcantidad));
+        totalprecunit = redondear.redondearDosDecimales(precunit);
         NumberFormat formatoNumero = NumberFormat.getNumberInstance();
             formatoNumero.setMaximumFractionDigits(2);
             formatoNumero.setMinimumFractionDigits(2);
             jTextField8.setText(String.valueOf(formatoNumero.format(tota)));
+            String variable = String.valueOf(formatoNumero.format(tota));
+            jTextField8.setText(variable);
+            System.out.println("total partida "+String.valueOf(formatoNumero.format(tota)));
+            System.out.println("total partida texto "+jTextField8.getText());
             jTextField12.setText(String.valueOf(formatoNumero.format(precunit)));
             
   
@@ -461,9 +527,11 @@ public final void buscagrupo() throws SQLException{
         jButton4 = new javax.swing.JButton();
         cancelButton = new javax.swing.JButton();
         jButton6 = new javax.swing.JButton();
+        jButton1 = new javax.swing.JButton();
         jLabel18 = new javax.swing.JLabel();
         jTextField9 = new javax.swing.JTextField();
         jLabel20 = new javax.swing.JLabel();
+        jCheckBox2 = new javax.swing.JCheckBox();
 
         jTextArea2.setColumns(20);
         jTextArea2.setRows(5);
@@ -478,7 +546,7 @@ public final void buscagrupo() throws SQLException{
         jPanel2.setBackground(new java.awt.Color(100, 100, 100));
 
         jLabel1.setBackground(new java.awt.Color(91, 91, 95));
-        jLabel1.setFont(new java.awt.Font("Tahoma", 1, 11)); // NOI18N
+        jLabel1.setFont(new java.awt.Font("Tahoma", 1, 11));
         jLabel1.setForeground(new java.awt.Color(255, 255, 255));
         jLabel1.setHorizontalAlignment(javax.swing.SwingConstants.CENTER);
         jLabel1.setText("Partidas del Presupuesto");
@@ -544,11 +612,11 @@ public final void buscagrupo() throws SQLException{
         jTextArea1.setWrapStyleWord(true);
         jTextArea1.setNextFocusableComponent(jTextField2);
         jTextArea1.addKeyListener(new java.awt.event.KeyAdapter() {
-            public void keyPressed(java.awt.event.KeyEvent evt) {
-                jTextArea1KeyPressed(evt);
-            }
             public void keyTyped(java.awt.event.KeyEvent evt) {
                 jTextArea1KeyTyped(evt);
+            }
+            public void keyPressed(java.awt.event.KeyEvent evt) {
+                jTextArea1KeyPressed(evt);
             }
         });
         jScrollPane1.setViewportView(jTextArea1);
@@ -581,6 +649,14 @@ public final void buscagrupo() throws SQLException{
         jTextField5.setText("0.00");
         jTextField5.setToolTipText("");
         jTextField5.setNextFocusableComponent(jTextField13);
+        jTextField5.addFocusListener(new java.awt.event.FocusAdapter() {
+            public void focusGained(java.awt.event.FocusEvent evt) {
+                jTextField5FocusGained(evt);
+            }
+            public void focusLost(java.awt.event.FocusEvent evt) {
+                jTextField5FocusLost(evt);
+            }
+        });
         jTextField5.addKeyListener(new java.awt.event.KeyAdapter() {
             public void keyTyped(java.awt.event.KeyEvent evt) {
                 jTextField5KeyTyped(evt);
@@ -593,6 +669,14 @@ public final void buscagrupo() throws SQLException{
 
         jTextField10.setToolTipText("");
         jTextField10.setNextFocusableComponent(jTextField15);
+        jTextField10.addFocusListener(new java.awt.event.FocusAdapter() {
+            public void focusGained(java.awt.event.FocusEvent evt) {
+                jTextField10FocusGained(evt);
+            }
+            public void focusLost(java.awt.event.FocusEvent evt) {
+                jTextField10FocusLost(evt);
+            }
+        });
 
         jLabel9.setFont(new java.awt.Font("Tahoma", 0, 14));
         jLabel9.setForeground(new java.awt.Color(255, 0, 0));
@@ -604,6 +688,14 @@ public final void buscagrupo() throws SQLException{
         jTextField4.setText("0.00");
         jTextField4.setToolTipText("");
         jTextField4.setNextFocusableComponent(jTextField10);
+        jTextField4.addFocusListener(new java.awt.event.FocusAdapter() {
+            public void focusGained(java.awt.event.FocusEvent evt) {
+                jTextField4FocusGained(evt);
+            }
+            public void focusLost(java.awt.event.FocusEvent evt) {
+                jTextField4FocusLost(evt);
+            }
+        });
         jTextField4.addKeyListener(new java.awt.event.KeyAdapter() {
             public void keyTyped(java.awt.event.KeyEvent evt) {
                 jTextField4KeyTyped(evt);
@@ -616,7 +708,15 @@ public final void buscagrupo() throws SQLException{
         jTextField6.setText("0.00");
         jTextField6.setToolTipText("");
         jTextField6.setNextFocusableComponent(jTextField4);
+        jTextField6.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jTextField6ActionPerformed(evt);
+            }
+        });
         jTextField6.addFocusListener(new java.awt.event.FocusAdapter() {
+            public void focusGained(java.awt.event.FocusEvent evt) {
+                jTextField6FocusGained(evt);
+            }
             public void focusLost(java.awt.event.FocusEvent evt) {
                 jTextField6FocusLost(evt);
             }
@@ -633,7 +733,6 @@ public final void buscagrupo() throws SQLException{
         jTextField12.setHorizontalAlignment(javax.swing.JTextField.RIGHT);
         jTextField12.setText("0.00");
         jTextField12.setToolTipText("");
-        jTextField12.setEnabled(false);
 
         jCheckBox1.setText("Redondeo");
         jCheckBox1.setNextFocusableComponent(jTextField7);
@@ -651,6 +750,9 @@ public final void buscagrupo() throws SQLException{
             public void focusLost(java.awt.event.FocusEvent evt) {
                 jTextField15FocusLost(evt);
             }
+            public void focusGained(java.awt.event.FocusEvent evt) {
+                jTextField15FocusGained(evt);
+            }
         });
         jTextField15.addKeyListener(new java.awt.event.KeyAdapter() {
             public void keyTyped(java.awt.event.KeyEvent evt) {
@@ -661,9 +763,17 @@ public final void buscagrupo() throws SQLException{
         jLabel14.setText("Precio Asumido:");
 
         jTextField13.setHorizontalAlignment(javax.swing.JTextField.RIGHT);
-        jTextField13.setText("0.00");
+        jTextField13.setText("1.00");
         jTextField13.setToolTipText("");
         jTextField13.setNextFocusableComponent(jTextField6);
+        jTextField13.addFocusListener(new java.awt.event.FocusAdapter() {
+            public void focusGained(java.awt.event.FocusEvent evt) {
+                jTextField13FocusGained(evt);
+            }
+            public void focusLost(java.awt.event.FocusEvent evt) {
+                jTextField13FocusLost(evt);
+            }
+        });
         jTextField13.addKeyListener(new java.awt.event.KeyAdapter() {
             public void keyTyped(java.awt.event.KeyEvent evt) {
                 jTextField13KeyTyped(evt);
@@ -726,6 +836,11 @@ public final void buscagrupo() throws SQLException{
 
         cancelButton.setIcon(new javax.swing.ImageIcon(getClass().getResource("/winspapus/imagenes/eliminar.png"))); // NOI18N
         cancelButton.setToolTipText("Salir");
+        cancelButton.addMouseListener(new java.awt.event.MouseAdapter() {
+            public void mouseClicked(java.awt.event.MouseEvent evt) {
+                cancelButtonMouseClicked(evt);
+            }
+        });
         cancelButton.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
                 cancelButtonActionPerformed(evt);
@@ -740,12 +855,22 @@ public final void buscagrupo() throws SQLException{
             }
         });
 
+        jButton1.setIcon(new javax.swing.ImageIcon(getClass().getResource("/winspapus/imagenes/agregapartidas.fw.png"))); // NOI18N
+        jButton1.setToolTipText("Guardar y Nueva Partida");
+        jButton1.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jButton1ActionPerformed(evt);
+            }
+        });
+
         javax.swing.GroupLayout jPanel3Layout = new javax.swing.GroupLayout(jPanel3);
         jPanel3.setLayout(jPanel3Layout);
         jPanel3Layout.setHorizontalGroup(
             jPanel3Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, jPanel3Layout.createSequentialGroup()
-                .addContainerGap(253, Short.MAX_VALUE)
+                .addContainerGap(192, Short.MAX_VALUE)
+                .addComponent(jButton1, javax.swing.GroupLayout.PREFERRED_SIZE, 45, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addComponent(okButton, javax.swing.GroupLayout.PREFERRED_SIZE, 45, javax.swing.GroupLayout.PREFERRED_SIZE)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addComponent(jButton2, javax.swing.GroupLayout.PREFERRED_SIZE, 45, javax.swing.GroupLayout.PREFERRED_SIZE)
@@ -759,21 +884,22 @@ public final void buscagrupo() throws SQLException{
                 .addComponent(jButton6, javax.swing.GroupLayout.PREFERRED_SIZE, 45, javax.swing.GroupLayout.PREFERRED_SIZE)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addComponent(cancelButton, javax.swing.GroupLayout.PREFERRED_SIZE, 45, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addGap(155, 155, 155))
+                .addGap(165, 165, 165))
         );
         jPanel3Layout.setVerticalGroup(
             jPanel3Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(jPanel3Layout.createSequentialGroup()
                 .addContainerGap()
-                .addGroup(jPanel3Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
-                    .addComponent(okButton, javax.swing.GroupLayout.Alignment.LEADING, javax.swing.GroupLayout.PREFERRED_SIZE, 45, javax.swing.GroupLayout.PREFERRED_SIZE)
-                    .addComponent(jButton2, javax.swing.GroupLayout.Alignment.LEADING, javax.swing.GroupLayout.PREFERRED_SIZE, 45, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addGroup(jPanel3Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                    .addComponent(jButton1, javax.swing.GroupLayout.PREFERRED_SIZE, 45, javax.swing.GroupLayout.PREFERRED_SIZE)
+                    .addComponent(okButton, javax.swing.GroupLayout.PREFERRED_SIZE, 45, javax.swing.GroupLayout.PREFERRED_SIZE)
+                    .addComponent(jButton2, javax.swing.GroupLayout.PREFERRED_SIZE, 45, javax.swing.GroupLayout.PREFERRED_SIZE)
                     .addComponent(jButton3, javax.swing.GroupLayout.PREFERRED_SIZE, 45, javax.swing.GroupLayout.PREFERRED_SIZE)
                     .addComponent(jButton4, javax.swing.GroupLayout.PREFERRED_SIZE, 45, javax.swing.GroupLayout.PREFERRED_SIZE)
-                    .addComponent(jButton5, javax.swing.GroupLayout.Alignment.LEADING, javax.swing.GroupLayout.PREFERRED_SIZE, 45, javax.swing.GroupLayout.PREFERRED_SIZE)
-                    .addComponent(jButton6, javax.swing.GroupLayout.Alignment.LEADING, javax.swing.GroupLayout.PREFERRED_SIZE, 45, javax.swing.GroupLayout.PREFERRED_SIZE)
-                    .addComponent(cancelButton, javax.swing.GroupLayout.Alignment.LEADING, javax.swing.GroupLayout.PREFERRED_SIZE, 45, javax.swing.GroupLayout.PREFERRED_SIZE))
-                .addContainerGap())
+                    .addComponent(jButton5, javax.swing.GroupLayout.PREFERRED_SIZE, 45, javax.swing.GroupLayout.PREFERRED_SIZE)
+                    .addComponent(cancelButton, javax.swing.GroupLayout.PREFERRED_SIZE, 45, javax.swing.GroupLayout.PREFERRED_SIZE)
+                    .addComponent(jButton6, javax.swing.GroupLayout.PREFERRED_SIZE, 45, javax.swing.GroupLayout.PREFERRED_SIZE))
+                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
         );
 
         getRootPane().setDefaultButton(okButton);
@@ -787,147 +913,140 @@ public final void buscagrupo() throws SQLException{
         jLabel20.setForeground(new java.awt.Color(255, 0, 0));
         jLabel20.setText("* Campo no puede ser vacio");
 
+        jCheckBox2.setText("Igualar a Unitario");
+        jCheckBox2.addItemListener(new java.awt.event.ItemListener() {
+            public void itemStateChanged(java.awt.event.ItemEvent evt) {
+                jCheckBox2ItemStateChanged(evt);
+            }
+        });
+
         javax.swing.GroupLayout jPanel1Layout = new javax.swing.GroupLayout(jPanel1);
         jPanel1.setLayout(jPanel1Layout);
         jPanel1Layout.setHorizontalGroup(
             jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, jPanel1Layout.createSequentialGroup()
+            .addGroup(jPanel1Layout.createSequentialGroup()
                 .addContainerGap()
                 .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                    .addComponent(jLabel7)
                     .addComponent(jLabel13)
                     .addComponent(jLabel8)
                     .addComponent(jLabel17)
                     .addComponent(jLabel11)
                     .addComponent(jLabel6)
                     .addComponent(jLabel4)
-                    .addComponent(jLabel2))
-                .addGap(4, 4, 4)
+                    .addComponent(jLabel2)
+                    .addComponent(jLabel7))
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                    .addGroup(jPanel1Layout.createSequentialGroup()
-                        .addComponent(jTextField1, javax.swing.GroupLayout.PREFERRED_SIZE, 142, javax.swing.GroupLayout.PREFERRED_SIZE)
-                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                        .addComponent(jLabel9)
-                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                        .addComponent(jLabel3)
-                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                        .addComponent(jSpinner1, javax.swing.GroupLayout.PREFERRED_SIZE, 78, javax.swing.GroupLayout.PREFERRED_SIZE)
-                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                        .addComponent(jLabel5)
-                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                        .addComponent(jComboBox2, 0, 264, Short.MAX_VALUE))
-                    .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, jPanel1Layout.createSequentialGroup()
-                        .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
-                            .addComponent(jTextField4, javax.swing.GroupLayout.DEFAULT_SIZE, 142, Short.MAX_VALUE)
-                            .addComponent(jTextField5, javax.swing.GroupLayout.DEFAULT_SIZE, 142, Short.MAX_VALUE)
-                            .addComponent(jTextField13, javax.swing.GroupLayout.DEFAULT_SIZE, 142, Short.MAX_VALUE)
-                            .addComponent(jTextField6, javax.swing.GroupLayout.DEFAULT_SIZE, 142, Short.MAX_VALUE)
-                            .addComponent(jTextField2)
-                            .addComponent(jComboBox1, 0, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
-                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 194, Short.MAX_VALUE)
-                        .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                            .addComponent(jLabel14)
-                            .addComponent(jLabel16)
-                            .addComponent(jLabel19)
-                            .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING, false)
-                                .addGroup(javax.swing.GroupLayout.Alignment.LEADING, jPanel1Layout.createSequentialGroup()
-                                    .addComponent(jLabel15)
-                                    .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                                    .addComponent(jTextField8, javax.swing.GroupLayout.PREFERRED_SIZE, 142, javax.swing.GroupLayout.PREFERRED_SIZE))
-                                .addGroup(javax.swing.GroupLayout.Alignment.LEADING, jPanel1Layout.createSequentialGroup()
-                                    .addComponent(jLabel18)
-                                    .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                                    .addComponent(jTextField9, javax.swing.GroupLayout.PREFERRED_SIZE, 142, javax.swing.GroupLayout.PREFERRED_SIZE))
-                                .addGroup(jPanel1Layout.createSequentialGroup()
-                                    .addComponent(jLabel12)
-                                    .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                                    .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                                        .addComponent(jTextField10, javax.swing.GroupLayout.PREFERRED_SIZE, 142, javax.swing.GroupLayout.PREFERRED_SIZE)
-                                        .addComponent(jTextField7, javax.swing.GroupLayout.PREFERRED_SIZE, 142, javax.swing.GroupLayout.PREFERRED_SIZE)
-                                        .addComponent(jTextField12, javax.swing.GroupLayout.PREFERRED_SIZE, 142, javax.swing.GroupLayout.PREFERRED_SIZE)
-                                        .addComponent(jTextField15, javax.swing.GroupLayout.PREFERRED_SIZE, 142, javax.swing.GroupLayout.PREFERRED_SIZE)
-                                        .addComponent(jCheckBox1, javax.swing.GroupLayout.Alignment.TRAILING))))))
-                    .addComponent(jScrollPane1, javax.swing.GroupLayout.DEFAULT_SIZE, 588, Short.MAX_VALUE))
+                    .addComponent(jTextField4, javax.swing.GroupLayout.DEFAULT_SIZE, 164, Short.MAX_VALUE)
+                    .addComponent(jTextField6, javax.swing.GroupLayout.DEFAULT_SIZE, 164, Short.MAX_VALUE)
+                    .addComponent(jTextField13, javax.swing.GroupLayout.DEFAULT_SIZE, 164, Short.MAX_VALUE)
+                    .addComponent(jTextField5, javax.swing.GroupLayout.DEFAULT_SIZE, 164, Short.MAX_VALUE)
+                    .addComponent(jComboBox1, 0, 164, Short.MAX_VALUE)
+                    .addComponent(jTextField2, javax.swing.GroupLayout.PREFERRED_SIZE, 164, javax.swing.GroupLayout.PREFERRED_SIZE))
+                .addGap(134, 134, 134)
+                .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                    .addComponent(jLabel12)
+                    .addComponent(jLabel15)
+                    .addComponent(jLabel18)
+                    .addComponent(jLabel14)
+                    .addComponent(jLabel16)
+                    .addComponent(jLabel19)
+                    .addComponent(jCheckBox2))
+                .addGap(39, 39, 39)
+                .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                    .addComponent(jTextField9, javax.swing.GroupLayout.Alignment.TRAILING, javax.swing.GroupLayout.PREFERRED_SIZE, 142, javax.swing.GroupLayout.PREFERRED_SIZE)
+                    .addComponent(jTextField8, javax.swing.GroupLayout.Alignment.TRAILING, javax.swing.GroupLayout.PREFERRED_SIZE, 142, javax.swing.GroupLayout.PREFERRED_SIZE)
+                    .addComponent(jTextField7, javax.swing.GroupLayout.Alignment.TRAILING, javax.swing.GroupLayout.PREFERRED_SIZE, 142, javax.swing.GroupLayout.PREFERRED_SIZE)
+                    .addComponent(jCheckBox1, javax.swing.GroupLayout.Alignment.TRAILING)
+                    .addComponent(jTextField15, javax.swing.GroupLayout.Alignment.TRAILING, javax.swing.GroupLayout.PREFERRED_SIZE, 142, javax.swing.GroupLayout.PREFERRED_SIZE)
+                    .addComponent(jTextField12, javax.swing.GroupLayout.Alignment.TRAILING, javax.swing.GroupLayout.PREFERRED_SIZE, 142, javax.swing.GroupLayout.PREFERRED_SIZE)
+                    .addComponent(jTextField10, javax.swing.GroupLayout.Alignment.TRAILING, javax.swing.GroupLayout.PREFERRED_SIZE, 142, javax.swing.GroupLayout.PREFERRED_SIZE))
                 .addGap(25, 25, 25))
             .addComponent(jPanel2, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
             .addComponent(jPanel3, javax.swing.GroupLayout.Alignment.TRAILING, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-            .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, jPanel1Layout.createSequentialGroup()
-                .addContainerGap(341, Short.MAX_VALUE)
+            .addGroup(jPanel1Layout.createSequentialGroup()
+                .addGap(309, 309, 309)
                 .addComponent(jLabel20)
-                .addGap(282, 282, 282))
+                .addContainerGap(314, Short.MAX_VALUE))
+            .addGroup(jPanel1Layout.createSequentialGroup()
+                .addGap(146, 146, 146)
+                .addComponent(jTextField1, javax.swing.GroupLayout.PREFERRED_SIZE, 142, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                .addComponent(jLabel9)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                .addComponent(jLabel3)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                .addComponent(jSpinner1, javax.swing.GroupLayout.PREFERRED_SIZE, 78, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                .addComponent(jLabel5)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                .addComponent(jComboBox2, 0, 264, Short.MAX_VALUE)
+                .addContainerGap(25, Short.MAX_VALUE))
+            .addGroup(jPanel1Layout.createSequentialGroup()
+                .addGap(146, 146, 146)
+                .addComponent(jScrollPane1, javax.swing.GroupLayout.DEFAULT_SIZE, 588, Short.MAX_VALUE)
+                .addContainerGap(25, Short.MAX_VALUE))
         );
         jPanel1Layout.setVerticalGroup(
             jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(jPanel1Layout.createSequentialGroup()
                 .addComponent(jPanel2, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                 .addGap(27, 27, 27)
-                .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                    .addComponent(jLabel3)
+                .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.CENTER)
                     .addComponent(jTextField1, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                    .addComponent(jLabel9)
                     .addComponent(jLabel2)
-                    .addComponent(jLabel5)
+                    .addComponent(jLabel3)
+                    .addComponent(jLabel9)
                     .addComponent(jSpinner1, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                    .addComponent(jLabel5)
                     .addComponent(jComboBox2, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
                 .addGap(8, 8, 8)
                 .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                    .addComponent(jLabel4)
-                    .addComponent(jScrollPane1, javax.swing.GroupLayout.PREFERRED_SIZE, 71, javax.swing.GroupLayout.PREFERRED_SIZE))
+                    .addComponent(jScrollPane1, javax.swing.GroupLayout.PREFERRED_SIZE, 71, javax.swing.GroupLayout.PREFERRED_SIZE)
+                    .addComponent(jLabel4))
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                    .addGroup(jPanel1Layout.createSequentialGroup()
-                        .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                            .addComponent(jTextField2, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                            .addComponent(jLabel13))
-                        .addGap(9, 9, 9)
-                        .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                            .addComponent(jComboBox1, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                            .addComponent(jLabel6))
-                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                        .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                            .addComponent(jTextField5, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                            .addComponent(jLabel11))
-                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                        .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                            .addComponent(jTextField13, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                            .addComponent(jLabel17))
-                        .addGap(7, 7, 7)
-                        .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                            .addComponent(jTextField6, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                            .addComponent(jLabel8))
-                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
-                        .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                            .addComponent(jLabel7)
-                            .addComponent(jTextField4, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)))
-                    .addGroup(jPanel1Layout.createSequentialGroup()
-                        .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                            .addComponent(jLabel19)
-                            .addComponent(jTextField10, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
-                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                        .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                            .addComponent(jLabel16)
-                            .addComponent(jTextField12, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
-                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                        .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                            .addComponent(jLabel14)
-                            .addComponent(jTextField15, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
-                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                        .addComponent(jCheckBox1)
-                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                        .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                            .addComponent(jLabel12)
-                            .addComponent(jTextField7, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
-                        .addGap(8, 8, 8)
-                        .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                            .addComponent(jLabel15)
-                            .addComponent(jTextField8, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
-                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                        .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                            .addComponent(jLabel18)
-                            .addComponent(jTextField9, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))))
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.CENTER)
+                    .addComponent(jTextField10, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                    .addComponent(jLabel19)
+                    .addComponent(jTextField2, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                    .addComponent(jLabel13))
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.CENTER)
+                    .addComponent(jComboBox1, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                    .addComponent(jLabel6)
+                    .addComponent(jLabel16)
+                    .addComponent(jTextField12, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.CENTER)
+                    .addComponent(jTextField15, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                    .addComponent(jLabel14)
+                    .addComponent(jTextField5, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                    .addComponent(jLabel11))
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.CENTER)
+                    .addComponent(jCheckBox1)
+                    .addComponent(jCheckBox2)
+                    .addComponent(jTextField13, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                    .addComponent(jLabel17))
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.CENTER)
+                    .addComponent(jLabel8)
+                    .addComponent(jTextField6, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                    .addComponent(jLabel12)
+                    .addComponent(jTextField7, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.CENTER)
+                    .addComponent(jTextField8, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                    .addComponent(jLabel15)
+                    .addComponent(jTextField4, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                    .addComponent(jLabel7))
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.CENTER)
+                    .addComponent(jLabel18)
+                    .addComponent(jTextField9, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
+                .addGap(12, 12, 12)
                 .addComponent(jLabel20, javax.swing.GroupLayout.PREFERRED_SIZE, 14, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
+                .addGap(2, 2, 2)
                 .addComponent(jPanel3, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                 .addContainerGap())
         );
@@ -940,7 +1059,7 @@ public final void buscagrupo() throws SQLException{
         );
         layout.setVerticalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addComponent(jPanel1, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+            .addComponent(jPanel1, javax.swing.GroupLayout.DEFAULT_SIZE, 465, Short.MAX_VALUE)
         );
 
         pack();
@@ -956,9 +1075,9 @@ public final void buscagrupo() throws SQLException{
         doClose(RET_CANCEL);
     }//GEN-LAST:event_closeDialog
 
-    public void settotalpartida(String total){
+ /*   public void settotalpartida(String total){
         jTextField8.setText(total);
-    }
+    }*/
     public void buscaapu(){
     String codicove, numero;
     String mpres="";
@@ -987,7 +1106,7 @@ public final void buscagrupo() throws SQLException{
        cargartotal();
        
 }
-public void validafloat( java.awt.event.KeyEvent evt,String valor){
+public void validaDouble( java.awt.event.KeyEvent evt,String valor){
         char car = evt.getKeyChar();
         
         int repite = new StringTokenizer(valor,".").countTokens() - 1;
@@ -1002,20 +1121,20 @@ public void validafloat( java.awt.event.KeyEvent evt,String valor){
        
         buscaapu();
 
-         float precunit;
+      /*   Double precunit;
          
-          precunit = (float) totalprecunit;
+          precunit = (Double) totalprecunit;
         if(totalprecunit==0)
         {
-            precunit = (float) totalprecasu;
+            precunit = (Double) totalprecasu;
         }
-        float cantidad = (float) totalcantidad, total1;
+        Double cantidad = (Double) totalcantidad, total1;
         total1 = precunit*cantidad;
          NumberFormat formatoNumero = NumberFormat.getNumberInstance();
             formatoNumero.setMaximumFractionDigits(2);
             formatoNumero.setMinimumFractionDigits(2);
             jTextField8.setText(String.valueOf(formatoNumero.format(total1)));
-            jTextField12.setText(String.valueOf(formatoNumero.format(precunit)));
+            jTextField12.setText(String.valueOf(formatoNumero.format(precunit)));*/
     }//GEN-LAST:event_jButton5ActionPerformed
 
     private void jSpinner1StateChanged(javax.swing.event.ChangeEvent evt) {//GEN-FIRST:event_jSpinner1StateChanged
@@ -1125,35 +1244,40 @@ public void validafloat( java.awt.event.KeyEvent evt,String valor){
     }//GEN-LAST:event_jTextArea1KeyPressed
 
     private void jTextField6FocusLost(java.awt.event.FocusEvent evt) {//GEN-FIRST:event_jTextField6FocusLost
-      
+if(jTextField6.getText().equals(""))
+    jTextField6.setText(val);      
  
         // TODO add your handling code here:
     }//GEN-LAST:event_jTextField6FocusLost
 
     private void jTextField7FocusLost(java.awt.event.FocusEvent evt) {//GEN-FIRST:event_jTextField7FocusLost
-        float precunit;
-          precunit = (float) totalprecunit;
-         
-        if(totalprecunit==0)
+        BigDecimal precunit;
+          precunit =  totalprecunit;
+          System.out.println("precunit "+totalprecunit);
+
+        if(totalprecunit.doubleValue()==0)
         {
-            precunit = (float) totalprecasu;
+            precunit = totalprecasu;
         }
         int nomodifica=0;
         if(jTextField7.getText().equals("")){
             jTextField7.setText(val);
             nomodifica=1;
         }
-         float cantidad =0;
+         BigDecimal cantidad =new BigDecimal("0.00");
         if(edita==0)
-       cantidad= Float.valueOf(jTextField7.getText().toString());
+       cantidad= new BigDecimal(jTextField7.getText().toString());
         else{
             if(nomodifica==1)
-            cantidad = (float) totalcantidad;
+            cantidad = totalcantidad;
             else
-                cantidad= Float.valueOf(jTextField7.getText().toString());
+                cantidad= new BigDecimal(jTextField7.getText().toString());
         }
-         float  total1;
-        total1 = precunit*cantidad;
+         BigDecimal  total1;
+         if(totalprecasu.doubleValue()!=0.00)
+        total1 = redondear.redondearDosDecimales(totalprecasu.multiply(cantidad));
+         else
+             total1= redondear.redondearDosDecimales(precunit.multiply(cantidad));
         
         NumberFormat formatoNumero = NumberFormat.getNumberInstance();
             formatoNumero.setMaximumFractionDigits(2);
@@ -1171,36 +1295,56 @@ public void validafloat( java.awt.event.KeyEvent evt,String valor){
         char car = evt.getKeyChar();
         if ((car<'0' || car>'9')) 
         {
+            
             evt.consume();
         }
         
     }//GEN-LAST:event_jSpinner1KeyTyped
 
     private void jTextField5KeyTyped(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_jTextField5KeyTyped
-validafloat(evt, jTextField5.getText().toString());         // TODO add your handling code here:
+validaDouble(evt, jTextField5.getText().toString());         // TODO add your handling code here:
     }//GEN-LAST:event_jTextField5KeyTyped
 
     private void jTextField13KeyTyped(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_jTextField13KeyTyped
-validafloat(evt, jTextField13.getText().toString());         // TODO add your handling code here:
+validaDouble(evt, jTextField13.getText().toString());         // TODO add your handling code here:
     }//GEN-LAST:event_jTextField13KeyTyped
 
     private void jTextField6KeyTyped(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_jTextField6KeyTyped
-validafloat(evt, jTextField6.getText().toString());         // TODO add your handling code here:
+validaDouble(evt, jTextField6.getText().toString());         // TODO add your handling code here:
     }//GEN-LAST:event_jTextField6KeyTyped
 
     private void jTextField4KeyTyped(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_jTextField4KeyTyped
-validafloat(evt, jTextField4.getText().toString());         // TODO add your handling code here:
+validaDouble(evt, jTextField4.getText().toString());         // TODO add your handling code here:
     }//GEN-LAST:event_jTextField4KeyTyped
 
     private void jTextField15KeyTyped(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_jTextField15KeyTyped
-validafloat(evt, jTextField15.getText().toString());         // TODO add your handling code here:
+validaDouble(evt, jTextField15.getText().toString());         // TODO add your handling code here:
     }//GEN-LAST:event_jTextField15KeyTyped
 
     private void jTextField7KeyTyped(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_jTextField7KeyTyped
-validafloat(evt, jTextField7.getText().toString());         // TODO add your handling code here:
+validaDouble(evt, jTextField7.getText().toString());         // TODO add your handling code here:
     }//GEN-LAST:event_jTextField7KeyTyped
 
-private void okButtonMouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_okButtonMouseClicked
+    public boolean compruebaCampos(){
+        boolean comprueba=false;
+        if(jTextField1.getText().equals(""))
+            comprueba=false;
+        else
+            comprueba=true;
+        return comprueba;
+    }
+    public void guardarPartida()        
+    {
+        if(!compruebaCampos())
+        {
+            jLabel9.setVisible(true);   
+            jLabel20.setVisible(true);
+            JOptionPane.showMessageDialog(rootPane, "Campos Claves vacios, llene los campos vacios.");
+            return;
+        }else{
+            jLabel9.setVisible(false);   
+            jLabel20.setVisible(false);
+        }
         String mpre_id=presupuesto, ids=jTextField1.getText().toString();
         String numero = "0", descri = jTextArea1.getText().toString();
         int idband = jComboBox1.getSelectedIndex()+1;
@@ -1211,11 +1355,10 @@ private void okButtonMouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:ev
         String tipos = null;
         String adicional = jTextField2.getText();
         if(edita==1){
-            float precuni = Float.valueOf(precunit);
-            
+            BigDecimal precuni = new BigDecimal(precunit);            
                 precasu="0";
                 if(jCheckBox1.isSelected()){
-                    precasu = String.valueOf(Math.rint(((precuni+0.000001)*100)/100));
+                    precasu = precuni.toString();
                     System.out.println("precasu"+precasu);
                 }
                 precasu = String.valueOf(jTextField15.getText());
@@ -1314,7 +1457,8 @@ private void okButtonMouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:ev
                     + "SELECT '"+codpres+"', nomabr, nombre, ubicac, fecini,"
                     + "fecfin, feccon, fecimp, porgam, porcfi, porimp, poripa,"
                     + "porpre, poruti, codpro, codcon, parpre, nrocon, nroctr, fecapr,"
-                    + "nrolic, 1, '"+mpre_id+"',memo,timemo, fecmemo, 0  FROM mpres WHERE id='"+mpre_id+"'";
+                    + "nrolic, 1, '"+mpre_id+"',memo,timemo, fecmemo, 0, partidapres, "
+                    + "fecharegistro, valu  FROM mpres WHERE id='"+mpre_id+"'";
 
                     // System.out.println("Inserta Presupuesto Adicional: "+insertar);
                     Statement insert = (Statement) conex.createStatement();
@@ -1322,7 +1466,7 @@ private void okButtonMouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:ev
                 }
                  String sql = "INSERT INTO mppres (mpre_id, id, numero, numegrup, descri, idband, porcgad, porcpre"
                     + ", porcutil, precasu, precunit, rendimi, unidad, redondeo, cantidad, tipo, status,nropresupuesto,tiponp)"
-                    + " VALUE ('"+adicional+"','"+ids+"', "+numero+", "+numegrup+", '"+descri+"', "+idband+","
+                    + " VALUE ('"+codpres+"','"+ids+"', "+numero+", "+numegrup+", '"+descri+"', "+idband+","
                     + " "+porcgad+", "+porcpre+","+porcutil+", "+precasu+", "+precunit+", "+rendimi+", '"+unidad+"',"
                     + ""+redondeo+", "+cantidad+", '"+tipos+"', 1,'"+adicional+"','"+tiponp+"')";
             
@@ -1371,21 +1515,31 @@ private void okButtonMouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:ev
                   stinserta.execute(insertapart);
                 }
                   }
-                JOptionPane.showMessageDialog(rootPane, "Se ha insertado la Partida");
-                
-                
-                
+               pres.buscapartida();   
+                JOptionPane.showMessageDialog(rootPane, "Se ha insertado la Partida");                
             } catch (SQLException ex) {
                 Logger.getLogger(Partida.class.getName()).log(Level.SEVERE, null, ex);
             }
-            doClose(RET_OK);
+           
         }else{
-            String sql = "UPDATE mppres SET descri= '"+descri+"', idband="+idband+", porcgad="+porcgad+""
+            String codpres=mpre_id;
+             if(tipos.equals("NP"))
+                codpres = mpre_id+tiponp+adicional;
+             String sql="";
+             if(!tipos.equals("VP"))                 
+             sql= "UPDATE mppres SET mpre_id='"+codpres+"', id='"+jTextField1.getText()+"',descri= '"+descri+"', idband="+idband+", porcgad="+porcgad+""
                     + ", porcpre="+porcpre+", porcutil="+porcutil+", precasu="+precasu+", precunit="+precunit+""
                     + ", rendimi="+rendimi+", unidad='"+unidad+"', redondeo="+redondeo+", nropresupuesto='"+adicional+"',"
-                    + "cantidad="+cantidad+", tipo='"+tipos+"', status=1"
+                    + "cantidad="+cantidad+", tipo='"+tipos+"', tiponp='"+tiponp+"', status=1"
                     + " WHERE (mpre_id='"+mpre_id+"' OR mpre_id IN (SELECT id FROM mpres WHERE mpres_id='"+mpre_id+"')) "
-                    + "AND id='"+ids+"' AND numero="+numero;
+                    + " AND numero="+numero;
+             else
+                 sql= "UPDATE mppres SET id='"+jTextField1.getText()+"',descri= '"+descri+"', idband="+idband+", porcgad="+porcgad+""
+                    + ", porcpre="+porcpre+", porcutil="+porcutil+", precasu="+precasu+", precunit="+precunit+""
+                    + ", rendimi="+rendimi+", unidad='"+unidad+"', redondeo="+redondeo+", nropresupuesto='"+adicional+"',"
+                    + "cantidad="+cantidad+", tipo='"+tipos+"', tiponp='"+tiponp+"', status=1"
+                    + " WHERE (mpre_id='"+mpre_id+"' OR mpre_id IN (SELECT id FROM mpres WHERE mpres_id='"+mpre_id+"')) "
+                    + " AND numero="+numero;
             System.out.println("actualiza "+sql);
             try {
                 Statement st = (Statement) conex.createStatement();
@@ -1394,12 +1548,23 @@ private void okButtonMouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:ev
             } catch (SQLException ex) {
                 Logger.getLogger(Partida.class.getName()).log(Level.SEVERE, null, ex);
             } 
-        } // TODO add your handling code here:
+        }
+        
+}
+    
+    private void vaciaCampo(JTextField field){
+        val = field.getText().toString();
+        field.setText("");
+    }
+private void okButtonMouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_okButtonMouseClicked
+    guardarPartida();
+    pres.numPartidas();
+     //doClose(RET_OK);
+    // TODO add your handling code here:
 }//GEN-LAST:event_okButtonMouseClicked
 
     private void jTextField7FocusGained(java.awt.event.FocusEvent evt) {//GEN-FIRST:event_jTextField7FocusGained
-        val = jTextField7.getText().toString();
-        jTextField7.setText("");
+        vaciaCampo(jTextField7);
         // TODO add your handling code here:
     }//GEN-LAST:event_jTextField7FocusGained
 
@@ -1408,24 +1573,23 @@ private void okButtonMouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:ev
     }//GEN-LAST:event_okButtonActionPerformed
 
     private void jTextField15FocusLost(java.awt.event.FocusEvent evt) {//GEN-FIRST:event_jTextField15FocusLost
- totalprecasu = Float.valueOf(jTextField15.getText().toString());
+        if(jTextField15.getText().equals(""))
+            jTextField15.setText(val);
+        
+        totalprecasu = new BigDecimal(jTextField15.getText().toString());
         
         // TODO add your handling code here:
     }//GEN-LAST:event_jTextField15FocusLost
 
    
 private void jTextField1KeyTyped(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_jTextField1KeyTyped
-   Character c = evt.getKeyChar();
-                if(Character.isLetter(c)) {
-                    evt.setKeyChar(Character.toUpperCase(c));
-                }// TODO add your handling code here:
+vali.validaText(evt);
+vali.sizeField("id", "mppres", evt, jTextField1.getText());
 }//GEN-LAST:event_jTextField1KeyTyped
 
 private void jTextArea1KeyTyped(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_jTextArea1KeyTyped
-   Character c = evt.getKeyChar();
-                if(Character.isLetter(c)) {
-                    evt.setKeyChar(Character.toUpperCase(c));
-                }// TODO add your handling code here:
+  vali.validaText(evt);
+vali.sizeField("descri", "mppres", evt, jTextField1.getText());
 }//GEN-LAST:event_jTextArea1KeyTyped
 
     private void jButton6ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton6ActionPerformed
@@ -1454,21 +1618,150 @@ private void jTextArea1KeyTyped(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_
     }//GEN-LAST:event_jButton6ActionPerformed
 
     private void jCheckBox1ItemStateChanged(java.awt.event.ItemEvent evt) {//GEN-FIRST:event_jCheckBox1ItemStateChanged
-float unitario = (float) totalprecunit;
-        float redondeado = (float) Math.rint(unitario);
-        float cantidad = (float) totalcantidad;
-        
+        BigDecimal unitario = totalprecunit;
+        BigDecimal redondeado = new BigDecimal(Math.rint(unitario.floatValue()));
+        if(unitario.doubleValue()==0)
+            redondeado = new BigDecimal(Math.rint(totalprecasu.floatValue()));
+        BigDecimal cantidad = totalcantidad;
         if(jCheckBox1.isSelected()){
             jTextField15.setText(String.valueOf(redondeado));
-            jTextField8.setText(String.valueOf(cantidad*redondeado));
+            jTextField8.setText((cantidad.multiply(redondeado)).toString());
         }
         else {
-            jTextField15.setText("0.00");
-            jTextField8.setText(String.valueOf(cantidad*unitario));
+            jTextField8.setText(redondear.redondearDosDecimales(cantidad.multiply(unitario)).toString());
+            jTextField15.setText(totalprecunit.toString());
         }             // TODO add your handling code here:
     }//GEN-LAST:event_jCheckBox1ItemStateChanged
+
+private void cancelButtonMouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_cancelButtonMouseClicked
+pres.cargartotal();
+
     
+    // TODO add your handling code here:
+}//GEN-LAST:event_cancelButtonMouseClicked
+
+private void jButton1ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton1ActionPerformed
+    int auxedita=edita;
+    edita=0;
+    totalprecasu=totalprecunit=new BigDecimal("0.00");
+    jLabel13.setVisible(false);
+        jTextField2.setVisible(false);
+        jLabel9.setVisible(false);
+        jLabel20.setVisible(false);
+        this.setTitle("Nueva Partida");
+        id = new ArrayList<Integer>();
+        if(auxedita==0)
+        guardarPartida();
+        try {
+            
+            contar();
+        } catch (SQLException ex) {
+            Logger.getLogger(Partida.class.getName()).log(Level.SEVERE, null, ex);
+        }
+            
+            jTextField9.setText(total);
+            if(jComboBox2.getSelectedItem().equals("No Prevista")){
+                jLabel13.setVisible(false);
+                jTextField2.setVisible(false);
+            }       
+           
+            jButton2.setEnabled(false);
+            jButton3.setEnabled(false);
+            jButton4.setEnabled(false);
+            jButton5.setEnabled(false);
+            jButton6.setEnabled(false);
+            cargavalorespres();
+            vaciaCampos();
+    // TODO add your handling code here:
+}//GEN-LAST:event_jButton1ActionPerformed
+
+private void jTextField5FocusGained(java.awt.event.FocusEvent evt) {//GEN-FIRST:event_jTextField5FocusGained
+    vaciaCampo(jTextField5);
+    
+    // TODO add your handling code here:
+}//GEN-LAST:event_jTextField5FocusGained
+
+private void jTextField13FocusGained(java.awt.event.FocusEvent evt) {//GEN-FIRST:event_jTextField13FocusGained
+    vaciaCampo(jTextField13);
+    // TODO add your handling code here:
+}//GEN-LAST:event_jTextField13FocusGained
+
+private void jTextField6FocusGained(java.awt.event.FocusEvent evt) {//GEN-FIRST:event_jTextField6FocusGained
+    vaciaCampo(jTextField6);
+    // TODO add your handling code here:
+}//GEN-LAST:event_jTextField6FocusGained
+
+private void jTextField4FocusGained(java.awt.event.FocusEvent evt) {//GEN-FIRST:event_jTextField4FocusGained
+vaciaCampo(jTextField4);
+    // TODO add your handling code here:
+}//GEN-LAST:event_jTextField4FocusGained
+
+private void jTextField10FocusGained(java.awt.event.FocusEvent evt) {//GEN-FIRST:event_jTextField10FocusGained
+vaciaCampo(jTextField10);
+    // TODO add your handling code here:
+}//GEN-LAST:event_jTextField10FocusGained
+
+private void jTextField15FocusGained(java.awt.event.FocusEvent evt) {//GEN-FIRST:event_jTextField15FocusGained
+vaciaCampo(jTextField15);
+    // TODO add your handling code here:
+}//GEN-LAST:event_jTextField15FocusGained
+
+private void jTextField5FocusLost(java.awt.event.FocusEvent evt) {//GEN-FIRST:event_jTextField5FocusLost
+    if(jTextField5.getText().equals(""))
+    jTextField5.setText(val);
+    // TODO add your handling code here:
+}//GEN-LAST:event_jTextField5FocusLost
+
+private void jTextField6ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jTextField6ActionPerformed
+    jTextField6.setText(val);
+    // TODO add your handling code here:
+}//GEN-LAST:event_jTextField6ActionPerformed
+
+private void jTextField4FocusLost(java.awt.event.FocusEvent evt) {//GEN-FIRST:event_jTextField4FocusLost
+    if(jTextField4.getText().equals(""))
+    jTextField4.setText(val);
+    // TODO add your handling code here:
+}//GEN-LAST:event_jTextField4FocusLost
+
+private void jTextField10FocusLost(java.awt.event.FocusEvent evt) {//GEN-FIRST:event_jTextField10FocusLost
+    if(jTextField10.getText().equals(""))
+    jTextField10.setText(val);
+    // TODO add your handling code here:
+}//GEN-LAST:event_jTextField10FocusLost
+
+private void jTextField13FocusLost(java.awt.event.FocusEvent evt) {//GEN-FIRST:event_jTextField13FocusLost
+if(jTextField13.getText().equals(""))
+    jTextField13.setText(val);
+    // TODO add your handling code here:
+}//GEN-LAST:event_jTextField13FocusLost
+
+private void jCheckBox2ItemStateChanged(java.awt.event.ItemEvent evt) {//GEN-FIRST:event_jCheckBox2ItemStateChanged
+   if(jCheckBox2.isSelected())
+    jTextField15.setText(totalprecunit.toString());
+   else
+       jTextField15.setText("0.00");
+    
+}//GEN-LAST:event_jCheckBox2ItemStateChanged
+    public void vaciaCampos()
+    {
+        jTextField1.setText("");
+        jTextArea1.setText("");
+        jTextField10.setText("");
+        jTextField12.setText("0.00");
+        jTextField15.setText("0.00");
+        jTextField7.setText("0.00");
+        jTextField8.setText("0.00");
+    }
     public void doClose(int retStatus) {
+        pres.numPartidas();
+        if(reconsidera==1)
+            recon.buscacuadro();
+        try {
+           // pres.setid(presupuesto);
+            pres.buscapartida();
+        } catch (SQLException ex) {
+            Logger.getLogger(Partida.class.getName()).log(Level.SEVERE, null, ex);
+        }
         returnStatus = retStatus;
         setVisible(false);
         dispose();
@@ -1477,12 +1770,14 @@ float unitario = (float) totalprecunit;
     
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JButton cancelButton;
+    private javax.swing.JButton jButton1;
     private javax.swing.JButton jButton2;
     private javax.swing.JButton jButton3;
     private javax.swing.JButton jButton4;
     private javax.swing.JButton jButton5;
     private javax.swing.JButton jButton6;
     private javax.swing.JCheckBox jCheckBox1;
+    private javax.swing.JCheckBox jCheckBox2;
     private javax.swing.JComboBox jComboBox1;
     private javax.swing.JComboBox jComboBox2;
     private javax.swing.JLabel jLabel1;

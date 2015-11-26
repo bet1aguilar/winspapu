@@ -10,10 +10,10 @@
  */
 package presupuestos;
 
-import com.mysql.jdbc.Connection;
 import com.mysql.jdbc.Statement;
 import java.awt.event.ActionEvent;
 import java.awt.event.KeyEvent;
+import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.logging.Level;
@@ -210,14 +210,13 @@ public class copiarapu extends javax.swing.JDialog {
              String sql, cantidad, codicove;
       
         ResultSet rsmat = st.executeQuery("SELECT  mppre_id,mmpre_id, cantidad, precio FROM dmpres WHERE mpre_id = '"+pres+"' AND numepart="+realnumero2);
-        String mmtab_id, precio, mtabus;
+        String mmtab_id, precio;
              
              while (rsmat.next()) {
                   mmtab_id =rsmat.getObject(2).toString();
                   cantidad = rsmat.getObject(3).toString();
                   precio = rsmat.getObject(4).toString();
                   codicove = rsmat.getObject(1).toString();
-                  mtabus = rsmat.getObject(5).toString();
                   
                   sql = "INSERT INTO dmpres VALUES ('"+pres+"', '"+codigo+"', " + 
 
@@ -245,16 +244,18 @@ public class copiarapu extends javax.swing.JDialog {
           Statement s = (Statement) conex.createStatement();
           String sql;
           String mtabu;
-        ResultSet rse = s.executeQuery("SELECT mepre_id, cantidad, precio, mppre_id FROM deppres WHERE mpre_id = '"+pres+"' AND numero="+realnumero2);
+        ResultSet rse = s.executeQuery("SELECT mepre_id, cantidad, precio, mppre_id, mpre_id FROM deppres "
+                + "WHERE (mpre_id = '"+pres+"' OR mpre_id IN (SELECT id FROM mpres WHERE mpres_id='"+pres+"')) AND "
+                + "numero="+realnumero2);
         String metab_id, precio, codicove;
-        String cantidad;
+        String cantidad, mpre_id;
              while (rse.next()) {
                   metab_id =rse.getObject(1).toString();
                   cantidad = rse.getObject(2).toString();
                   precio = rse.getObject(3).toString();
                   codicove = rse.getObject(4).toString();
-           
-                  sql = "INSERT INTO deppres VALUES ('"+pres+"', '"+codigo+"', " + 
+                  mpre_id = rse.getString(5);
+                  sql = "INSERT INTO deppres VALUES ('"+mpre_id+"', '"+codigo+"', " + 
 
                                                         "'"+metab_id+"'," + 
 
@@ -277,9 +278,11 @@ public class copiarapu extends javax.swing.JDialog {
         private void insertamano() throws SQLException{
            Statement s = (Statement) conex.createStatement();
            Statement st = (Statement) conex.createStatement();
-        ResultSet rsma = st.executeQuery("SELECT mmopre_id, cantidad, bono, salario, subsidi, mppre_id FROM dmoppres WHERE mpre_id = '"+pres+"' AND numero="+realnumero2);
+        ResultSet rsma = st.executeQuery("SELECT mmopre_id, cantidad, bono, salario, subsidi, "
+                + "mppre_id, mpre_id FROM dmoppres WHERE "
+                + "(mpre_id = '"+pres+"' OR (SELECT id FROM mpres WHERE mpres_id='"+pres+"')) AND numero="+realnumero2);
         String mmoptab_id, bono, salario, subsidi, codicove, mtabus_id;
-             String sql, cantidad;
+             String sql, cantidad, mpre_id;
              while (rsma.next()) {
                   mmoptab_id =rsma.getObject(1).toString();
                   cantidad = rsma.getObject(2).toString();
@@ -287,9 +290,9 @@ public class copiarapu extends javax.swing.JDialog {
                   salario = rsma.getObject(4).toString();
                   subsidi = rsma.getObject(5).toString();
                   codicove = rsma.getObject(6).toString();
-                  mtabus_id = rsma.getObject("mtabus_id").toString();
+                  mpre_id = rsma.getString(7);
                   sql = "INSERT INTO dmoppres (mpre_id, mmopre_id, numero,cantidad, bono, salario, subsidi, status, mppre_id)"
-                          + " VALUES ('"+pres+"', " + 
+                          + " VALUES ('"+mpre_id+"', " + 
 
                                                         "'"+mmoptab_id+"'," + 
 
@@ -363,26 +366,24 @@ private void okButtonMouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:ev
             }
             
             if(cont>0){
-                String sqlnum = "Select numero FROM mppres WHERE numegrup ='"+partida+"'";
+                String sqlnum = "Select numero FROM mppres WHERE numegrup ='"+partida+"' AND "
+                        + "(mpre_id='"+pres+"' OR mpre_id IN (SELECT id FROM mpres WHERE mpres_id='"+pres+"'))";
                 Statement sta = (Statement) conex.createStatement();
                 ResultSet rsta = sta.executeQuery(sqlnum);
                 
-                while(rsta.next()){
+                while(rsta.next())
                     realnumero = rsta.getObject(1).toString();
-                }
                 
-                sqlnum = "Select numero From mppres WHERE numegrup ='"+acopiar+"'";
+                sqlnum = "Select numero From mppres WHERE numegrup ='"+acopiar+"' AND "
+                        + "(mpre_id='"+pres+"' OR mpre_id IN (SELECT id FROM mpres WHERE mpres_id='"+pres+"'))";
                 Statement sta2 = (Statement) conex.createStatement();
                 ResultSet rsta2 = sta2.executeQuery(sqlnum);
                 while(rsta2.next()){
                     realnumero2 = rsta2.getObject(1).toString();
                 }
-
-                
                 insertaequip();
                 insertamat();
                 insertamano();
-                
             }else{
                 jLabel4.setVisible(true);
                 jLabel4.setText("La partida no existe");

@@ -22,7 +22,7 @@
   <Layout>
     <DimensionLayout dim="0">
       <Group type="103" groupAlignment="0" attributes="0">
-          <Component id="jPanel1" pref="703" max="32767" attributes="0"/>
+          <Component id="jPanel1" alignment="0" pref="703" max="32767" attributes="0"/>
       </Group>
     </DimensionLayout>
     <DimensionLayout dim="1">
@@ -33,18 +33,6 @@
   </Layout>
   <SubComponents>
     <Container class="javax.swing.JPanel" name="jPanel1">
-      <Properties>
-        <Property name="border" type="javax.swing.border.Border" editor="org.netbeans.modules.form.editors2.BorderEditor">
-          <Border info="org.netbeans.modules.form.compat2.border.BevelBorderInfo">
-            <BevelBorder>
-              <Color PropertyName="highlightOuter" blue="40" green="40" id="darkGray" palette="1" red="40" type="palette"/>
-              <Color PropertyName="highlightInner" blue="c0" green="c0" id="lightGray" palette="1" red="c0" type="palette"/>
-              <Color PropertyName="shadowOuter" blue="80" green="80" id="gray" palette="1" red="80" type="palette"/>
-              <Color PropertyName="shadowInner" blue="c0" green="c0" id="lightGray" palette="1" red="c0" type="palette"/>
-            </BevelBorder>
-          </Border>
-        </Property>
-      </Properties>
 
       <Layout>
         <DimensionLayout dim="0">
@@ -127,7 +115,7 @@
                   </Group>
                   <EmptySpace type="separate" max="-2" attributes="0"/>
                   <Component id="jLabel20" min="-2" max="-2" attributes="0"/>
-                  <EmptySpace max="32767" attributes="0"/>
+                  <EmptySpace pref="23" max="32767" attributes="0"/>
                   <Group type="103" groupAlignment="0" attributes="0">
                       <Component id="cancelButton" min="-2" pref="45" max="-2" attributes="0"/>
                       <Component id="okButton" min="-2" pref="45" max="-2" attributes="0"/>
@@ -189,7 +177,7 @@
         </Component>
         <Component class="javax.swing.JTextField" name="jTextField1">
           <Properties>
-            <Property name="toolTipText" type="java.lang.String" value="Ingrese C&#xf3;digo del Tabulador"/>
+            <Property name="toolTipText" type="java.lang.String" value="C&#xf3;digo del Material"/>
           </Properties>
           <Events>
             <EventHandler event="keyTyped" listener="java.awt.event.KeyListener" parameters="java.awt.event.KeyEvent" handler="jTextField1KeyTyped"/>
@@ -213,13 +201,23 @@
         </Component>
         <Component class="javax.swing.JTextField" name="jTextField3">
           <Properties>
-            <Property name="toolTipText" type="java.lang.String" value="Ingrese C&#xf3;digo del Tabulador"/>
+            <Property name="horizontalAlignment" type="int" value="4"/>
+            <Property name="text" type="java.lang.String" value="0.00"/>
+            <Property name="toolTipText" type="java.lang.String" value="Desperdicio de Material"/>
           </Properties>
+          <Events>
+            <EventHandler event="focusGained" listener="java.awt.event.FocusListener" parameters="java.awt.event.FocusEvent" handler="jTextField3FocusGained"/>
+            <EventHandler event="keyTyped" listener="java.awt.event.KeyListener" parameters="java.awt.event.KeyEvent" handler="jTextField3KeyTyped"/>
+          </Events>
         </Component>
         <Component class="javax.swing.JTextField" name="jTextField5">
           <Properties>
-            <Property name="toolTipText" type="java.lang.String" value="Ingrese C&#xf3;digo del Tabulador"/>
+            <Property name="horizontalAlignment" type="int" value="4"/>
+            <Property name="toolTipText" type="java.lang.String" value="Unidad de Medida"/>
           </Properties>
+          <Events>
+            <EventHandler event="keyTyped" listener="java.awt.event.KeyListener" parameters="java.awt.event.KeyEvent" handler="jTextField5KeyTyped"/>
+          </Events>
         </Component>
         <Component class="javax.swing.JLabel" name="jLabel9">
           <Properties>
@@ -234,7 +232,7 @@
         </Component>
         <Component class="javax.swing.JTextField" name="jTextField8">
           <Properties>
-            <Property name="toolTipText" type="java.lang.String" value="Ingrese C&#xf3;digo del Tabulador"/>
+            <Property name="toolTipText" type="java.lang.String" value="Descripci&#xf3;n del Material"/>
           </Properties>
           <Events>
             <EventHandler event="keyTyped" listener="java.awt.event.KeyListener" parameters="java.awt.event.KeyEvent" handler="jTextField8KeyTyped"/>
@@ -277,7 +275,9 @@
         </Component>
         <Component class="javax.swing.JTextField" name="jTextField7">
           <Properties>
-            <Property name="toolTipText" type="java.lang.String" value="Ingrese C&#xf3;digo del Tabulador"/>
+            <Property name="horizontalAlignment" type="int" value="4"/>
+            <Property name="text" type="java.lang.String" value="0.00"/>
+            <Property name="toolTipText" type="java.lang.String" value="Precio del Material"/>
           </Properties>
         </Component>
         <Component class="javax.swing.JButton" name="okButton">
@@ -316,6 +316,7 @@
           </Properties>
           <Events>
             <EventHandler event="stateChanged" listener="javax.swing.event.ChangeListener" parameters="javax.swing.event.ChangeEvent" handler="jSpinner1StateChanged"/>
+            <EventHandler event="keyTyped" listener="java.awt.event.KeyListener" parameters="java.awt.event.KeyEvent" handler="jSpinner1KeyTyped"/>
           </Events>
         </Component>
       </SubComponents>

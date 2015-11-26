@@ -1,8 +1,9 @@
 
 package presupuestos;
-import com.mysql.jdbc.Connection;
+import java.sql.Connection;
 import com.mysql.jdbc.ResultSetMetaData;
 import com.mysql.jdbc.Statement;
+import config.Redondeo;
 import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.Font;
@@ -13,6 +14,7 @@ import java.awt.event.KeyEvent;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
+import java.math.BigDecimal;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.text.DateFormat;
@@ -63,12 +65,14 @@ public final class diagrama extends javax.swing.JDialog {
     public static final int RET_OK = 1;
     private Connection conex;
      final long mil = 86400000 ; 
+     
      JScrollBar scroller;
     String partida, pres;
     String partidaselect;
      int cont=0;
     int monto = 0;
-    float totalpres=0;
+    Redondeo redondear = new Redondeo();
+    BigDecimal totalpres=new BigDecimal("0.00");
       int numdias=0, numsemanas=0, numeses=0;
     diagrama dia = this;
     String fecha;
@@ -77,8 +81,8 @@ public final class diagrama extends javax.swing.JDialog {
     int filafase;
     String [] semanas, vecmes, vecanio, vecmeses,vecmesanio;
     Date fechaini=null, fechafin=null;
-    float costo=0, costolapso=0;
-    float totaldias=0;
+    BigDecimal costo=new BigDecimal("0.00"), costolapso=new BigDecimal("0.00");
+    BigDecimal totaldias=new BigDecimal("0.00");
     int rangos = 0;
     int lapso=0;
     JScrollPane scroll;
@@ -87,14 +91,14 @@ public final class diagrama extends javax.swing.JDialog {
     String numpartida=null;
     private ResultSet rst;
     Frame prin;
-    float dias;
+    BigDecimal dias;
     Object [][] matriz;
     private String[] partidas;
-     float semana = 0, meses=0, anios=0;
+     BigDecimal semana = new BigDecimal("0.00"), meses=new BigDecimal("0.00"), anios=new BigDecimal("0.00");
       DefaultTableModel dm ;
     private Object metabs;
     /** Creates new form diagrama */
-    public diagrama(java.awt.Frame parent, boolean modal, Connection conex, String pres, float total) {
+    public diagrama(java.awt.Frame parent, boolean modal, Connection conex, String pres, BigDecimal total) {
         super(parent, modal);
         initComponents();
         this.totalpres = total;
@@ -112,7 +116,7 @@ public final class diagrama extends javax.swing.JDialog {
     jTable1.getTableHeader().setPreferredSize(new Dimension(30,65));
     jTable1.setRowHeight(25);
         buscapartida();
-        creamodelo();
+         creamodelo();
         iniciatabla();
         hacetabla1();
         hacerscroll();
@@ -162,38 +166,37 @@ public final class diagrama extends javax.swing.JDialog {
         jTextField1.setText(pres);
         jTextField2.setText(conta);
         int reg=0, i=0;
-        float prec, cant;
-        String partida1, descri="", rendimi="", cantidad="",precunit="", id="";
+        BigDecimal prec, cant, precunit=new BigDecimal("0.00"), cantidad=new BigDecimal("0.00"), rendimi=new BigDecimal("0.00");
+        String partida1, descri="", id="";
         String consulta = "SELECT numero, numegrup, id, descri, tipo, rendimi, cantidad, precunit FROM mppres WHERE mpre_id='"+pres+"' OR mpre_id IN "
                 + "         (SELECT id from mpres where mpres_id ='"+pres+"' GROUP BY id) ORDER BY numegrup";
         try {
             Statement st = (Statement) conex.createStatement();
             rst = st.executeQuery(consulta);
             rst.last();
-            reg = rst.getRow();
-            rst.first();
+            reg = rst.getRow();            
             partidas = new String[reg];
+            rst.first();
                 do
                 {
                     if(i==0){
                         descri = rst.getString("descri");
-                        rendimi = rst.getString("rendimi");
-                        cantidad = rst.getString("cantidad");
-                        precunit = rst.getString("precunit");
+                        rendimi = rst.getBigDecimal("rendimi");
+                        cantidad = rst.getBigDecimal("cantidad");
+                        precunit = rst.getBigDecimal("precunit");
                         id = rst.getString("id");
                     }
                     partidas[i] = rst.getString("numegrup");
                     i++;
                 }while(rst.next());
-                prec = Float.valueOf(precunit);
-                cant = Float.valueOf(cantidad);
-                prec = prec*cant;
-                prec = (float) Math.rint((prec+0.000001)*100)/100;
+                prec = precunit;
+                cant = cantidad;
+                prec = redondear.redondearDosDecimales(prec.multiply(cant));
                 jTextArea1.setText(descri);
                 jTextField2.setText(id);
-                jTextField7.setText(rendimi);
-                jTextField8.setText(cantidad);
-                jTextField9.setText(precunit);
+                jTextField7.setText(rendimi.toString());
+                jTextField8.setText(cantidad.toString());
+                jTextField9.setText(precunit.toString());
                 jTextField10.setText(String.valueOf(prec));
                 jTextField4.setText(id);
                 jTextField5.setText(jTextField10.getText());
@@ -265,7 +268,7 @@ public final class diagrama extends javax.swing.JDialog {
                                  filas[i]=dias+" días";
                                   System.out.println("dias "+dias);
                                  
-                              totaldias +=dias;
+                              totaldias = totaldias.add(dias);
                           }if(lapsos==1){
                               calculasemanas();
                               filas[i]=dias+" semanas";
@@ -323,6 +326,7 @@ public void mouseClicked(java.awt.event.MouseEvent e)
        jLabel10.add(scroll); 
      
     }
+    //Llena el vector de fechas por semanas, en el vector guarda la fecha del lunes de cada semana
     public void numdia(){
         int numdia=0;
          SimpleDateFormat formato = new SimpleDateFormat("dd/MM/yyyy");
@@ -346,9 +350,9 @@ public void mouseClicked(java.awt.event.MouseEvent e)
             formateada = formato.format(fecsem1);
             semanas[0]=formateada;
         }
-        for(int i=1;i<semana;i++){
+        for(int i=1;i<semana.intValue();i++){
             calen.setTime(fecsem1);
-            calen.add(Calendar.DATE, 7);
+            calen.add(Calendar.DATE, 7); //Suma 7 dias, los dias de la semana, a partir de la fecha menor
             fecsem1 = calen.getTime();
             formateada = formato.format(fecsem1);
             semanas[i]=formateada;
@@ -366,7 +370,7 @@ public void mouseClicked(java.awt.event.MouseEvent e)
         mes1 = String.valueOf(fechini.get(Calendar.MONTH)+1);
         anio1 = String.valueOf(fechini.get(Calendar.YEAR));
         fechini.set(Integer.parseInt(anio1), Integer.parseInt(mes1), 1);
-        while(i<meses){
+        while(i<meses.intValue()){
             int month = Integer.parseInt(mes1);
             if(month<10){
                 vecmes[i]="0"+mes1+"/"+anio1;
@@ -389,7 +393,7 @@ public void mouseClicked(java.awt.event.MouseEvent e)
       
         fechini.setTime(fechaini);
         anio1 = String.valueOf(fechini.get(Calendar.YEAR));
-        while(i<anios){         
+        while(i<anios.intValue()){         
             
                 vecanio[i]=anio1;
            
@@ -400,6 +404,7 @@ public void mouseClicked(java.awt.event.MouseEvent e)
         }
         
     }
+    //Guarda dos vectores paralelos donde se almacena en uno los dias de L a V y en el otro las respectivas fechas
     public void vectordias(){
         SimpleDateFormat formatoDelTexto = new SimpleDateFormat("dd/MM/yyyy");
         String[] letradias={"L","M","M","J","V","S","D"};
@@ -412,16 +417,16 @@ public void mouseClicked(java.awt.event.MouseEvent e)
             Logger.getLogger(diagrama.class.getName()).log(Level.SEVERE, null, ex);
         }
         int i=0, j=0;
-        int numdia = (int) (semana*7);
+        int numdia = (int) (semana.intValue()*7);
         while(i<numdia){
             j=0;
             while(j<7){
-                diasemana[i]=letradias[j];
+                diasemana[i]=letradias[j]; //Guarda el los dias de la semana
                 cal.setTime(fechas);
                 
                 fechas = cal.getTime();
                 formateada = formatoDelTexto.format(fechas);
-                fechasdias[i]=formateada;
+                fechasdias[i]=formateada; //Guarda las fechas correspondientes a cada dia.
                 cal.add(Calendar.DATE, 1);
                 fechas=cal.getTime();
                 j++;
@@ -555,12 +560,12 @@ public void mouseClicked(java.awt.event.MouseEvent e)
             fechaini = fecini1;
             fechafin = fecfin2;
             calculasemanas();
-            semana = (float) Math.ceil(dias)+1; // numero de semanas
-            if(semana<8){
-                semana=8;
+            semana = new BigDecimal(Math.ceil(dias.intValue())+1); // numero de semanas
+            if(semana.intValue()<8){
+                semana= new BigDecimal(8);
             }
-            numdias = (int) (semana*7);
-            semanas = new String[(int) semana];
+            numdias = (semana.intValue()*7);
+            semanas = new String[semana.intValue()];
             fechasdias = new String[numdias];
             diasemana = new String[numdias];
             matriz= new Object[numpartidas][numdias];
@@ -573,7 +578,7 @@ public void mouseClicked(java.awt.event.MouseEvent e)
             vectordias();
             iniciamatriz(numpartidas,numdias);
             System.out.println("numdias="+numdias);
-            jTextField12.setText(String.valueOf(semana*5));
+            jTextField12.setText(String.valueOf(semana.intValue()*5));
             int num = 0;
             do{
                 if(i>0){
@@ -669,7 +674,19 @@ public void mouseClicked(java.awt.event.MouseEvent e)
             }while(rste.next());
             dm.setDataVector(matriz, diasemana);
             }
-            
+         /*   for(int i=0;i<diasemana.length;i++){
+                System.out.print(diasemana[i]);
+            }
+            System.out.println();
+            for(int i=0;i<matriz.length;i++)
+            {
+                for(int j=0;j<matriz[i].length;j++)
+                {
+                    System.out.print(matriz[i][j]);
+                }
+                System.out.println();
+            }
+                    */   
            
         } catch (SQLException ex) {
             Logger.getLogger(diagrama.class.getName()).log(Level.SEVERE, null, ex);
@@ -685,16 +702,16 @@ public void mouseClicked(java.awt.event.MouseEvent e)
     }
     public void calculatotaldias(){
         //jtextfield13 para total de dias suma(cant/rendimi)
-        float cantdias=0;
+        BigDecimal cantdias=new BigDecimal("0.00");
         String selec = "SELECT SUM(cantidad/rendimi) FROM mppres WHERE "
                 + "(mpre_id='"+pres+"' OR mpre_id IN (SELECT id FROM mpres WHERE mpres_id='"+pres+"'))";
         try {
             Statement ste = (Statement) conex.createStatement();
             ResultSet rste = ste.executeQuery(selec);
             while(rste.next()){
-                cantdias = rste.getFloat(1);
+                cantdias = rste.getBigDecimal(1);
             }
-            jTextField13.setText(String.valueOf(Math.rint(cantdias*100)/100));
+            jTextField13.setText(redondear.redondearDosDecimales(cantdias).toString());
         } catch (SQLException ex) {
             Logger.getLogger(diagrama.class.getName()).log(Level.SEVERE, null, ex);
         }
@@ -706,7 +723,7 @@ public void mouseClicked(java.awt.event.MouseEvent e)
     String[] letradias={"L","M","M","J","V","S","D"};
      TableColumnModel cm = tabla.getColumnModel();
      int recor=0;
-     int semana1 = (int) semana;
+     int semana1 = semana.intValue();
      ColumnGroup [] cg = new ColumnGroup[semana1];
      for(int i=0;i<semana1;i++){    
          cg[i]=new ColumnGroup(semanas[i]);
@@ -761,13 +778,10 @@ public void mouseClicked(java.awt.event.MouseEvent e)
       tabla.repaint();
     }
      public void llenatabla2(){
-        
-        
-         
+   
      modelotabla2();
        tabla.setModel(dm);
        TableCellRenderer renderer = new RenderCelda();
-        
             tabla.setDefaultRenderer( Object.class, renderer );
        tabla.setSize(jPanel7.getWidth(), jPanel7.getHeight());     
     tabla.setAutoResizeMode(JTable.AUTO_RESIZE_OFF);
@@ -798,7 +812,7 @@ public void mouseClicked(java.awt.event.MouseEvent e)
      int recor=0;
      int enc=0, j=0;
              
-     int semana1 = (int) meses;
+     int semana1 = meses.intValue();
      ColumnGroup [] cg = new ColumnGroup[semana1];
      for(int i=0;i<semana1;i++){    
          cg[i]=new ColumnGroup(vecmes[i]);
@@ -833,7 +847,7 @@ public void mouseClicked(java.awt.event.MouseEvent e)
      int recor=0;
      int enc=0, j=0;
              
-     int semana1 = (int) anios;
+     int semana1 = anios.intValue();
      ColumnGroup [] cg = new ColumnGroup[semana1];
      for(int i=0;i<semana1;i++){    
          cg[i]=new ColumnGroup(vecanio[i]);
@@ -901,9 +915,9 @@ public void mouseClicked(java.awt.event.MouseEvent e)
             fechaini = fecini1;
             fechafin = fecfin2;
             calculames();
-            meses = (float) Math.ceil(dias)+1; // numero de meses
-            if(meses<6){
-                meses=6;
+            meses = new BigDecimal(Math.ceil(dias.intValue())+1); // numero de meses
+            if(meses.intValue()<6){
+                meses=new BigDecimal(6);
             }
             Calendar cal = Calendar.getInstance();
             Calendar calfin = Calendar.getInstance();
@@ -920,7 +934,7 @@ public void mouseClicked(java.awt.event.MouseEvent e)
                 Logger.getLogger(diagrama.class.getName()).log(Level.SEVERE, null, ex);
             }
             calfin.setTime(fechafin);
-            cal.add(Calendar.MONTH, (int) meses-1);
+            cal.add(Calendar.MONTH, meses.subtract(new BigDecimal(1)).intValue());
             mes = cal.get(Calendar.MONTH);
             anio = cal.get(Calendar.YEAR);
             int dis;
@@ -935,12 +949,12 @@ public void mouseClicked(java.awt.event.MouseEvent e)
                 Logger.getLogger(diagrama.class.getName()).log(Level.SEVERE, null, ex);
             }
             calculasemanas();
-            numsemanas = (int) (Math.ceil(dias)+1);
+            numsemanas = (int) Math.ceil(dias.intValue())+1;
            if(numsemanas<0)
                numsemanas=numsemanas*(-1);
             
             
-            vecmes = new String[(int) meses];
+            vecmes = new String[(int) meses.intValue()];
             semanaanio = new String[numsemanas]; // Tendra el numero de la semana del año
             semanames = new String[numsemanas];
             matriz= new Object[numpartidas][numsemanas];
@@ -959,7 +973,7 @@ public void mouseClicked(java.awt.event.MouseEvent e)
             
             iniciamatriz2(numpartidas,numsemanas);
             System.out.println("numsemanas="+numsemanas);
-            jTextField12.setText(String.valueOf(semana*5));
+            jTextField12.setText(String.valueOf(semana.intValue()*5));
             int num = 0;
             do{
                 if(i>0){
@@ -1159,15 +1173,15 @@ public void mouseClicked(java.awt.event.MouseEvent e)
             fechaini = fecini1;
             fechafin = fecfin2;
             calculaanio();
-            anios = (float) Math.ceil(dias)+1; // numero de semanas
-            if(anios<2){
-                anios=2;
+            anios = new BigDecimal(Math.ceil(dias.intValue())+1); // numero de semanas
+            if(anios.intValue()<2){
+                anios=new BigDecimal(2);
                         
             }
            
-            vecanio = new String[(int) anios];
+            vecanio = new String[ anios.intValue()];
            
-            matriz= new Object[numpartidas][(int)anios];
+            matriz= new Object[numpartidas][anios.intValue()];
             String formini,yearini,yearfin, formfin;
             int i = 0;
             int enc=0;
@@ -1183,9 +1197,9 @@ public void mouseClicked(java.awt.event.MouseEvent e)
            
             yearini = String.valueOf(fechini1.get(Calendar.YEAR));
             yearfin = String.valueOf(fechini1.get(Calendar.YEAR));
-            iniciamatriz2(numpartidas,(int) anios);
+            iniciamatriz2(numpartidas, anios.intValue());
             System.out.println("numeses="+numeses);
-            jTextField12.setText(String.valueOf(semana*5));
+            jTextField12.setText(String.valueOf(semana.intValue()*5));
             int num = 0;
             do{
                 if(i>0){
@@ -1204,13 +1218,13 @@ public void mouseClicked(java.awt.event.MouseEvent e)
                     int n=0;
                     int posdia=0;
                     enc=0;
-                    while(n<anios && enc==0){
+                    while(n<anios.intValue() && enc==0){
                         if(yearini.equals(vecanio[n])){
                             matriz[num][n]=new Integer(1);
                             int enc2=0;
                             int n2=n;
                             enc=1;
-                            while(n2<anios && enc2==0){
+                            while(n2<anios.intValue() && enc2==0){
                                 matriz[num][n2]=new Integer(1);
                                 if(yearini.equals(vecanio[n2])){
                                     enc2=1;
@@ -1264,13 +1278,13 @@ public void mouseClicked(java.awt.event.MouseEvent e)
                        
                        
                        enc=0;
-                       while(n<anios && enc==0){
+                       while(n<anios.intValue() && enc==0){
                         if(yearini.equals(vecanio[n])){
                             matriz[num][n]=new Integer(1);
                             int enc2=0;
                             int n2=n;
                             enc=1;
-                            while(n2<anios && enc2==0){
+                            while(n2<anios.intValue() && enc2==0){
                                 matriz[num][n2]=new Integer(1);
                                 if(yearfin.equals(vecanio[n2])){
                                     enc2=1;
@@ -1372,10 +1386,10 @@ public void mouseClicked(java.awt.event.MouseEvent e)
             fechaini = fecini1;
             fechafin = fecfin2;
             calculaanio();
-            anios = (float) Math.ceil(dias)+1; // numero de semanas
+            anios = new BigDecimal(Math.ceil(dias.intValue())+1); // numero de semanas
             
-            numeses = (int) (anios*12);
-            vecanio = new String[(int) anios];
+            numeses =(anios.intValue()*12);
+            vecanio = new String[(int) anios.intValue()];
             vecmeses = new String[(int) numeses];
             vecmesanio = new String[(int) numeses];
             matriz= new Object[numpartidas][numeses];
@@ -1407,7 +1421,7 @@ public void mouseClicked(java.awt.event.MouseEvent e)
             yearfin = String.valueOf(fechini1.get(Calendar.YEAR));
             iniciamatriz2(numpartidas,numeses);
             System.out.println("numeses="+numeses);
-            jTextField12.setText(String.valueOf(semana*5));
+            jTextField12.setText(String.valueOf(semana.intValue()*5));
             int num = 0;
             do{
                 if(i>0){
@@ -1692,6 +1706,7 @@ public void mouseClicked(java.awt.event.MouseEvent e)
     // <editor-fold defaultstate="collapsed" desc="Generated Code">//GEN-BEGIN:initComponents
     private void initComponents() {
 
+        jScrollPane5 = new javax.swing.JScrollPane();
         jPanel1 = new javax.swing.JPanel();
         jPanel4 = new javax.swing.JPanel();
         jLabel1 = new javax.swing.JLabel();
@@ -1760,6 +1775,10 @@ public void mouseClicked(java.awt.event.MouseEvent e)
             }
         });
 
+        jScrollPane5.setPreferredSize(new java.awt.Dimension(900, 600));
+
+        jPanel1.setPreferredSize(new java.awt.Dimension(1200, 500));
+
         jPanel4.setBackground(new java.awt.Color(100, 100, 100));
 
         jLabel1.setFont(new java.awt.Font("Tahoma", 1, 11)); // NOI18N
@@ -1771,11 +1790,13 @@ public void mouseClicked(java.awt.event.MouseEvent e)
         jPanel4.setLayout(jPanel4Layout);
         jPanel4Layout.setHorizontalGroup(
             jPanel4Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addComponent(jLabel1, javax.swing.GroupLayout.DEFAULT_SIZE, 1175, Short.MAX_VALUE)
+            .addGroup(jPanel4Layout.createSequentialGroup()
+                .addComponent(jLabel1, javax.swing.GroupLayout.DEFAULT_SIZE, 1212, Short.MAX_VALUE)
+                .addContainerGap())
         );
         jPanel4Layout.setVerticalGroup(
             jPanel4Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addComponent(jLabel1, javax.swing.GroupLayout.DEFAULT_SIZE, 45, Short.MAX_VALUE)
+            .addComponent(jLabel1, javax.swing.GroupLayout.PREFERRED_SIZE, 47, javax.swing.GroupLayout.PREFERRED_SIZE)
         );
 
         cancelButton.setIcon(new javax.swing.ImageIcon(getClass().getResource("/winspapus/imagenes/eliminar.png"))); // NOI18N
@@ -1787,6 +1808,11 @@ public void mouseClicked(java.awt.event.MouseEvent e)
 
         jButton3.setIcon(new javax.swing.ImageIcon(getClass().getResource("/winspapus/imagenes/nuevo.png"))); // NOI18N
         jButton3.setToolTipText("Generar Reporte");
+        jButton3.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jButton3ActionPerformed(evt);
+            }
+        });
 
         okButton.setIcon(new javax.swing.ImageIcon(getClass().getResource("/winspapus/imagenes/guardar.png"))); // NOI18N
         okButton.addMouseListener(new java.awt.event.MouseAdapter() {
@@ -1941,7 +1967,7 @@ public void mouseClicked(java.awt.event.MouseEvent e)
                         .addComponent(jLabel9)
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                         .addComponent(jCheckBox1)
-                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 47, Short.MAX_VALUE)
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 69, Short.MAX_VALUE)
                         .addComponent(jLabel11))
                     .addGroup(jPanel3Layout.createSequentialGroup()
                         .addComponent(jScrollPane4, javax.swing.GroupLayout.PREFERRED_SIZE, 367, javax.swing.GroupLayout.PREFERRED_SIZE)
@@ -1950,7 +1976,7 @@ public void mouseClicked(java.awt.event.MouseEvent e)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addGroup(jPanel3Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                     .addComponent(jTextField8, javax.swing.GroupLayout.PREFERRED_SIZE, 99, javax.swing.GroupLayout.PREFERRED_SIZE)
-                    .addComponent(jTextField7, javax.swing.GroupLayout.DEFAULT_SIZE, 99, Short.MAX_VALUE))
+                    .addComponent(jTextField7, javax.swing.GroupLayout.DEFAULT_SIZE, 120, Short.MAX_VALUE))
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addGroup(jPanel3Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING, false)
                     .addGroup(javax.swing.GroupLayout.Alignment.LEADING, jPanel3Layout.createSequentialGroup()
@@ -1969,7 +1995,7 @@ public void mouseClicked(java.awt.event.MouseEvent e)
                         .addGroup(jPanel3Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
                             .addComponent(jTextField11, javax.swing.GroupLayout.Alignment.TRAILING)
                             .addComponent(jTextField10, javax.swing.GroupLayout.Alignment.TRAILING, javax.swing.GroupLayout.PREFERRED_SIZE, 124, javax.swing.GroupLayout.PREFERRED_SIZE))))
-                .addContainerGap(11, Short.MAX_VALUE))
+                .addContainerGap())
         );
         jPanel3Layout.setVerticalGroup(
             jPanel3Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
@@ -2079,13 +2105,13 @@ public void mouseClicked(java.awt.event.MouseEvent e)
         jPanel7.setLayout(jPanel7Layout);
         jPanel7Layout.setHorizontalGroup(
             jPanel7Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addComponent(jScrollPane2, javax.swing.GroupLayout.DEFAULT_SIZE, 724, Short.MAX_VALUE)
+            .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, jPanel7Layout.createSequentialGroup()
+                .addComponent(jScrollPane2, javax.swing.GroupLayout.DEFAULT_SIZE, 714, Short.MAX_VALUE)
+                .addContainerGap())
         );
         jPanel7Layout.setVerticalGroup(
             jPanel7Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGroup(jPanel7Layout.createSequentialGroup()
-                .addComponent(jScrollPane2, javax.swing.GroupLayout.DEFAULT_SIZE, 352, Short.MAX_VALUE)
-                .addContainerGap())
+            .addComponent(jScrollPane2, javax.swing.GroupLayout.DEFAULT_SIZE, 380, Short.MAX_VALUE)
         );
 
         jScrollPane1.addMouseWheelListener(new java.awt.event.MouseWheelListener() {
@@ -2155,17 +2181,16 @@ public void mouseClicked(java.awt.event.MouseEvent e)
         jPanel6Layout.setHorizontalGroup(
             jPanel6Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, jPanel6Layout.createSequentialGroup()
-                .addComponent(jScrollPane1, javax.swing.GroupLayout.DEFAULT_SIZE, 431, Short.MAX_VALUE)
+                .addComponent(jScrollPane1, javax.swing.GroupLayout.DEFAULT_SIZE, 473, Short.MAX_VALUE)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addComponent(jPanel7, javax.swing.GroupLayout.PREFERRED_SIZE, 724, javax.swing.GroupLayout.PREFERRED_SIZE))
         );
         jPanel6Layout.setVerticalGroup(
             jPanel6Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(jPanel6Layout.createSequentialGroup()
-                .addGroup(jPanel6Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                    .addComponent(jPanel7, javax.swing.GroupLayout.PREFERRED_SIZE, 363, javax.swing.GroupLayout.PREFERRED_SIZE)
-                    .addComponent(jScrollPane1, javax.swing.GroupLayout.DEFAULT_SIZE, 363, Short.MAX_VALUE))
-                .addContainerGap())
+                .addComponent(jPanel7, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+            .addComponent(jScrollPane1, javax.swing.GroupLayout.DEFAULT_SIZE, 391, Short.MAX_VALUE)
         );
 
         jScrollPane3.setViewportView(jPanel6);
@@ -2229,7 +2254,6 @@ public void mouseClicked(java.awt.event.MouseEvent e)
         jPanel5.setLayout(jPanel5Layout);
         jPanel5Layout.setHorizontalGroup(
             jPanel5Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addComponent(jScrollPane3, javax.swing.GroupLayout.Alignment.TRAILING, javax.swing.GroupLayout.DEFAULT_SIZE, 1163, Short.MAX_VALUE)
             .addGroup(jPanel5Layout.createSequentialGroup()
                 .addGroup(jPanel5Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                     .addGroup(jPanel5Layout.createSequentialGroup()
@@ -2240,7 +2264,7 @@ public void mouseClicked(java.awt.event.MouseEvent e)
                         .addComponent(jLabel5)
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                         .addGroup(jPanel5Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                            .addComponent(jTextField4, javax.swing.GroupLayout.DEFAULT_SIZE, 326, Short.MAX_VALUE)
+                            .addComponent(jTextField4, javax.swing.GroupLayout.DEFAULT_SIZE, 336, Short.MAX_VALUE)
                             .addGroup(jPanel5Layout.createSequentialGroup()
                                 .addComponent(jTextField13, javax.swing.GroupLayout.PREFERRED_SIZE, 95, javax.swing.GroupLayout.PREFERRED_SIZE)
                                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
@@ -2252,17 +2276,17 @@ public void mouseClicked(java.awt.event.MouseEvent e)
                     .addGroup(jPanel5Layout.createSequentialGroup()
                         .addComponent(jLabel8)
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                        .addComponent(jTextField5, javax.swing.GroupLayout.DEFAULT_SIZE, 178, Short.MAX_VALUE))
+                        .addComponent(jTextField5, javax.swing.GroupLayout.DEFAULT_SIZE, 186, Short.MAX_VALUE))
                     .addGroup(jPanel5Layout.createSequentialGroup()
                         .addComponent(jLabel6)
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                        .addComponent(jDateChooser1, javax.swing.GroupLayout.DEFAULT_SIZE, 179, Short.MAX_VALUE)))
+                        .addComponent(jDateChooser1, javax.swing.GroupLayout.DEFAULT_SIZE, 187, Short.MAX_VALUE)))
                 .addGroup(jPanel5Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
                     .addGroup(jPanel5Layout.createSequentialGroup()
                         .addGap(68, 68, 68)
                         .addComponent(jLabel17)
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                        .addComponent(jTextField6, javax.swing.GroupLayout.DEFAULT_SIZE, 169, Short.MAX_VALUE))
+                        .addComponent(jTextField6, javax.swing.GroupLayout.DEFAULT_SIZE, 179, Short.MAX_VALUE))
                     .addGroup(jPanel5Layout.createSequentialGroup()
                         .addGap(98, 98, 98)
                         .addComponent(jLabel7)
@@ -2280,8 +2304,9 @@ public void mouseClicked(java.awt.event.MouseEvent e)
                         .addGap(6, 6, 6)
                         .addComponent(jLabel18)
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                        .addComponent(jComboBox1, 0, 111, Short.MAX_VALUE)))
+                        .addComponent(jComboBox1, 0, 125, Short.MAX_VALUE)))
                 .addContainerGap())
+            .addComponent(jScrollPane3, javax.swing.GroupLayout.Alignment.TRAILING, javax.swing.GroupLayout.DEFAULT_SIZE, 1205, Short.MAX_VALUE)
         );
         jPanel5Layout.setVerticalGroup(
             jPanel5Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
@@ -2312,46 +2337,49 @@ public void mouseClicked(java.awt.event.MouseEvent e)
                     .addComponent(jComboBox1, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                     .addComponent(jLabel18))
                 .addGap(18, 18, 18)
-                .addComponent(jScrollPane3, javax.swing.GroupLayout.PREFERRED_SIZE, 354, javax.swing.GroupLayout.PREFERRED_SIZE))
+                .addComponent(jScrollPane3, javax.swing.GroupLayout.DEFAULT_SIZE, 380, Short.MAX_VALUE))
         );
 
         javax.swing.GroupLayout jPanel1Layout = new javax.swing.GroupLayout(jPanel1);
         jPanel1.setLayout(jPanel1Layout);
         jPanel1Layout.setHorizontalGroup(
             jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addComponent(jPanel4, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-            .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, jPanel1Layout.createSequentialGroup()
-                .addContainerGap(947, Short.MAX_VALUE)
-                .addComponent(jPanel2, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addContainerGap())
-            .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, jPanel1Layout.createSequentialGroup()
-                .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
-                    .addComponent(jPanel5, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                    .addComponent(jPanel3, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
-                .addContainerGap())
+            .addGroup(jPanel1Layout.createSequentialGroup()
+                .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                    .addComponent(jPanel4, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                    .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, jPanel1Layout.createSequentialGroup()
+                        .addGap(15, 15, 15)
+                        .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
+                            .addComponent(jPanel2, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                            .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
+                                .addComponent(jPanel3, javax.swing.GroupLayout.Alignment.LEADING, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                                .addComponent(jPanel5, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)))))
+                .addGap(34, 34, 34))
         );
         jPanel1Layout.setVerticalGroup(
             jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(jPanel1Layout.createSequentialGroup()
-                .addComponent(jPanel4, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addComponent(jPanel4, javax.swing.GroupLayout.DEFAULT_SIZE, 50, Short.MAX_VALUE)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addComponent(jPanel3, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                .addComponent(jPanel5, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addComponent(jPanel5, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addComponent(jPanel2, javax.swing.GroupLayout.PREFERRED_SIZE, 49, javax.swing.GroupLayout.PREFERRED_SIZE)
                 .addContainerGap())
         );
 
+        jScrollPane5.setViewportView(jPanel1);
+
         javax.swing.GroupLayout layout = new javax.swing.GroupLayout(getContentPane());
         getContentPane().setLayout(layout);
         layout.setHorizontalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addComponent(jPanel1, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+            .addComponent(jScrollPane5, javax.swing.GroupLayout.DEFAULT_SIZE, 1258, Short.MAX_VALUE)
         );
         layout.setVerticalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addComponent(jPanel1, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+            .addComponent(jScrollPane5, javax.swing.GroupLayout.DEFAULT_SIZE, 701, Short.MAX_VALUE)
         );
 
         pack();
@@ -2373,7 +2401,7 @@ public void mouseClicked(java.awt.event.MouseEvent e)
                 + "OR mpre_id IN (SELECT id FROM mpres WHERE mpres_id='"+pres+"')) AND cron=1";
         String id=null, descri="";        
         int redondeo=0, rango=0, lapsos=0;
-        float precunit=0, precasu=0, rendimi=0, cantidad = 0;        
+        BigDecimal precunit=new BigDecimal("0.00"), precasu=new BigDecimal("0.00"), rendimi=new BigDecimal("0.00"), cantidad = new BigDecimal("0.00");        
         Date fecini=null, fecfin=null;
         
         try {
@@ -2385,15 +2413,15 @@ public void mouseClicked(java.awt.event.MouseEvent e)
                 fecfin = rsts.getDate("fechafin");
                 rango = rsts.getInt("rango");
                 lapsos = rsts.getInt("lapso");
-                precunit = rsts.getFloat("precunit");
-                precasu = rsts.getFloat("precasu");
+                precunit = rsts.getBigDecimal("precunit");
+                precasu = rsts.getBigDecimal("precasu");
                 redondeo = rsts.getInt("redondeo");
-                rendimi = rsts.getFloat("rendimi");  
-                cantidad = rsts.getInt("cantidad");
+                rendimi = rsts.getBigDecimal("rendimi");  
+                cantidad = rsts.getBigDecimal("cantidad");
                 descri = rsts.getString("descri");
             }
-            float numedias =cantidad/rendimi ;
-            jTextField3.setText(String.valueOf(Math.rint(numedias*100)/100));
+            BigDecimal numedias =cantidad.divide(rendimi,2,BigDecimal.ROUND_HALF_UP) ;
+            jTextField3.setText(String.valueOf(redondear.redondearDosDecimales(numedias)));
             jTextArea1.setText(descri);
             jTextField4.setText(id);
             jDateChooser1.setDate(fecini);
@@ -2414,7 +2442,7 @@ public void mouseClicked(java.awt.event.MouseEvent e)
             fechafin = fecfin;
             if(lapso==0){
                 calculadias();
-            //    costolapso = (float) Math.rint(costo/(dias*5)*100)/100;
+            //    costolapso = (BigDecimal) Math.rint(costo/(dias*5)*100)/100;
                
             }
              if(lapso==1){
@@ -2502,7 +2530,7 @@ public void mouseClicked(java.awt.event.MouseEvent e)
         jButton2.setEnabled(false);
         jButton1.setEnabled(true);
         int redondeo = 0;
-        float cant = 0, prec = 0;
+        BigDecimal cant = new BigDecimal("0.00"), prec = new BigDecimal("0.00");
         System.out.println("cambia");
         lapso = jComboBox1.getSelectedIndex();
         
@@ -2521,14 +2549,13 @@ public void mouseClicked(java.awt.event.MouseEvent e)
                 precio = rste.getString("precunit");
                 redondeo = rste.getInt("redondeo");
             }
-            cant = Float.valueOf(cantidad);
+            cant = new BigDecimal(cantidad);
             if(redondeo==0){
-            prec = Float.valueOf(precio);
+            prec = new BigDecimal(precio);
             }else{
-                prec = Float.valueOf(precasu);
+                prec = new BigDecimal(precasu);
             }
-            prec = cant*prec;
-            prec = (float) Math.rint(((prec+0.000001)*100)/100);
+            prec = redondear.redondearDosDecimales(cant.multiply(prec));
             jTextField2.setText(codicove);
             jTextArea1.setText(descri);
             jTextField7.setText(rendimi);
@@ -2542,8 +2569,8 @@ public void mouseClicked(java.awt.event.MouseEvent e)
             if(lapso==0){
                 //Debe verificar Dias habiles, aqui solo se quitan fines de semana
                 calculasemanas();
-                dias= dias*5; // Dias sin fines de semana 
-                costolapso = (float) Math.rint(((costo/dias)*100)/100);
+                dias= dias.multiply(new BigDecimal("5")); // Dias sin fines de semana 
+                costolapso = costo.divide(dias,2,BigDecimal.ROUND_HALF_UP);
             }
              if(lapso==1){
                 calculasemanas();
@@ -2626,17 +2653,17 @@ public void mouseClicked(java.awt.event.MouseEvent e)
 
     public void calculadias(){
        
-       dias = (fechafin.getTime()-fechaini.getTime())/mil+1;
+       dias = new BigDecimal((fechafin.getTime()-fechaini.getTime())/mil+1);
        System.out.println("costo "+costo+" dias "+dias);
-        costolapso = (float) Math.rint(((costo/dias)*100)/100);
-        if(costolapso>costo){
+        costolapso = costo.divide(dias,2, BigDecimal.ROUND_HALF_UP);
+        if(costolapso.doubleValue()>costo.doubleValue()){
             costolapso=costo;
         }
                 
     }
     
     public void calculasemanas(){
-        float semana1=0, semana2=0;
+        BigDecimal semana1=new BigDecimal("0.00"), semana2=new BigDecimal("0.00");
         Calendar c = Calendar.getInstance();
         Calendar cfin = Calendar.getInstance();
         Calendar paraanio = Calendar.getInstance();
@@ -2644,59 +2671,61 @@ public void mouseClicked(java.awt.event.MouseEvent e)
         DateFormat sdf = new SimpleDateFormat("dd/MM/yyyy");
         c.setTime(fechaini);
         cfin.setTime(fechafin);
-        float year1, year2, anios1;
-        year1 = c.get(Calendar.YEAR);
-        year2 = cfin.get(Calendar.YEAR);
-        paraanio.set((int)year1, 0, 1);
-        anios1 = year2-year1;
+        BigDecimal year1, year2, anios1;
+        year1 = new BigDecimal( c.get(Calendar.YEAR));
+        year2 = new BigDecimal(cfin.get(Calendar.YEAR));
+        paraanio.set(year1.intValue(), 0, 1);
+        anios1 = year2.subtract(year1);
         numsemana= paraanio.getActualMaximum(Calendar.WEEK_OF_YEAR);
-        if(anios1==0){
-            semana1 = c.get(Calendar.WEEK_OF_YEAR);
-            semana2 = cfin.get(Calendar.WEEK_OF_YEAR);
+        if(anios1.intValue()==0){
+            semana1 = new BigDecimal(c.get(Calendar.WEEK_OF_YEAR));
+            semana2 = new BigDecimal(cfin.get(Calendar.WEEK_OF_YEAR));
         }else{
-            if(anios1>0){
-                semana1 = c.get(Calendar.WEEK_OF_YEAR);
-                semana2 = cfin.get(Calendar.WEEK_OF_YEAR);
-                semana2 = semana2 + numsemana;
+            if(anios1.intValue()>0){
+                semana1 = new BigDecimal(c.get(Calendar.WEEK_OF_YEAR));
+                semana2 = new BigDecimal(cfin.get(Calendar.WEEK_OF_YEAR));
+                semana2 = semana2.add(new BigDecimal(numsemana));
             }
         }
-        dias = semana2-semana1;
+        dias = semana2.subtract(semana1);
         System.out.println("costo "+costo+" semanas "+dias);
-        costolapso = (float) Math.rint(((costo/dias)*100)/100);
-        if(costolapso>costo){
+        if(dias.intValue()<=0)
+            dias=new BigDecimal(1);
+        costolapso = (costo.divide(dias,2,BigDecimal.ROUND_HALF_UP));
+        if(costolapso.doubleValue()>costo.doubleValue()){
             costolapso=costo;
         }
         System.out.println("semanas: "+dias);
     }
     public void calculames(){
-        float mes1, mes2;
+        BigDecimal mes1, mes2;
         Calendar c = Calendar.getInstance();
         Calendar cfin = Calendar.getInstance();
         DateFormat sdf = new SimpleDateFormat("dd/MM/yyyy");
         c.setTime(fechaini);
         cfin.setTime(fechafin);
-        mes1 = c.get(Calendar.MONTH);
-        mes2 = cfin.get(Calendar.MONTH);
-        dias = (mes2-mes1)+1; // Nro. de meses
+        mes1 = new BigDecimal(c.get(Calendar.MONTH));
+        mes2 = new BigDecimal(cfin.get(Calendar.MONTH));
+        dias = new BigDecimal((mes2.intValue()-mes1.intValue())+1); // Nro. de meses
         
-        costolapso = (float) Math.rint(((costo/(dias))*100)/100);
-        if(costolapso>costo){
+        costolapso = costo.divide(dias,2, BigDecimal.ROUND_HALF_UP);
+        if(costolapso.doubleValue()>costo.doubleValue()){
             costolapso=costo;
         }
         System.out.println("semanas: "+dias);
     }
     public void calculaanio(){
-        float mes1, mes2;
+        BigDecimal mes1, mes2;
         Calendar c = Calendar.getInstance();
         Calendar cfin = Calendar.getInstance();
         DateFormat sdf = new SimpleDateFormat("dd/MM/yyyy");
         c.setTime(fechaini);
         cfin.setTime(fechafin);
-        mes1 = c.get(Calendar.YEAR);
-        mes2 = cfin.get(Calendar.YEAR);
-        dias = (mes2-mes1)+1; // Nro. de años
-        costolapso = (float) Math.rint(((costo/dias)*100)/100);
-        if(costolapso>costo){
+        mes1 = new BigDecimal(c.get(Calendar.YEAR));
+        mes2 = new BigDecimal(cfin.get(Calendar.YEAR));
+        dias = new BigDecimal((mes2.intValue()-mes1.intValue())+1); // Nro. de años
+        costolapso = costo.divide(dias,2, BigDecimal.ROUND_HALF_UP);
+        if(costolapso.doubleValue()>costo.doubleValue()){
             costolapso=costo;
         }
         System.out.println("semanas: "+dias);
@@ -2705,7 +2734,7 @@ public void mouseClicked(java.awt.event.MouseEvent e)
       
        SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd");
        String fecini=null, fecfin=null;
-       float semanas1=0, meses1=0;
+       BigDecimal semanas1=new BigDecimal("0.00"), meses1=new BigDecimal("0.00");
        int contador=0;
         numpartida = jSpinner1.getValue().toString();//numpartida numegrup
        String enc = "SELECT count(*) FROM mppres WHERE numegrup="+numpartida+" "
@@ -2726,7 +2755,7 @@ public void mouseClicked(java.awt.event.MouseEvent e)
             fechaini = jDateChooser1.getDate();
             fechafin = jDateChooser2.getDate();
             lapso = jComboBox1.getSelectedIndex();
-            costo = Float.valueOf(jTextField5.getText().toString());
+            costo = new BigDecimal(jTextField5.getText().toString());
             if(lapso==0){
                 calculadias();               
             }
@@ -2761,7 +2790,7 @@ public void mouseClicked(java.awt.event.MouseEvent e)
 
     private void jComboBox1ItemStateChanged(java.awt.event.ItemEvent evt) {//GEN-FIRST:event_jComboBox1ItemStateChanged
         lapso = jComboBox1.getSelectedIndex();
-        costo = Float.valueOf(jTextField5.getText().toString());
+        costo = new BigDecimal(jTextField5.getText().toString());
         if(lapso==0){
             calculadias();
             hacetabla1();
@@ -2797,7 +2826,8 @@ public void mouseClicked(java.awt.event.MouseEvent e)
         fechai = format.format(fecini);
         fechaf = format.format(fecfin);
         String update = "UPDATE mppres SET fechaini='"+fechai+"', fechafin ='"+fechaf+"' "
-                + "WHERE numegrup="+partidaselect+ " AND (mpre_id='"+pres+"' OR (SELECT id FROM mpres WHERE mpres_id='"+pres+"'))";     
+                + "WHERE numegrup="+partidaselect+ " AND (mpre_id='"+pres+"' OR mpre_id IN "
+                + "(SELECT id FROM mpres WHERE mpres_id='"+pres+"'))";     
         try {
             Statement stupdate = (Statement) conex.createStatement();
             stupdate.execute(update);
@@ -2838,7 +2868,7 @@ public void mouseClicked(java.awt.event.MouseEvent e)
     private void jDateChooser2MousePressed(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_jDateChooser2MousePressed
          
         lapso = jComboBox1.getSelectedIndex();
-            costo = Float.valueOf(jTextField5.getText().toString());
+            costo = new BigDecimal(jTextField5.getText().toString());
             if(lapso==0){//DIAS
                 calculadias();
                 hacetabla1();
@@ -2866,7 +2896,7 @@ public void mouseClicked(java.awt.event.MouseEvent e)
 
     private void jDateChooser2InputMethodTextChanged(java.awt.event.InputMethodEvent evt) {//GEN-FIRST:event_jDateChooser2InputMethodTextChanged
          lapso = jComboBox1.getSelectedIndex();
-            costo = Float.valueOf(jTextField5.getText().toString());
+            costo = new BigDecimal(jTextField5.getText().toString());
             if(lapso==0){//DIAS
                 calculadias();               
             }
@@ -2905,11 +2935,38 @@ System.out.println("Si soy el de la table 1");        // TODO add your handling 
     private void jButton5ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton5ActionPerformed
         int filaselect = jTable1.getSelectedRow();
         String id = jTable1.getValueAt(filaselect, 0).toString();
+        String consultanumero = "SELECT numero, rango FROM mppres WHERE"
+                + " numegrup="+id+"  AND (mpre_id='"+pres+"' OR mpre_id IN "
+                + "(SELECT id FROM mpres WHERE mpres_id='"+pres+"'))";
+        String numeropart ="";
+        int rango=0;
+        try {
+            Statement stnumero = (Statement) conex.createStatement();
+            ResultSet rstnumero = stnumero.executeQuery(consultanumero);
+            while(rstnumero.next())
+            {
+                numeropart = rstnumero.getString("numero");
+                rango = rstnumero.getInt("rango");
+            }
+        } catch (SQLException ex) {
+            Logger.getLogger(diagrama.class.getName()).log(Level.SEVERE, null, ex);
+        }
+        
         String sql = "UPDATE mppres SET cron=0, lapso=0, rango=0 WHERE "
-                + "numegrup="+id+" AND mpre_id='"+pres+"' OR mpre_id IN "
-                + "(SELECT id FROM mpres WHERE mpres_id='"+pres+"')";
+                + "numegrup="+id+" AND (mpre_id='"+pres+"' OR mpre_id IN "
+                + "(SELECT id FROM mpres WHERE mpres_id='"+pres+"'))";
         int op=JOptionPane.showConfirmDialog(null, "¿Desea quitar la partida del cronograma?");
         if(op == JOptionPane.YES_OPTION){
+            if(rango==1){
+        String borrarangos ="DELETE FROM rcppres WHERE mppres_id="+numeropart+" AND "
+                + "(mpre_id = '"+pres+"' OR mpre_id IN (SELECT id FROM mpres WHERE mpres_id='"+pres+"'))";
+            try {
+                Statement borra = (Statement) conex.createStatement();
+                borra.execute(borrarangos);
+            } catch (SQLException ex) {
+                Logger.getLogger(diagrama.class.getName()).log(Level.SEVERE, null, ex);
+            }
+        }
             try {
                 Statement st = (Statement) conex.createStatement();
                 st.execute(sql);
@@ -2927,6 +2984,14 @@ System.out.println("Si soy el de la table 1");        // TODO add your handling 
     private void okButtonMouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_okButtonMouseClicked
         doClose(RET_OK);        // TODO add your handling code here:
     }//GEN-LAST:event_okButtonMouseClicked
+
+    private void jButton3ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton3ActionPerformed
+        creacronograma crono = new creacronograma(null, true, conex, pres, totalpres);
+        crono.setBounds((prin.getWidth()/2)-400/2, (prin.getHeight()/2)-250/2, 450, 300);
+        crono.setVisible(true);
+  
+        // TODO add your handling code here:
+    }//GEN-LAST:event_jButton3ActionPerformed
 
     private void doClose(int retStatus) {
         returnStatus = retStatus;
@@ -2980,6 +3045,7 @@ System.out.println("Si soy el de la table 1");        // TODO add your handling 
     private javax.swing.JScrollPane jScrollPane2;
     private javax.swing.JScrollPane jScrollPane3;
     private javax.swing.JScrollPane jScrollPane4;
+    private javax.swing.JScrollPane jScrollPane5;
     private javax.swing.JSpinner jSpinner1;
     private javax.swing.JTable jTable1;
     private javax.swing.JTextArea jTextArea1;

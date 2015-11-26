@@ -24,6 +24,7 @@ import javax.swing.AbstractAction;
 import javax.swing.ActionMap;
 import javax.swing.InputMap;
 import javax.swing.JComponent;
+import javax.swing.JOptionPane;
 import javax.swing.KeyStroke;
 
 /**
@@ -61,6 +62,7 @@ public final class Versiones extends javax.swing.JDialog {
         try {
             buscar_versiones();
         } catch (SQLException ex) {
+            JOptionPane.showMessageDialog(parent, "Error al consultar sus versiones disponibles "+ex);
             Logger.getLogger(Versiones.class.getName()).log(Level.SEVERE, null, ex);
         }
         // Close the dialog when Esc is pressed
@@ -118,6 +120,7 @@ public final class Versiones extends javax.swing.JDialog {
         cancelButton = new javax.swing.JButton();
         jComboBox1 = new javax.swing.JComboBox();
         jLabel1 = new javax.swing.JLabel();
+        jLabel2 = new javax.swing.JLabel();
 
         addWindowListener(new java.awt.event.WindowAdapter() {
             public void windowClosing(java.awt.event.WindowEvent evt) {
@@ -142,6 +145,13 @@ public final class Versiones extends javax.swing.JDialog {
 
         jLabel1.setText("Seleccione la Versión que desea Instalar:");
 
+        jLabel2.setBackground(new java.awt.Color(91, 91, 95));
+        jLabel2.setFont(new java.awt.Font("Tahoma", 1, 11)); // NOI18N
+        jLabel2.setForeground(new java.awt.Color(255, 255, 255));
+        jLabel2.setHorizontalAlignment(javax.swing.SwingConstants.CENTER);
+        jLabel2.setText("Versiones Disponibles");
+        jLabel2.setOpaque(true);
+
         javax.swing.GroupLayout layout = new javax.swing.GroupLayout(getContentPane());
         getContentPane().setLayout(layout);
         layout.setHorizontalGroup(
@@ -157,11 +167,13 @@ public final class Versiones extends javax.swing.JDialog {
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                         .addComponent(cancelButton, javax.swing.GroupLayout.PREFERRED_SIZE, 45, javax.swing.GroupLayout.PREFERRED_SIZE)))
                 .addContainerGap())
+            .addComponent(jLabel2, javax.swing.GroupLayout.DEFAULT_SIZE, 513, Short.MAX_VALUE)
         );
         layout.setVerticalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, layout.createSequentialGroup()
-                .addContainerGap(49, Short.MAX_VALUE)
+                .addComponent(jLabel2, javax.swing.GroupLayout.PREFERRED_SIZE, 45, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
                 .addComponent(jLabel1)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addComponent(jComboBox1, javax.swing.GroupLayout.PREFERRED_SIZE, 21, javax.swing.GroupLayout.PREFERRED_SIZE)
@@ -183,7 +195,7 @@ public final class Versiones extends javax.swing.JDialog {
         String idcompra=versioncompra[0];
         //ESCRIBIR EN INSTALACION DE SPAPU
         //*------------INSERTAR EQUIPO EN BD DEL SERVIDOR HOSTING
-        maquina maqui = new maquina(prin, true, conex, idcompra,dd,tm,licencia, prin, conexion);
+        maquina maqui = new maquina(prin, true, conex, idcompra,dd,tm,licencia, prin, conexion,usuario_id);
         int x = (prin.getWidth()/2)-400/2;
         int y = (prin.getHeight()/2)-300/2;
         maqui.setBounds(x, y, 400, 300);
@@ -216,6 +228,7 @@ public final class Versiones extends javax.swing.JDialog {
     private javax.swing.JButton cancelButton;
     private javax.swing.JComboBox jComboBox1;
     private javax.swing.JLabel jLabel1;
+    private javax.swing.JLabel jLabel2;
     private javax.swing.JButton okButton;
     // End of variables declaration//GEN-END:variables
     private int returnStatus = RET_CANCEL;

@@ -1,0 +1,418 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<jasperReport xmlns="http://jasperreports.sourceforge.net/jasperreports" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports http://jasperreports.sourceforge.net/xsd/jasperreport.xsd" name="generalPago" language="groovy" pageWidth="612" pageHeight="792" columnWidth="555" leftMargin="20" rightMargin="20" topMargin="20" bottomMargin="20" uuid="d98fedb3-2e84-48c7-89b1-84d394d8873f">
+	<property name="ireport.zoom" value="1.2100000000000006"/>
+	<property name="ireport.x" value="0"/>
+	<property name="ireport.y" value="0"/>
+	<parameter name="mpres" class="java.lang.String">
+		<defaultValueExpression><![CDATA[]]></defaultValueExpression>
+	</parameter>
+	<parameter name="totalmat" class="java.math.BigDecimal"/>
+	<parameter name="totaleq" class="java.math.BigDecimal"/>
+	<parameter name="totalmano" class="java.math.BigDecimal"/>
+	<parameter name="totalAsumidos" class="java.math.BigDecimal"/>
+	<parameter name="totalBono" class="java.math.BigDecimal"/>
+	<queryString>
+		<![CDATA[SELECT
+     IFNULL(mprops.`logo`,'') AS mprops_logo,
+     IFNULL(mconts.`logo`,'') AS mconts_logo,
+     mpres.`nombre` AS mpres_nombre,
+     mpres.`ubicac` AS mpres_ubicac,
+     mconts.`encabe` AS mconts_encabe,
+     mpres.`nrocon` AS mpres_nrocon,
+     mpres.`porgam` AS mpres_porgam,
+     mpres.`poruti` AS mpres_poruti,
+     mpres.`porcfi` AS mpres_porcfi,
+     mpres.`porimp` AS mpres_porimp,
+     mpres.`porpre` AS mpres_porpre
+FROM
+     `mpres` mpres INNER JOIN `mconts` mconts ON mpres.`codcon` = mconts.`id`
+     INNER JOIN `mprops` mprops ON mpres.`codpro` = mprops.`id`
+WHERE
+     mpres.id = $P{mpres}]]>
+	</queryString>
+	<field name="mprops_logo" class="java.lang.Object"/>
+	<field name="mconts_logo" class="java.lang.Object"/>
+	<field name="mpres_nombre" class="java.lang.String"/>
+	<field name="mpres_ubicac" class="java.lang.String"/>
+	<field name="mconts_encabe" class="java.lang.String"/>
+	<field name="mpres_nrocon" class="java.lang.String"/>
+	<field name="mpres_porgam" class="java.math.BigDecimal"/>
+	<field name="mpres_poruti" class="java.math.BigDecimal"/>
+	<field name="mpres_porcfi" class="java.math.BigDecimal"/>
+	<field name="mpres_porimp" class="java.math.BigDecimal"/>
+	<field name="mpres_porpre" class="java.math.BigDecimal"/>
+	<variable name="presta" class="java.math.BigDecimal">
+		<variableExpression><![CDATA[$P{totalmano}.multiply($F{mpres_porpre}.divide(new BigDecimal("100")))]]></variableExpression>
+		<initialValueExpression><![CDATA[0]]></initialValueExpression>
+	</variable>
+	<variable name="totalGastos" class="java.math.BigDecimal">
+		<variableExpression><![CDATA[$P{totalmat}.add($P{totaleq}).add($P{totalmano}).add($P{totalBono}).
+add($V{presta})]]></variableExpression>
+		<initialValueExpression><![CDATA[0]]></initialValueExpression>
+	</variable>
+	<variable name="administrativo" class="java.math.BigDecimal">
+		<variableExpression><![CDATA[$V{totalGastos}.multiply($F{mpres_porgam}.divide(new BigDecimal("100")))]]></variableExpression>
+	</variable>
+	<variable name="utilidad" class="java.math.BigDecimal">
+		<variableExpression><![CDATA[$V{totalGastos}.multiply($F{mpres_poruti}.divide(new BigDecimal("100")))]]></variableExpression>
+		<initialValueExpression><![CDATA[0]]></initialValueExpression>
+	</variable>
+	<variable name="financiamiento" class="java.math.BigDecimal">
+		<variableExpression><![CDATA[$V{totalGastos}.multiply($F{mpres_porcfi}.divide(new BigDecimal("100")))]]></variableExpression>
+	</variable>
+	<variable name="impuesto" class="java.math.BigDecimal">
+		<variableExpression><![CDATA[$V{totalGastos}.multiply($F{mpres_porimp}.divide(new BigDecimal("100")))]]></variableExpression>
+		<initialValueExpression><![CDATA[0]]></initialValueExpression>
+	</variable>
+	<variable name="totalprecUnit" class="java.math.BigDecimal">
+		<variableExpression><![CDATA[$V{totalGastos}.add($V{administrativo}).add($V{utilidad}).add($V{financiamiento})]]></variableExpression>
+	</variable>
+	<variable name="unitImpuesto" class="java.math.BigDecimal">
+		<variableExpression><![CDATA[$V{totalprecUnit}.add($V{impuesto})]]></variableExpression>
+		<initialValueExpression><![CDATA[0]]></initialValueExpression>
+	</variable>
+	<variable name="asumImpuesto" class="java.math.BigDecimal">
+		<variableExpression><![CDATA[$P{totalAsumidos}.add($V{impuesto})]]></variableExpression>
+	</variable>
+	<background>
+		<band splitType="Stretch"/>
+	</background>
+	<pageHeader>
+		<band height="182" splitType="Stretch">
+			<image hAlign="Right" vAlign="Middle" onErrorType="Blank">
+				<reportElement uuid="2fbf8662-ef51-4dbf-90c4-a6399c2995c3" x="399" y="0" width="173" height="64"/>
+				<imageExpression><![CDATA[JRImageRenderer.getInstance((byte []) $F{mprops_logo})]]></imageExpression>
+			</image>
+			<image vAlign="Middle" onErrorType="Blank">
+				<reportElement uuid="b9f4f3df-e212-42e9-a408-ba66a414f678" x="0" y="0" width="171" height="65"/>
+				<imageExpression><![CDATA[JRImageRenderer.getInstance((byte []) $F{mconts_logo})]]></imageExpression>
+			</image>
+			<textField isStretchWithOverflow="true" isBlankWhenNull="true">
+				<reportElement uuid="e8f156f7-06c9-4e31-acfd-a0e055dcd815" x="171" y="0" width="228" height="65"/>
+				<textElement textAlignment="Center">
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{mconts_encabe}]]></textFieldExpression>
+			</textField>
+			<textField isStretchWithOverflow="true" isBlankWhenNull="true">
+				<reportElement uuid="96bda06c-9c2f-4c1c-bce4-c294d8e85778" stretchType="RelativeToTallestObject" x="0" y="110" width="572" height="28"/>
+				<box topPadding="3" leftPadding="3" bottomPadding="3" rightPadding="3">
+					<pen lineWidth="1.0"/>
+					<topPen lineWidth="1.0"/>
+					<leftPen lineWidth="1.0"/>
+					<bottomPen lineWidth="1.0"/>
+					<rightPen lineWidth="1.0"/>
+				</box>
+				<textElement textAlignment="Justified">
+					<font size="7"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{mpres_nombre}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement uuid="7184c7b9-782e-4884-b2ba-257f3cb59f30" x="382" y="138" width="190" height="15"/>
+				<box leftPadding="5">
+					<pen lineWidth="1.0"/>
+					<topPen lineWidth="1.0"/>
+					<leftPen lineWidth="1.0"/>
+					<bottomPen lineWidth="1.0"/>
+					<rightPen lineWidth="1.0"/>
+				</box>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Lugar]]></text>
+			</staticText>
+			<textField isStretchWithOverflow="true" isBlankWhenNull="true">
+				<reportElement uuid="f2850376-e3e7-452d-bfc1-d05cddb1b09b" stretchType="RelativeToTallestObject" x="382" y="153" width="190" height="28"/>
+				<box topPadding="3" leftPadding="3" bottomPadding="3" rightPadding="3">
+					<pen lineWidth="1.0"/>
+					<topPen lineWidth="1.0"/>
+					<leftPen lineWidth="1.0"/>
+					<bottomPen lineWidth="1.0"/>
+					<rightPen lineWidth="1.0"/>
+				</box>
+				<textElement textAlignment="Justified" verticalAlignment="Top">
+					<font size="7"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{mpres_ubicac}]]></textFieldExpression>
+			</textField>
+			<textField isStretchWithOverflow="true" evaluationTime="Report">
+				<reportElement uuid="cfcd788a-b90a-48c2-861c-2dc05722613c" x="552" y="25" width="14" height="15"/>
+				<textElement textAlignment="Right" verticalAlignment="Middle">
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[" " + $V{PAGE_NUMBER}]]></textFieldExpression>
+			</textField>
+			<textField pattern="dd/MM/yyyy">
+				<reportElement uuid="e4404672-4e22-4ea6-98ac-aebb5cecc365" x="472" y="65" width="100" height="15"/>
+				<textElement textAlignment="Right" verticalAlignment="Middle">
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[new java.util.Date()]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement uuid="49b6d205-a1fa-4693-a554-a75d2b1e732b" x="0" y="95" width="572" height="15"/>
+				<box leftPadding="5">
+					<pen lineWidth="1.0"/>
+					<topPen lineWidth="1.0"/>
+					<leftPen lineWidth="1.0"/>
+					<bottomPen lineWidth="1.0"/>
+					<rightPen lineWidth="1.0"/>
+				</box>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Obra]]></text>
+			</staticText>
+			<staticText>
+				<reportElement uuid="ad1c259a-abde-422c-9a96-8edf6df21bdc" x="-1" y="138" width="383" height="15"/>
+				<box topPadding="0" leftPadding="5" bottomPadding="0" rightPadding="0">
+					<pen lineWidth="1.0"/>
+					<topPen lineWidth="1.0"/>
+					<leftPen lineWidth="1.0"/>
+					<bottomPen lineWidth="1.0"/>
+					<rightPen lineWidth="1.0"/>
+				</box>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[No. Contrato]]></text>
+			</staticText>
+			<textField isBlankWhenNull="true">
+				<reportElement uuid="db5b792c-ff8b-4e0a-a5ed-7d13f727abb9" x="0" y="153" width="382" height="29"/>
+				<box topPadding="3" leftPadding="3" bottomPadding="3" rightPadding="3">
+					<pen lineWidth="1.0"/>
+					<topPen lineWidth="1.0"/>
+					<leftPen lineWidth="1.0"/>
+					<bottomPen lineWidth="1.0"/>
+					<rightPen lineWidth="1.0"/>
+				</box>
+				<textElement verticalAlignment="Top">
+					<font size="7"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{mpres_nrocon}]]></textFieldExpression>
+			</textField>
+		</band>
+	</pageHeader>
+	<detail>
+		<band height="326" splitType="Stretch">
+			<rectangle>
+				<reportElement uuid="1a75824b-e4eb-42c3-a00a-333947919bb4" x="10" y="10" width="556" height="316"/>
+			</rectangle>
+			<staticText>
+				<reportElement uuid="09328ef8-ca0b-498c-a5cd-90a220e6a6d4" x="41" y="28" width="149" height="15"/>
+				<textElement>
+					<font isBold="true"/>
+				</textElement>
+				<text><![CDATA[Total de Gastos en Materiales:]]></text>
+			</staticText>
+			<staticText>
+				<reportElement uuid="091a7872-d00f-4747-a298-e4db900c92a9" x="41" y="43" width="149" height="15"/>
+				<textElement>
+					<font isBold="true"/>
+				</textElement>
+				<text><![CDATA[Total de Gastos en Equipos:]]></text>
+			</staticText>
+			<staticText>
+				<reportElement uuid="335bf077-1ba7-42ac-a46c-59442ac450a9" x="41" y="60" width="175" height="15"/>
+				<textElement>
+					<font isBold="true"/>
+				</textElement>
+				<text><![CDATA[Total de Gastos en Mano de Obra:]]></text>
+			</staticText>
+			<staticText>
+				<reportElement uuid="035732dc-9b16-4582-a764-72afdf822a64" x="113" y="75" width="122" height="15"/>
+				<textElement>
+					<font isBold="true"/>
+				</textElement>
+				<text><![CDATA[% Prestaciones Sociales:]]></text>
+			</staticText>
+			<staticText>
+				<reportElement uuid="d539abc0-6861-453b-8909-05bc7e195cda" x="41" y="90" width="122" height="15"/>
+				<textElement>
+					<font isBold="true"/>
+				</textElement>
+				<text><![CDATA[Total Bonos:]]></text>
+			</staticText>
+			<staticText>
+				<reportElement uuid="2d532345-911b-4269-bde3-6905df7ad14c" x="41" y="122" width="194" height="15"/>
+				<textElement>
+					<font isBold="true"/>
+				</textElement>
+				<text><![CDATA[Total General de Gastos de Obra:]]></text>
+			</staticText>
+			<staticText>
+				<reportElement uuid="7762912e-5c95-4f0a-a5f1-8e5e70733c7a" x="113" y="137" width="141" height="15"/>
+				<textElement>
+					<font isBold="true"/>
+				</textElement>
+				<text><![CDATA[% Gastos Administrativos:]]></text>
+			</staticText>
+			<staticText>
+				<reportElement uuid="aace53ac-be18-4448-8aff-d98fa1fc4d77" x="113" y="152" width="141" height="15"/>
+				<textElement>
+					<font isBold="true"/>
+				</textElement>
+				<text><![CDATA[% Utilidad:]]></text>
+			</staticText>
+			<staticText>
+				<reportElement uuid="7ccdee0a-0c6f-49f5-b789-f38621869c41" x="113" y="167" width="141" height="15"/>
+				<textElement>
+					<font isBold="true"/>
+				</textElement>
+				<text><![CDATA[% Financiamiento:]]></text>
+			</staticText>
+			<staticText>
+				<reportElement uuid="38059bd0-c5b5-4e70-8806-4eb43cecb1ff" x="113" y="182" width="141" height="15"/>
+				<textElement>
+					<font isBold="true"/>
+				</textElement>
+				<text><![CDATA[% Impuesto:]]></text>
+			</staticText>
+			<staticText>
+				<reportElement uuid="cf2ff4cd-7a8d-43c2-ae8b-0eee56a42d73" x="41" y="210" width="194" height="15"/>
+				<textElement>
+					<font isBold="true"/>
+				</textElement>
+				<text><![CDATA[Total Precios Unitarios:]]></text>
+			</staticText>
+			<staticText>
+				<reportElement uuid="0f26ec37-20a1-4d4a-8e62-d8ee571c4134" x="41" y="235" width="194" height="15"/>
+				<textElement>
+					<font isBold="true"/>
+				</textElement>
+				<text><![CDATA[Total Precios Asumidos:]]></text>
+			</staticText>
+			<staticText>
+				<reportElement uuid="9ef410bf-dd6a-403a-a7f9-63bea006f41d" x="41" y="260" width="194" height="15"/>
+				<textElement>
+					<font isBold="true"/>
+				</textElement>
+				<text><![CDATA[Total General de Precios Unitarios:]]></text>
+			</staticText>
+			<staticText>
+				<reportElement uuid="dbc494d9-6b46-49db-8116-87e1524e924f" x="41" y="285" width="194" height="15"/>
+				<textElement>
+					<font isBold="true"/>
+				</textElement>
+				<text><![CDATA[Total General de Precios Asumidos:]]></text>
+			</staticText>
+			<textField pattern="#,##0.00" isBlankWhenNull="true">
+				<reportElement uuid="8823a66d-f1e9-476c-a4fc-5b43b935c575" x="41" y="137" width="69" height="15"/>
+				<textElement/>
+				<textFieldExpression><![CDATA[$F{mpres_porgam}]]></textFieldExpression>
+			</textField>
+			<textField pattern="#,##0.00" isBlankWhenNull="true">
+				<reportElement uuid="48a4453a-8644-4572-9f0d-54b222bd9e60" x="41" y="152" width="69" height="15"/>
+				<textElement/>
+				<textFieldExpression><![CDATA[$F{mpres_poruti}]]></textFieldExpression>
+			</textField>
+			<textField pattern="#,##0.00" isBlankWhenNull="true">
+				<reportElement uuid="aa8a1291-1125-4f79-a877-65c8b0c8ecc1" x="41" y="167" width="69" height="15"/>
+				<textElement/>
+				<textFieldExpression><![CDATA[$F{mpres_porcfi}]]></textFieldExpression>
+			</textField>
+			<textField pattern="#,##0.00" isBlankWhenNull="true">
+				<reportElement uuid="bbf02fbf-a13d-4e5a-8bc0-5094155bb4ca" x="41" y="182" width="69" height="15"/>
+				<textElement/>
+				<textFieldExpression><![CDATA[$F{mpres_porimp}]]></textFieldExpression>
+			</textField>
+			<textField pattern="#,##0.00" isBlankWhenNull="true">
+				<reportElement uuid="e21baea6-c987-45f8-ab36-672b2a1ae5ec" x="409" y="28" width="143" height="15"/>
+				<textElement textAlignment="Right"/>
+				<textFieldExpression><![CDATA[$P{totalmat}]]></textFieldExpression>
+			</textField>
+			<textField pattern="#,##0.00" isBlankWhenNull="true">
+				<reportElement uuid="67ea9308-d19e-4f77-8a9d-993d956e13fb" x="409" y="43" width="143" height="15"/>
+				<textElement textAlignment="Right"/>
+				<textFieldExpression><![CDATA[$P{totaleq}]]></textFieldExpression>
+			</textField>
+			<textField pattern="#,##0.00" isBlankWhenNull="true">
+				<reportElement uuid="f3ca4025-dd32-4ba7-a6e3-f7a71644471d" x="409" y="58" width="143" height="17"/>
+				<textElement textAlignment="Right"/>
+				<textFieldExpression><![CDATA[$P{totalmano}]]></textFieldExpression>
+			</textField>
+			<textField pattern="#,##0.00" isBlankWhenNull="true">
+				<reportElement uuid="327203cc-4564-492b-be76-b768c41649e5" x="409" y="235" width="143" height="15"/>
+				<textElement textAlignment="Right"/>
+				<textFieldExpression><![CDATA[$P{totalAsumidos}]]></textFieldExpression>
+			</textField>
+			<textField pattern="#,##0.00" isBlankWhenNull="true">
+				<reportElement uuid="13feae61-8a52-4faf-89b9-fbc412dd3559" x="409" y="75" width="143" height="15"/>
+				<textElement textAlignment="Right"/>
+				<textFieldExpression><![CDATA[$V{presta}]]></textFieldExpression>
+			</textField>
+			<textField pattern="#,##0.00" isBlankWhenNull="true">
+				<reportElement uuid="5ecbdcca-d4de-46e1-bd89-c000af878fb5" x="409" y="90" width="143" height="15"/>
+				<textElement textAlignment="Right"/>
+				<textFieldExpression><![CDATA[$P{totalBono}]]></textFieldExpression>
+			</textField>
+			<textField pattern="#,##0.00" isBlankWhenNull="true">
+				<reportElement uuid="4c6a4683-b046-4d28-8357-c13290473ebe" x="409" y="122" width="143" height="15"/>
+				<textElement textAlignment="Right"/>
+				<textFieldExpression><![CDATA[$V{totalGastos}]]></textFieldExpression>
+			</textField>
+			<textField pattern="#,##0.00" isBlankWhenNull="true">
+				<reportElement uuid="1a2ccf80-0419-4f3a-acbe-0f0e286220c1" x="409" y="137" width="143" height="15"/>
+				<textElement textAlignment="Right"/>
+				<textFieldExpression><![CDATA[$V{administrativo}]]></textFieldExpression>
+			</textField>
+			<textField pattern="#,##0.00" isBlankWhenNull="true">
+				<reportElement uuid="0e10d0de-226c-4ce6-b2fc-4843152290b2" x="409" y="152" width="143" height="15"/>
+				<textElement textAlignment="Right"/>
+				<textFieldExpression><![CDATA[$V{utilidad}]]></textFieldExpression>
+			</textField>
+			<textField pattern="#,##0.00" isBlankWhenNull="true">
+				<reportElement uuid="edd1fcb6-7c49-4b19-b854-a1bc6c1aac50" x="408" y="168" width="144" height="14"/>
+				<textElement textAlignment="Right"/>
+				<textFieldExpression><![CDATA[$V{financiamiento}]]></textFieldExpression>
+			</textField>
+			<textField pattern="#,##0.00" isBlankWhenNull="true">
+				<reportElement uuid="36482bd0-5226-4f9f-851f-357357569bee" x="408" y="182" width="144" height="15"/>
+				<textElement textAlignment="Right"/>
+				<textFieldExpression><![CDATA[$V{impuesto}]]></textFieldExpression>
+			</textField>
+			<textField pattern="#,##0.00" isBlankWhenNull="true">
+				<reportElement uuid="75b35151-2c96-43b0-bbf7-ea5f9468bfc3" x="409" y="210" width="143" height="15"/>
+				<textElement textAlignment="Right"/>
+				<textFieldExpression><![CDATA[$V{totalprecUnit}]]></textFieldExpression>
+			</textField>
+			<textField pattern="#,##0.00" isBlankWhenNull="true">
+				<reportElement uuid="26de272a-febc-4200-909d-01ef22ecf680" x="409" y="260" width="143" height="15"/>
+				<textElement textAlignment="Right"/>
+				<textFieldExpression><![CDATA[$V{unitImpuesto}]]></textFieldExpression>
+			</textField>
+			<textField pattern="#,##0.00" isBlankWhenNull="true">
+				<reportElement uuid="60736ef3-5599-4cc0-a53e-f2bd09c8a62b" x="408" y="285" width="144" height="15"/>
+				<textElement textAlignment="Right"/>
+				<textFieldExpression><![CDATA[$V{asumImpuesto}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement uuid="0626d3c2-260b-473c-ad97-dfb40b9a682d" x="41" y="75" width="72" height="15"/>
+				<textElement/>
+				<textFieldExpression><![CDATA[$F{mpres_porpre}]]></textFieldExpression>
+			</textField>
+		</band>
+	</detail>
+	<pageFooter>
+		<band height="32" splitType="Stretch">
+			<staticText>
+				<reportElement uuid="4f0d12ca-2080-420a-9fb3-5eaba80aa463" x="0" y="10" width="572" height="11"/>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font size="6" isBold="true"/>
+				</textElement>
+				<text><![CDATA[SPAPU (Sistemas R.H. C.A.)  San Cristóbal Edo. Táchira, Barrio Obrero Carrera 18 Entre calles 8 y 9 Edf. Marcol's No. 8-23 ]]></text>
+			</staticText>
+			<line>
+				<reportElement uuid="41c9f5ec-d696-4551-a6c2-e750a19a06ea" x="-1" y="6" width="573" height="1"/>
+			</line>
+			<staticText>
+				<reportElement uuid="7e914fb3-b7b1-4917-94b1-65dc2d8a50cd" x="-1" y="21" width="573" height="11"/>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font size="6" isBold="true"/>
+				</textElement>
+				<text><![CDATA[0276-3567564 / 0276-3553158 / 0276-3560071 / 0276-3579562 www.spapu.net / Facebook: SPAPU.SISTEMASRH / Twitter: @Spapu]]></text>
+			</staticText>
+		</band>
+	</pageFooter>
+</jasperReport>

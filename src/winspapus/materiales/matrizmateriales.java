@@ -42,7 +42,7 @@ Principal obj;
         this.obj = obj;
         cargartabus();
         cambiarcabecera();
-        
+        bloqueaboton(!obj.isbloquedmtabu());
          jTable1.setShowHorizontalLines(true);
     jTable1.setShowVerticalLines(false);
     jTable1.getTableHeader().setSize(new Dimension(25,40));
@@ -54,6 +54,11 @@ Principal obj;
     jTable2.getTableHeader().setSize(new Dimension(25,40));
     jTable2.getTableHeader().setPreferredSize(new Dimension(25,30));
     jTable2.setRowHeight(20);
+    }
+    private void bloqueaboton(boolean bloq){
+        jButton1.setEnabled(bloq);
+        jButton2.setEnabled(bloq);
+        jButton4.setEnabled(bloq);
     }
 private void cambiarcabecera() {
     
@@ -133,8 +138,8 @@ private void cambiarcabecera() {
                 .addContainerGap())
         );
 
-        jTable1.setFont(new java.awt.Font("Tahoma", 0, 10));
-        jTable1.setSelectionBackground(new java.awt.Color(255, 153, 51));
+        jTable1.setFont(new java.awt.Font("Tahoma", 0, 10)); // NOI18N
+        jTable1.setSelectionBackground(new java.awt.Color(216, 141, 0));
         jTable1.addMouseListener(new java.awt.event.MouseAdapter() {
             public void mouseClicked(java.awt.event.MouseEvent evt) {
                 jTable1MouseClicked(evt);
@@ -145,7 +150,7 @@ private void cambiarcabecera() {
         jPanel2.setBackground(new java.awt.Color(100, 100, 100));
 
         jLabel1.setBackground(new java.awt.Color(91, 91, 95));
-        jLabel1.setFont(new java.awt.Font("Tahoma", 1, 11)); // NOI18N
+        jLabel1.setFont(new java.awt.Font("Tahoma", 1, 11));
         jLabel1.setForeground(new java.awt.Color(255, 255, 255));
         jLabel1.setHorizontalAlignment(javax.swing.SwingConstants.CENTER);
         jLabel1.setText("Materiales Matriz de Costos");
@@ -165,7 +170,7 @@ private void cambiarcabecera() {
         jLabel2.setText("Seleccione el Precio Referencial para el cual desea modificar los materiales");
 
         jTable2.setFont(new java.awt.Font("Tahoma", 0, 9));
-        jTable2.setSelectionBackground(new java.awt.Color(255, 153, 51));
+        jTable2.setSelectionBackground(new java.awt.Color(216, 141, 0));
         jTable2.addMouseListener(new java.awt.event.MouseAdapter() {
             public void mouseClicked(java.awt.event.MouseEvent evt) {
                 jTable2MouseClicked(evt);
@@ -313,11 +318,12 @@ private void cambiarcabecera() {
     
     private void jTable1MouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_jTable1MouseClicked
         row = jTable1.rowAtPoint(evt.getPoint());
-        jButton1.setEnabled(true);
+        jButton1.setEnabled(!obj.isbloquedmtabu());
         jButton3.setEnabled(true);
-           jButton4.setEnabled(true);
+           jButton4.setEnabled(!obj.isbloquedmtabu());
         
         codigo = jTable1.getValueAt(row, 0).toString();
+        bloqueaboton(!obj.isbloquedmtabu(codigo));
         try {
             buscamat();
         } catch (SQLException ex) {
@@ -365,7 +371,7 @@ private void cambiarcabecera() {
     }//GEN-LAST:event_jButton4ActionPerformed
 
     private void jTable2MouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_jTable2MouseClicked
-        jButton2.setEnabled(true);
+        jButton2.setEnabled(!obj.isbloquedmtabu(codigo));
         int fila = jTable2.rowAtPoint(evt.getPoint());
         codimate = jTable2.getValueAt(fila, 0).toString();
     }//GEN-LAST:event_jTable2MouseClicked

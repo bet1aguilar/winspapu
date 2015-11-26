@@ -9,8 +9,7 @@
  * Created on 13/07/2013, 06:29:18 PM
  */
 package presupuestos.capitulos;
-
-import com.mysql.jdbc.Connection;
+import java.sql.Connection;
 import com.mysql.jdbc.ResultSetMetaData;
 import com.mysql.jdbc.Statement;
 import java.awt.Dimension;
@@ -42,7 +41,7 @@ public class partidasub extends javax.swing.JDialog {
     /** A return status code - returned if OK button has been pressed */
     public static final int RET_OK = 1;
     private DefaultTableModel metabs;
-    Connection conex;
+    private Connection conex;
     String mpres, capitulo;
     String id;
     private String codicove;

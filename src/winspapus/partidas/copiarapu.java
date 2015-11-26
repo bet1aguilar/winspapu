@@ -12,6 +12,7 @@ package winspapus.partidas;
 
 import com.mysql.jdbc.Connection;
 import com.mysql.jdbc.Statement;
+import herramienta.Validacion;
 import java.awt.event.ActionEvent;
 import java.awt.event.KeyEvent;
 import java.sql.ResultSet;
@@ -40,6 +41,8 @@ public class copiarapu extends javax.swing.JDialog {
     private Connection conex;
     String realnumero, realnumero2;
     String tabu, partida, acopiar;
+    Validacion val;
+    public final String tableName="mptabs";
     /** Creates new form copiarapu */
     public copiarapu(java.awt.Frame parent, boolean modal, Principal obj, String numpartida, String tabu, Connection conex) {
         super(parent, modal);
@@ -47,7 +50,7 @@ public class copiarapu extends javax.swing.JDialog {
         this.tabu = tabu;
         this.conex = conex;
         this.partida = numpartida;
-        
+        val = new Validacion(conex);
         initComponents();
         jLabel3.setVisible(false);
         jLabel4.setVisible(false);
@@ -107,7 +110,7 @@ public class copiarapu extends javax.swing.JDialog {
         jPanel2.setBackground(new java.awt.Color(100, 100, 100));
 
         jLabel1.setBackground(new java.awt.Color(91, 91, 95));
-        jLabel1.setFont(new java.awt.Font("Tahoma", 1, 11)); // NOI18N
+        jLabel1.setFont(new java.awt.Font("Tahoma", 1, 11));
         jLabel1.setForeground(new java.awt.Color(255, 255, 255));
         jLabel1.setHorizontalAlignment(javax.swing.SwingConstants.CENTER);
         jLabel1.setText("Copiar APU");
@@ -130,6 +133,12 @@ public class copiarapu extends javax.swing.JDialog {
 
         jLabel4.setForeground(new java.awt.Color(255, 0, 0));
         jLabel4.setText("Campo no puede estar vacio");
+
+        jtextfield1.addKeyListener(new java.awt.event.KeyAdapter() {
+            public void keyTyped(java.awt.event.KeyEvent evt) {
+                jtextfield1KeyTyped(evt);
+            }
+        });
 
         javax.swing.GroupLayout jPanel1Layout = new javax.swing.GroupLayout(jPanel1);
         jPanel1.setLayout(jPanel1Layout);
@@ -366,6 +375,10 @@ public class copiarapu extends javax.swing.JDialog {
         doClose(RET_OK);
         }        // TODO add your handling code here:
     }//GEN-LAST:event_okButtonMouseClicked
+
+    private void jtextfield1KeyTyped(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_jtextfield1KeyTyped
+val.validaInt(evt);        // TODO add your handling code here:
+    }//GEN-LAST:event_jtextfield1KeyTyped
     
     private void doClose(int retStatus) {
         returnStatus = retStatus;

@@ -47,10 +47,12 @@ public class vercapitulo extends javax.swing.JDialog {
     String ids;
     DefaultTableModel metabs;
     int fila1 = 0;
+    Principal obj;
     /** Creates new form vercapitulo */
-    public vercapitulo(java.awt.Frame parent, boolean modal, String mtabus, Connection conex, String capitulo) {
+    public vercapitulo(java.awt.Frame parent, boolean modal, String mtabus, Connection conex, String capitulo, Principal obj) {
         super(parent, modal);
         initComponents();
+        this.obj = obj;
         this.conex = conex;
         this.capitulo = capitulo;
         this.mtabus = mtabus;
@@ -68,6 +70,7 @@ public class vercapitulo extends javax.swing.JDialog {
     jTable2.setRowHeight(25);
         buscasub();
         buscapartida();
+        bloqueaboton(!obj.isbloquedmtabu());
         // Close the dialog when Esc is pressed
         String cancelName = "cancel";
         InputMap inputMap = getRootPane().getInputMap(JComponent.WHEN_ANCESTOR_OF_FOCUSED_COMPONENT);
@@ -81,7 +84,15 @@ public class vercapitulo extends javax.swing.JDialog {
             }
         });
     }
-
+    public final void bloqueaboton(boolean bloq)
+    {
+        jButton2.setEnabled(bloq);
+        jButton3.setEnabled(bloq);
+        jButton4.setEnabled(bloq);
+        jButton5.setEnabled(bloq);
+        jButton6.setEnabled(bloq);
+        jButton7.setEnabled(bloq);
+    }
     public final void buscasub(){
         try {
             Statement st = (Statement) conex.createStatement();
@@ -347,7 +358,7 @@ public class vercapitulo extends javax.swing.JDialog {
 
             }
         ));
-        jTable2.setSelectionBackground(new java.awt.Color(255, 153, 51));
+        jTable2.setSelectionBackground(new java.awt.Color(216, 141, 0));
         jTable2.addMouseListener(new java.awt.event.MouseAdapter() {
             public void mouseClicked(java.awt.event.MouseEvent evt) {
                 jTable2MouseClicked(evt);
@@ -447,7 +458,7 @@ public class vercapitulo extends javax.swing.JDialog {
                 .addContainerGap())
         );
 
-        jTable1.setFont(new java.awt.Font("Tahoma", 0, 10));
+        jTable1.setFont(new java.awt.Font("Tahoma", 0, 10)); // NOI18N
         jTable1.setModel(new javax.swing.table.DefaultTableModel(
             new Object [][] {
 
@@ -456,7 +467,7 @@ public class vercapitulo extends javax.swing.JDialog {
 
             }
         ));
-        jTable1.setSelectionBackground(new java.awt.Color(255, 153, 51));
+        jTable1.setSelectionBackground(new java.awt.Color(216, 141, 0));
         jTable1.addMouseListener(new java.awt.event.MouseAdapter() {
             public void mouseClicked(java.awt.event.MouseEvent evt) {
                 jTable1MouseClicked(evt);
@@ -576,16 +587,16 @@ public class vercapitulo extends javax.swing.JDialog {
             Logger.getLogger(vercapitulo.class.getName()).log(Level.SEVERE, null, ex);
         }
         jButton1.setEnabled(true);
-        jButton2.setEnabled(true);
-        jButton3.setEnabled(true);
-        jButton5.setEnabled(true);
+        jButton2.setEnabled(!obj.isbloquedmtabu());
+        jButton3.setEnabled(!obj.isbloquedmtabu());
+        jButton5.setEnabled(!obj.isbloquedmtabu());
         
     }//GEN-LAST:event_jTable1MouseClicked
 
     private void jButton1ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton1ActionPerformed
        
         
-        partidasub sub = new partidasub(null, true, conex, mtabus, ids);
+        partidasub sub = new partidasub(null, true, conex, mtabus, ids,obj);
         System.out.println("mtabus "+mtabus+" ids "+ids);
         int xi = (this.getX());
         int yi = (this.getY());
@@ -675,7 +686,7 @@ public class vercapitulo extends javax.swing.JDialog {
 
     private void jTable2MouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_jTable2MouseClicked
 
-        jButton4.setEnabled(true);
+        jButton4.setEnabled(!obj.isbloquedmtabu());
         fila1=jTable2.rowAtPoint(evt.getPoint());
         
         

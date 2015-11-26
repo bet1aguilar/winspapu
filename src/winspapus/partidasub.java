@@ -30,6 +30,7 @@ import javax.swing.table.DefaultTableModel;
 import javax.swing.table.JTableHeader;
 import javax.swing.table.TableColumn;
 import javax.swing.table.TableColumnModel;
+import valuaciones.buscapartida;
 
 /**
  *
@@ -46,16 +47,19 @@ public class partidasub extends javax.swing.JDialog {
     String mtabus, capitulo;
     String id;
     private String codicove;
+    private Principal obj;
     /** Creates new form partidasub */
-    public partidasub(java.awt.Frame parent, boolean modal, Connection conex, String mtabus, String subcapitulo) {
+    public partidasub(java.awt.Frame parent, boolean modal, Connection conex, String mtabus, String subcapitulo, Principal obj) {
         super(parent, modal);
         initComponents();
+        this.obj=obj;
         jTable1.setOpaque(true);
     jTable1.setShowHorizontalLines(true);
     jTable1.setShowVerticalLines(false);
     jTable1.getTableHeader().setSize(new Dimension(25,40));
     jTable1.getTableHeader().setPreferredSize(new Dimension(30,40));
     jTable1.setRowHeight(25);
+    bloqueaboton(!obj.isbloquedmtabu());
         this.conex= conex;
         this.mtabus = mtabus;
         this.capitulo = subcapitulo;
@@ -340,6 +344,7 @@ public class partidasub extends javax.swing.JDialog {
             Statement st = (Statement) conex.createStatement();
             st.execute(actualiza);
             JOptionPane.showMessageDialog(null, "Se ha eliminado la partida");
+            cargapartida();
         } catch (SQLException ex) {
             Logger.getLogger(partidasub.class.getName()).log(Level.SEVERE, null, ex);
         }
@@ -367,7 +372,12 @@ public class partidasub extends javax.swing.JDialog {
         dispose();
        
     }
-
+public final void bloqueaboton(boolean bloq)
+    {
+        jButton2.setEnabled(bloq);
+        jButton1.setEnabled(bloq);
+       
+    }
     /**
      * @param args the command line arguments
      */

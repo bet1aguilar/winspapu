@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <jasperReport xmlns="http://jasperreports.sourceforge.net/jasperreports" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports http://jasperreports.sourceforge.net/xsd/jasperreport.xsd" name="presupuesto" language="groovy" pageWidth="612" pageHeight="792" columnWidth="572" leftMargin="20" rightMargin="20" topMargin="20" bottomMargin="20" isSummaryWithPageHeaderAndFooter="true" isFloatColumnFooter="true" uuid="783eb973-dc35-448c-ace7-a90426bbba54">
-	<property name="ireport.zoom" value="1.2396694214876034"/>
-	<property name="ireport.x" value="0"/>
+	<property name="ireport.zoom" value="1.5000000000000002"/>
+	<property name="ireport.x" value="198"/>
 	<property name="ireport.y" value="0"/>
 	<parameter name="mpres" class="java.lang.String">
 		<defaultValueExpression><![CDATA[]]></defaultValueExpression>
@@ -119,14 +119,14 @@ AND mppres.tipo='VP' AND mppres.nrocuadro=$P{cuadro}]]>
 	<pageHeader>
 		<band height="144" splitType="Stretch">
 			<textField isStretchWithOverflow="true" evaluationTime="Report">
-				<reportElement uuid="be91b693-0c81-4b38-9c54-64e87e1c889f" x="565" y="11" width="5" height="11"/>
+				<reportElement uuid="be91b693-0c81-4b38-9c54-64e87e1c889f" x="565" y="78" width="5" height="11"/>
 				<textElement textAlignment="Right" verticalAlignment="Middle">
 					<font size="7"/>
 				</textElement>
 				<textFieldExpression><![CDATA[$V{PAGE_NUMBER}]]></textFieldExpression>
 			</textField>
 			<textField>
-				<reportElement uuid="79d3b196-56be-4249-8494-34ed5bf0a2a4" positionType="Float" x="456" y="11" width="109" height="11"/>
+				<reportElement uuid="79d3b196-56be-4249-8494-34ed5bf0a2a4" positionType="Float" x="456" y="78" width="109" height="11"/>
 				<textElement textAlignment="Right" verticalAlignment="Middle">
 					<font size="7"/>
 				</textElement>
@@ -233,7 +233,7 @@ AND mppres.tipo='VP' AND mppres.nrocuadro=$P{cuadro}]]>
 					<rightPen lineWidth="1.0"/>
 				</box>
 				<textElement verticalAlignment="Middle">
-					<font size="9"/>
+					<font size="7"/>
 				</textElement>
 				<textFieldExpression><![CDATA[$F{mpres_partidapres}]]></textFieldExpression>
 			</textField>
@@ -251,7 +251,7 @@ AND mppres.tipo='VP' AND mppres.nrocuadro=$P{cuadro}]]>
 				</textElement>
 				<text><![CDATA[Contrato:]]></text>
 			</staticText>
-			<textField>
+			<textField isBlankWhenNull="true">
 				<reportElement uuid="c66238e8-56a9-4fb9-84b3-a402c34e29be" positionType="Float" x="465" y="127" width="105" height="17"/>
 				<box>
 					<pen lineWidth="1.0"/>
@@ -261,27 +261,27 @@ AND mppres.tipo='VP' AND mppres.nrocuadro=$P{cuadro}]]>
 					<rightPen lineWidth="1.0"/>
 				</box>
 				<textElement verticalAlignment="Middle">
-					<font size="9"/>
+					<font size="7"/>
 				</textElement>
 				<textFieldExpression><![CDATA[$F{mpres_nrocon}]]></textFieldExpression>
 			</textField>
 			<textField isStretchWithOverflow="true" isBlankWhenNull="true">
-				<reportElement uuid="f32e70da-31e3-428a-bc4b-f8b4a6378c0d" stretchType="RelativeToBandHeight" x="100" y="0" width="355" height="69"/>
+				<reportElement uuid="f32e70da-31e3-428a-bc4b-f8b4a6378c0d" stretchType="RelativeToBandHeight" x="176" y="0" width="217" height="69"/>
 				<textElement textAlignment="Center">
 					<font size="8" isBold="true"/>
 				</textElement>
 				<textFieldExpression><![CDATA[$F{mconts_encabe}]]></textFieldExpression>
 			</textField>
 			<image onErrorType="Blank">
-				<reportElement uuid="ac8d3050-513a-4ce8-96ed-375b517834f0" x="0" y="22" width="100" height="46" isRemoveLineWhenBlank="true"/>
+				<reportElement uuid="ac8d3050-513a-4ce8-96ed-375b517834f0" x="0" y="0" width="176" height="68" isRemoveLineWhenBlank="true"/>
 				<imageExpression><![CDATA[JRImageRenderer.getInstance((byte []) $F{mconts_logo})]]></imageExpression>
 			</image>
 			<image hAlign="Right" onErrorType="Blank">
-				<reportElement uuid="c9ca5357-49ea-4e2f-a284-77294fe9376a" x="516" y="22" width="54" height="50" isRemoveLineWhenBlank="true"/>
+				<reportElement uuid="c9ca5357-49ea-4e2f-a284-77294fe9376a" x="393" y="0" width="177" height="68" isRemoveLineWhenBlank="true"/>
 				<imageExpression><![CDATA[JRImageRenderer.getInstance((byte []) $F{mprops_logo})]]></imageExpression>
 			</image>
 			<textField isBlankWhenNull="true">
-				<reportElement uuid="6b9725d6-7171-4eda-aaff-503a22d6385d" x="498" y="1" width="72" height="11"/>
+				<reportElement uuid="6b9725d6-7171-4eda-aaff-503a22d6385d" x="498" y="68" width="72" height="11"/>
 				<box rightPadding="0"/>
 				<textElement textAlignment="Right" verticalAlignment="Top">
 					<font size="7"/>
@@ -289,7 +289,7 @@ AND mppres.tipo='VP' AND mppres.nrocuadro=$P{cuadro}]]>
 				<textFieldExpression><![CDATA[$P{fecha}]]></textFieldExpression>
 			</textField>
 			<textField>
-				<reportElement uuid="b80e944a-dfe9-4e3b-95b6-593ecd53e625" x="76" y="68" width="405" height="21"/>
+				<reportElement uuid="b80e944a-dfe9-4e3b-95b6-593ecd53e625" x="100" y="68" width="355" height="21"/>
 				<textElement textAlignment="Center" verticalAlignment="Middle">
 					<font size="10" isBold="true"/>
 				</textElement>
@@ -550,7 +550,7 @@ AND mppres.tipo='VP' AND mppres.nrocuadro=$P{cuadro}]]>
 				<textElement textAlignment="Center" verticalAlignment="Middle">
 					<font size="6" isBold="true"/>
 				</textElement>
-				<text><![CDATA[0276-3567564 / 0276-3553158 / 0276-3560071 / 0276-3579562 - www.spapu.com.ve / Facebook: Rhspapu / Twitter: @Spapu]]></text>
+				<text><![CDATA[0276-3567564 / 0276-3553158 / 0276-3560071 / 0276-3579562 - www.spapu.net / Facebook: SPAPU.SISTEMASRH / Twitter: @Spapu]]></text>
 			</staticText>
 			<staticText>
 				<reportElement uuid="f60729a2-1aa2-4743-b4ab-10c9fbd12d04" x="0" y="1" width="64" height="13"/>

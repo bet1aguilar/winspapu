@@ -4,7 +4,7 @@
  */
 package presupuestos;
 
-import com.mysql.jdbc.Connection;
+import java.sql.Connection;
 import com.mysql.jdbc.Statement;
 import java.sql.SQLException;
 import java.util.logging.Level;
@@ -20,7 +20,7 @@ public class reordena extends Thread{
     int i=0;
     int [] numeros;
     String cadena;
-    Connection conexion;
+    private Connection conexion;
    int muestra;
     Presupuesto obj;
     public reordena(Connection conex, String[] coldata, int[] numeros, String id, Presupuesto pres) {

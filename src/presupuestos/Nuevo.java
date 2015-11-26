@@ -10,11 +10,12 @@
  */
 package presupuestos;
 
-import com.mysql.jdbc.Connection;
 import com.mysql.jdbc.ResultSetMetaData;
 import com.mysql.jdbc.Statement;
+import herramienta.Validacion;
 import java.awt.event.ActionEvent;
 import java.awt.event.KeyEvent;
+import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.text.ParseException;
@@ -47,6 +48,9 @@ public class Nuevo extends javax.swing.JDialog {
     public static final int RET_OK = 1;
     private Presupuesto frame;
     String date="";
+    String val="";
+    Validacion vali;
+    int cuenta=0;
     int x,y;
     int edita;
     private List<String> id, id2;
@@ -61,11 +65,14 @@ public class Nuevo extends javax.swing.JDialog {
        id = new ArrayList<String>();
        id2 = new ArrayList<String>();
         con = conex;
+        
+        vali = new Validacion(conex);
         jLabel20.setVisible(false);
         jLabel21.setVisible(false);
         jDateChooser1.setDate(new Date());
         jDateChooser2.setDate(new Date());
         jLabel22.setVisible(false);
+        cuenta=contarTablaPres();
         jLabel23.setVisible(false);
         jLabel24.setVisible(false);
         try {
@@ -87,6 +94,22 @@ public class Nuevo extends javax.swing.JDialog {
             }
         });
     }
+    public final int contarTablaPres(){
+        String sql = "SELECT COUNT(*) FROM mpres";
+        int cont=0;
+        try {
+            Statement st = (Statement) con.createStatement();
+            ResultSet rst = st.executeQuery(sql);
+            while(rst.next())
+            {
+                cont = rst.getInt(1);
+            }
+        } catch (SQLException ex) {
+            Logger.getLogger(Nuevo.class.getName()).log(Level.SEVERE, null, ex);
+        }
+        
+        return cont;
+    }
     public Nuevo(java.awt.Frame parent, boolean modal, Presupuesto obj, Connection conex, int edita, String pres) {
         super(parent, modal);
         initComponents();
@@ -94,8 +117,10 @@ public class Nuevo extends javax.swing.JDialog {
        id = new ArrayList<String>();
        id2 = new ArrayList<String>();
         con = conex;
+        vali = new Validacion(conex);
         this.edita=edita;
         this.pres = pres;
+        cuenta=contarTablaPres();
         jLabel20.setVisible(false);
         jLabel21.setVisible(false);
         jLabel22.setVisible(false);
@@ -165,12 +190,7 @@ public class Nuevo extends javax.swing.JDialog {
                 jTextField2.setText(rstme.getObject(1).toString());
                 jTextArea1.setText(rstme.getObject(2).toString());
                 jTextField3.setText(rstme.getObject(3).toString());
-                
-                    
-                   
-              
-                     
-                    
+                                   
                 jComboBox1.setSelectedItem(rstme.getString(13));
                 jComboBox2.setSelectedItem(rstme.getString(14));
                 jTextField4.setText(rstme.getString("porpre"));
@@ -354,7 +374,7 @@ public class Nuevo extends javax.swing.JDialog {
         jPanel2.setBackground(new java.awt.Color(100, 100, 100));
 
         jLabel1.setBackground(new java.awt.Color(91, 91, 95));
-        jLabel1.setFont(new java.awt.Font("Tahoma", 1, 11)); // NOI18N
+        jLabel1.setFont(new java.awt.Font("Tahoma", 1, 11));
         jLabel1.setForeground(new java.awt.Color(255, 255, 255));
         jLabel1.setHorizontalAlignment(javax.swing.SwingConstants.CENTER);
         jLabel1.setText("Nuevo Proyecto de Obra");
@@ -401,19 +421,29 @@ public class Nuevo extends javax.swing.JDialog {
         jLabel10.setText("Prestaciones %:");
 
         jTextField12.setNextFocusableComponent(jTextField11);
+        jTextField12.addKeyListener(new java.awt.event.KeyAdapter() {
+            public void keyTyped(java.awt.event.KeyEvent evt) {
+                jTextField12KeyTyped(evt);
+            }
+        });
 
         jLabel13.setText("Costos Financieros:");
 
         jTextField11.setNextFocusableComponent(jCheckBox1);
+        jTextField11.addKeyListener(new java.awt.event.KeyAdapter() {
+            public void keyTyped(java.awt.event.KeyEvent evt) {
+                jTextField11KeyTyped(evt);
+            }
+        });
 
         jTextField4.setText("0.00");
         jTextField4.setNextFocusableComponent(jTextField5);
         jTextField4.addFocusListener(new java.awt.event.FocusAdapter() {
-            public void focusGained(java.awt.event.FocusEvent evt) {
-                jTextField4FocusGained(evt);
-            }
             public void focusLost(java.awt.event.FocusEvent evt) {
                 jTextField4FocusLost(evt);
+            }
+            public void focusGained(java.awt.event.FocusEvent evt) {
+                jTextField4FocusGained(evt);
             }
         });
         jTextField4.addKeyListener(new java.awt.event.KeyAdapter() {
@@ -493,8 +523,16 @@ public class Nuevo extends javax.swing.JDialog {
 
         jTextField10.setNextFocusableComponent(jTextField12);
         jTextField10.addFocusListener(new java.awt.event.FocusAdapter() {
+            public void focusLost(java.awt.event.FocusEvent evt) {
+                jTextField10FocusLost(evt);
+            }
             public void focusGained(java.awt.event.FocusEvent evt) {
                 jTextField10FocusGained(evt);
+            }
+        });
+        jTextField10.addKeyListener(new java.awt.event.KeyAdapter() {
+            public void keyTyped(java.awt.event.KeyEvent evt) {
+                jTextField10KeyTyped(evt);
             }
         });
 
@@ -579,7 +617,7 @@ public class Nuevo extends javax.swing.JDialog {
                     .addGroup(jPanel3Layout.createSequentialGroup()
                         .addGroup(jPanel3Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                             .addComponent(jTextField7, javax.swing.GroupLayout.PREFERRED_SIZE, 102, javax.swing.GroupLayout.PREFERRED_SIZE)
-                            .addComponent(jDateChooser3, javax.swing.GroupLayout.DEFAULT_SIZE, 203, Short.MAX_VALUE)
+                            .addComponent(jDateChooser3, javax.swing.GroupLayout.DEFAULT_SIZE, 204, Short.MAX_VALUE)
                             .addComponent(jTextField14, javax.swing.GroupLayout.PREFERRED_SIZE, 102, javax.swing.GroupLayout.PREFERRED_SIZE)
                             .addGroup(jPanel3Layout.createSequentialGroup()
                                 .addGap(10, 10, 10)
@@ -590,21 +628,15 @@ public class Nuevo extends javax.swing.JDialog {
                         .addGap(105, 105, 105)))
                 .addGroup(jPanel3Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
                     .addGroup(jPanel3Layout.createSequentialGroup()
-                        .addGroup(jPanel3Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
-                            .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, jPanel3Layout.createSequentialGroup()
-                                .addComponent(jLabel16)
-                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                                .addComponent(jTextField10, javax.swing.GroupLayout.PREFERRED_SIZE, 102, javax.swing.GroupLayout.PREFERRED_SIZE)
-                                .addGap(2, 2, 2))
-                            .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, jPanel3Layout.createSequentialGroup()
-                                .addComponent(jLabel17)
-                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                                .addComponent(jTextField11, javax.swing.GroupLayout.PREFERRED_SIZE, 102, javax.swing.GroupLayout.PREFERRED_SIZE))
-                            .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, jPanel3Layout.createSequentialGroup()
-                                .addComponent(jLabel19)
-                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
-                                .addComponent(jTextField12, javax.swing.GroupLayout.PREFERRED_SIZE, 102, javax.swing.GroupLayout.PREFERRED_SIZE)
-                                .addGap(2, 2, 2)))
+                        .addGroup(jPanel3Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                            .addComponent(jLabel17)
+                            .addComponent(jLabel19)
+                            .addComponent(jLabel16))
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 11, Short.MAX_VALUE)
+                        .addGroup(jPanel3Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                            .addComponent(jTextField10, javax.swing.GroupLayout.Alignment.TRAILING, javax.swing.GroupLayout.PREFERRED_SIZE, 102, javax.swing.GroupLayout.PREFERRED_SIZE)
+                            .addComponent(jTextField12, javax.swing.GroupLayout.Alignment.TRAILING, javax.swing.GroupLayout.PREFERRED_SIZE, 102, javax.swing.GroupLayout.PREFERRED_SIZE)
+                            .addComponent(jTextField11, javax.swing.GroupLayout.Alignment.TRAILING, javax.swing.GroupLayout.PREFERRED_SIZE, 102, javax.swing.GroupLayout.PREFERRED_SIZE))
                         .addContainerGap())
                     .addGroup(jPanel3Layout.createSequentialGroup()
                         .addComponent(okButton, javax.swing.GroupLayout.PREFERRED_SIZE, 45, javax.swing.GroupLayout.PREFERRED_SIZE)
@@ -616,46 +648,39 @@ public class Nuevo extends javax.swing.JDialog {
             jPanel3Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(jPanel3Layout.createSequentialGroup()
                 .addContainerGap()
-                .addGroup(jPanel3Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                    .addGroup(jPanel3Layout.createSequentialGroup()
-                        .addGap(7, 7, 7)
-                        .addGroup(jPanel3Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                            .addComponent(jTextField5, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                            .addComponent(jLabel11)
-                            .addComponent(jTextField4, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                            .addComponent(jLabel10))
-                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                        .addGroup(jPanel3Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                            .addComponent(jLabel19)
-                            .addComponent(jTextField12, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                            .addComponent(jTextField7, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                            .addComponent(jTextField6, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                            .addComponent(jLabel13)
-                            .addComponent(jLabel12))
-                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
-                        .addGroup(jPanel3Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                            .addComponent(jTextField11, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                            .addComponent(jTextField9, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                            .addComponent(jTextField14, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                            .addComponent(jLabel15)
-                            .addComponent(jLabel17)
-                            .addComponent(jLabel14)))
-                    .addGroup(jPanel3Layout.createSequentialGroup()
-                        .addGap(2, 2, 2)
-                        .addGroup(jPanel3Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                            .addComponent(jTextField10, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                            .addComponent(jLabel16))))
+                .addGroup(jPanel3Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.CENTER)
+                    .addComponent(jLabel10)
+                    .addComponent(jTextField4, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                    .addComponent(jLabel11)
+                    .addComponent(jTextField5, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                    .addComponent(jLabel16)
+                    .addComponent(jTextField10, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                .addGroup(jPanel3Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.CENTER)
+                    .addComponent(jTextField12, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                    .addComponent(jLabel19)
+                    .addComponent(jTextField7, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                    .addComponent(jLabel13)
+                    .addComponent(jTextField6, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                    .addComponent(jLabel12))
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                .addGroup(jPanel3Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.CENTER)
+                    .addComponent(jTextField11, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                    .addComponent(jLabel17)
+                    .addComponent(jTextField14, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                    .addComponent(jLabel15)
+                    .addComponent(jTextField9, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                    .addComponent(jLabel14))
                 .addGroup(jPanel3Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                     .addGroup(jPanel3Layout.createSequentialGroup()
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                        .addGroup(jPanel3Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                            .addGroup(jPanel3Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                                .addComponent(jCheckBox1)
-                                .addComponent(jLabel18))
+                        .addGroup(jPanel3Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.CENTER)
+                            .addComponent(jCheckBox1)
+                            .addComponent(jLabel18)
                             .addComponent(jDateChooser3, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                         .addComponent(jLabel21)
-                        .addContainerGap(59, Short.MAX_VALUE))
+                        .addContainerGap(75, Short.MAX_VALUE))
                     .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, jPanel3Layout.createSequentialGroup()
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                         .addGroup(jPanel3Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
@@ -675,17 +700,33 @@ public class Nuevo extends javax.swing.JDialog {
         jTextArea1.setRows(2);
         jTextArea1.setWrapStyleWord(true);
         jTextArea1.setNextFocusableComponent(jTextField3);
-        jTextArea1.addKeyListener(new java.awt.event.KeyAdapter() {
-            public void keyPressed(java.awt.event.KeyEvent evt) {
-                jTextArea1KeyPressed(evt);
+        jTextArea1.addFocusListener(new java.awt.event.FocusAdapter() {
+            public void focusLost(java.awt.event.FocusEvent evt) {
+                jTextArea1FocusLost(evt);
             }
+            public void focusGained(java.awt.event.FocusEvent evt) {
+                jTextArea1FocusGained(evt);
+            }
+        });
+        jTextArea1.addKeyListener(new java.awt.event.KeyAdapter() {
             public void keyTyped(java.awt.event.KeyEvent evt) {
                 jTextArea1KeyTyped(evt);
+            }
+            public void keyPressed(java.awt.event.KeyEvent evt) {
+                jTextArea1KeyPressed(evt);
             }
         });
         jScrollPane1.setViewportView(jTextArea1);
 
         jTextField3.setNextFocusableComponent(jComboBox1);
+        jTextField3.addFocusListener(new java.awt.event.FocusAdapter() {
+            public void focusLost(java.awt.event.FocusEvent evt) {
+                jTextField3FocusLost(evt);
+            }
+            public void focusGained(java.awt.event.FocusEvent evt) {
+                jTextField3FocusGained(evt);
+            }
+        });
         jTextField3.addKeyListener(new java.awt.event.KeyAdapter() {
             public void keyTyped(java.awt.event.KeyEvent evt) {
                 jTextField3KeyTyped(evt);
@@ -711,15 +752,23 @@ public class Nuevo extends javax.swing.JDialog {
 
         jLabel8.setText("Propietario:");
 
+        jTextField1.addFocusListener(new java.awt.event.FocusAdapter() {
+            public void focusLost(java.awt.event.FocusEvent evt) {
+                jTextField1FocusLost(evt);
+            }
+            public void focusGained(java.awt.event.FocusEvent evt) {
+                jTextField1FocusGained(evt);
+            }
+        });
         jTextField1.addKeyListener(new java.awt.event.KeyAdapter() {
-            public void keyPressed(java.awt.event.KeyEvent evt) {
-                jTextField1KeyPressed(evt);
+            public void keyTyped(java.awt.event.KeyEvent evt) {
+                jTextField1KeyTyped(evt);
             }
             public void keyReleased(java.awt.event.KeyEvent evt) {
                 jTextField1KeyReleased(evt);
             }
-            public void keyTyped(java.awt.event.KeyEvent evt) {
-                jTextField1KeyTyped(evt);
+            public void keyPressed(java.awt.event.KeyEvent evt) {
+                jTextField1KeyPressed(evt);
             }
         });
 
@@ -738,6 +787,14 @@ public class Nuevo extends javax.swing.JDialog {
 
         jLabel5.setText("Ubicación:");
 
+        jTextField2.addFocusListener(new java.awt.event.FocusAdapter() {
+            public void focusLost(java.awt.event.FocusEvent evt) {
+                jTextField2FocusLost(evt);
+            }
+            public void focusGained(java.awt.event.FocusEvent evt) {
+                jTextField2FocusGained(evt);
+            }
+        });
         jTextField2.addKeyListener(new java.awt.event.KeyAdapter() {
             public void keyTyped(java.awt.event.KeyEvent evt) {
                 jTextField2KeyTyped(evt);
@@ -823,50 +880,38 @@ public class Nuevo extends javax.swing.JDialog {
             jPanel4Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(jPanel4Layout.createSequentialGroup()
                 .addContainerGap()
-                .addGroup(jPanel4Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
-                    .addGroup(jPanel4Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                        .addComponent(jTextField2, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                        .addComponent(jLabel3)
-                        .addComponent(jLabel22))
-                    .addGroup(jPanel4Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                        .addComponent(jTextField1, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                        .addComponent(jLabel20)
-                        .addComponent(jLabel2)))
+                .addGroup(jPanel4Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.CENTER)
+                    .addComponent(jLabel22)
+                    .addComponent(jTextField2, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                    .addComponent(jLabel3)
+                    .addComponent(jLabel20)
+                    .addComponent(jTextField1, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                    .addComponent(jLabel2))
                 .addGap(14, 14, 14)
                 .addGroup(jPanel4Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                     .addComponent(jScrollPane1, javax.swing.GroupLayout.PREFERRED_SIZE, 54, javax.swing.GroupLayout.PREFERRED_SIZE)
                     .addComponent(jLabel4))
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                .addGroup(jPanel4Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                    .addComponent(jTextField3, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                    .addComponent(jLabel5))
+                .addGroup(jPanel4Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.CENTER)
+                    .addComponent(jLabel5)
+                    .addComponent(jTextField3, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addGroup(jPanel4Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.CENTER)
                     .addComponent(jButton2, javax.swing.GroupLayout.PREFERRED_SIZE, 30, javax.swing.GroupLayout.PREFERRED_SIZE)
+                    .addComponent(jLabel24)
                     .addComponent(jComboBox2, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                     .addComponent(jLabel9)
+                    .addComponent(jLabel23, javax.swing.GroupLayout.PREFERRED_SIZE, 17, javax.swing.GroupLayout.PREFERRED_SIZE)
                     .addComponent(jButton1, javax.swing.GroupLayout.PREFERRED_SIZE, 30, javax.swing.GroupLayout.PREFERRED_SIZE)
-                    .addComponent(jComboBox1, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
+                    .addComponent(jComboBox1, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                    .addComponent(jLabel8))
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                .addGroup(jPanel4Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
+                .addGroup(jPanel4Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.CENTER)
+                    .addComponent(jDateChooser2, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                     .addComponent(jLabel7)
-                    .addComponent(jLabel6)
-                    .addGroup(jPanel4Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                        .addComponent(jDateChooser1, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                        .addComponent(jDateChooser2, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)))
+                    .addComponent(jDateChooser1, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                    .addComponent(jLabel6))
                 .addContainerGap(18, Short.MAX_VALUE))
-            .addGroup(jPanel4Layout.createSequentialGroup()
-                .addGap(140, 140, 140)
-                .addComponent(jLabel23, javax.swing.GroupLayout.PREFERRED_SIZE, 17, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addGap(48, 48, 48))
-            .addGroup(javax.swing.GroupLayout.Alignment.CENTER, jPanel4Layout.createSequentialGroup()
-                .addGap(139, 139, 139)
-                .addComponent(jLabel8)
-                .addGap(52, 52, 52))
-            .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, jPanel4Layout.createSequentialGroup()
-                .addContainerGap(134, Short.MAX_VALUE)
-                .addComponent(jLabel24)
-                .addGap(54, 54, 54))
         );
 
         javax.swing.GroupLayout jPanel1Layout = new javax.swing.GroupLayout(jPanel1);
@@ -888,8 +933,7 @@ public class Nuevo extends javax.swing.JDialog {
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addComponent(jPanel4, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                .addComponent(jPanel3, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+                .addComponent(jPanel3, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
         );
 
         javax.swing.GroupLayout layout = new javax.swing.GroupLayout(getContentPane());
@@ -917,10 +961,11 @@ public class Nuevo extends javax.swing.JDialog {
 
     private void jButton1ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton1ActionPerformed
         propietario propi = new propietario(null, true,con,1);
-        x = (frame.getWidth()/2)-680/2;
+        x = (frame.getWidth()/2)-800/2;
         y = (frame.getHeight()/2)-400/2;
-        propi.setBounds(x, y, 680,400);
+        propi.setBounds(x, y, 800,400);
         propi.setVisible(true);
+        propi.sicierra(1);
         try {
             cargarprop();
             prop=propi.prop;
@@ -937,6 +982,7 @@ private void jButton2ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRS
     y =(frame.getHeight()/2)-325;
     cont.setBounds(x, y, 800, 650);
     cont.setVisible(true);
+    cont.sicierra(1);
     String contra= cont.contra;
         try {
             cargarcont();
@@ -987,90 +1033,78 @@ private void jCheckBox1ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FI
     }//GEN-LAST:event_jTextArea1KeyPressed
 
     private void jTextField4FocusGained(java.awt.event.FocusEvent evt) {//GEN-FIRST:event_jTextField4FocusGained
-        float valor=Float.valueOf(jTextField4.getText());
-        if(valor==0){
+        val = jTextField4.getText();
         jTextField4.setText("");
-        }
     }//GEN-LAST:event_jTextField4FocusGained
 
     private void jTextField5FocusGained(java.awt.event.FocusEvent evt) {//GEN-FIRST:event_jTextField5FocusGained
-        float valor=Float.valueOf(jTextField5.getText());
-        if(valor==0){
+       val = jTextField5.getText();
         jTextField5.setText("");
-        }
     }//GEN-LAST:event_jTextField5FocusGained
 
     private void jTextField10FocusGained(java.awt.event.FocusEvent evt) {//GEN-FIRST:event_jTextField10FocusGained
-        
+        val = jTextField10.getText();
         jTextField10.setText("");
         
     }//GEN-LAST:event_jTextField10FocusGained
 
     private void jTextField6FocusGained(java.awt.event.FocusEvent evt) {//GEN-FIRST:event_jTextField6FocusGained
-        float valor=Float.valueOf(jTextField6.getText());
-        if(valor==0){
+        val = jTextField6.getText();
         jTextField6.setText("");
-        }
     }//GEN-LAST:event_jTextField6FocusGained
 
     private void jTextField7FocusGained(java.awt.event.FocusEvent evt) {//GEN-FIRST:event_jTextField7FocusGained
-       float valor=Float.valueOf(jTextField7.getText());
-        if(valor==0){
+        val = jTextField7.getText();
         jTextField7.setText("");
-        }
     }//GEN-LAST:event_jTextField7FocusGained
 
     private void jTextField9FocusGained(java.awt.event.FocusEvent evt) {//GEN-FIRST:event_jTextField9FocusGained
-       float valor=Float.valueOf(jTextField9.getText());
-        if(valor==0){
+        val = jTextField9.getText();
         jTextField9.setText("");
-        }
     }//GEN-LAST:event_jTextField9FocusGained
 
     private void jTextField14FocusGained(java.awt.event.FocusEvent evt) {//GEN-FIRST:event_jTextField14FocusGained
-       float valor=Float.valueOf(jTextField14.getText());
-        if(valor==0){
+        val = jTextField14.getText();
         jTextField14.setText("");
-        }
     }//GEN-LAST:event_jTextField14FocusGained
 
     private void jTextField6FocusLost(java.awt.event.FocusEvent evt) {//GEN-FIRST:event_jTextField6FocusLost
-        if(jTextField6.getText().toString().equals("")){
-            jTextField6.setText("0.00");
+        if(jTextField6.getText().equals("")){
+            jTextField6.setText(val);
         }
         // TODO add your handling code here:
     }//GEN-LAST:event_jTextField6FocusLost
 
     private void jTextField4FocusLost(java.awt.event.FocusEvent evt) {//GEN-FIRST:event_jTextField4FocusLost
-if(jTextField4.getText().toString().equals("")){
-            jTextField4.setText("0.00");
+    if(jTextField4.getText().equals("")){
+            jTextField4.setText(val);
         }        // TODO add your handling code here:
     }//GEN-LAST:event_jTextField4FocusLost
 
     private void jTextField5FocusLost(java.awt.event.FocusEvent evt) {//GEN-FIRST:event_jTextField5FocusLost
-if(jTextField5.getText().toString().equals("")){
-            jTextField5.setText("0.00");
+if(jTextField5.getText().equals("")){
+            jTextField5.setText(val);
         }        // TODO add your handling code here:
     }//GEN-LAST:event_jTextField5FocusLost
 
     private void jTextField7FocusLost(java.awt.event.FocusEvent evt) {//GEN-FIRST:event_jTextField7FocusLost
 
-        if(jTextField7.getText().toString().equals("")){
-            jTextField7.setText("0.00");
+        if(jTextField7.getText().equals("")){
+            jTextField7.setText(val);
         } // TODO add your handling code here:
     }//GEN-LAST:event_jTextField7FocusLost
 
     private void jTextField9FocusLost(java.awt.event.FocusEvent evt) {//GEN-FIRST:event_jTextField9FocusLost
 
-        if(jTextField9.getText().toString().equals("")){
-            jTextField9.setText("0.00");
+        if(jTextField9.getText().equals("")){
+            jTextField9.setText(val);
         } // TODO add your handling code here:
     }//GEN-LAST:event_jTextField9FocusLost
 
     private void jTextField14FocusLost(java.awt.event.FocusEvent evt) {//GEN-FIRST:event_jTextField14FocusLost
 
-        if(jTextField14.getText().toString().equals("")){
-            jTextField14.setText("0.00");
+        if(jTextField14.getText().equals("")){
+            jTextField14.setText(val);
         } // TODO add your handling code here:
     }//GEN-LAST:event_jTextField14FocusLost
 
@@ -1193,9 +1227,11 @@ private void okButtonMouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:ev
                     JOptionPane.showMessageDialog(this, "Se ha modificado el presupuesto");
 
                 }
+               frame.prin.setavalible(true);
                 frame.prin.haypresupuesto=1;
-            } catch (SQLException ex) {
-                JOptionPane.showMessageDialog(this, "Ha ocurrido un error al insertar un nuevo presupuesto");
+            } catch (SQLException ex) 
+            {
+                JOptionPane.showMessageDialog(this, "Ha ocurrido un error al insertar un nuevo presupuesto "+ex.getMessage());
                 Logger.getLogger(Nuevo.class.getName()).log(Level.SEVERE, null, ex);
             }
                
@@ -1205,6 +1241,7 @@ private void okButtonMouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:ev
                 frame.cargapresupuesto();
                 frame.buscaobra();
                 frame.cargartotal();
+                frame.buscapartida();
             } catch (SQLException ex) {
                 Logger.getLogger(Nuevo.class.getName()).log(Level.SEVERE, null, ex);
             }
@@ -1225,14 +1262,8 @@ private void okButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRS
 }//GEN-LAST:event_okButtonActionPerformed
 
     private void jTextArea1KeyTyped(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_jTextArea1KeyTyped
-        if(jTextArea1.getText().length()==450){
-            evt.consume();
-        }
-        Character c = evt.getKeyChar();
-                if(Character.isLetter(c)) {
-                    evt.setKeyChar(Character.toUpperCase(c));
-                }
-        // TODO add your handling code here:
+    vali.validaText(evt); 
+    
     }//GEN-LAST:event_jTextArea1KeyTyped
 
 private void jTextField1KeyReleased(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_jTextField1KeyReleased
@@ -1242,42 +1273,107 @@ private void jTextField1KeyReleased(java.awt.event.KeyEvent evt) {//GEN-FIRST:ev
 
 private void jTextField1KeyPressed(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_jTextField1KeyPressed
 
-    // TODO add your handling code here:
 }//GEN-LAST:event_jTextField1KeyPressed
 
 private void jTextField1KeyTyped(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_jTextField1KeyTyped
-   Character c = evt.getKeyChar();
-                if(Character.isLetter(c)) {
-                    evt.setKeyChar(Character.toUpperCase(c));
-                }// TODO add your handling code here:
+    vali.validaText(evt); 
+    if(cuenta>0)
+    vali.sizeField("id", "mpres", evt, jTextField1.getText());
+    else
+        if(jTextField1.getText().length()==20)
+          evt.consume();
+    
 }//GEN-LAST:event_jTextField1KeyTyped
 
 private void jTextField2KeyTyped(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_jTextField2KeyTyped
-
-    Character c = evt.getKeyChar();
-                if(Character.isLetter(c)) {
-                    evt.setKeyChar(Character.toUpperCase(c));
-                }// TODO add your handling code here:
+    vali.validaText(evt); 
+    if(cuenta>0)
+    vali.sizeField("nomabr", "mpres", evt, jTextField2.getText());
+     else
+        if(jTextField2.getText().length()==40)
+          evt.consume();
 }//GEN-LAST:event_jTextField2KeyTyped
 
 private void jTextField3KeyTyped(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_jTextField3KeyTyped
-    
-    if(jTextField3.getText().length()==45){
-            evt.consume();
-        }
-    Character c = evt.getKeyChar();
-                if(Character.isLetter(c)) {
-                    evt.setKeyChar(Character.toUpperCase(c));
-                }
-    // TODO add your handling code here:
+    vali.validaText(evt); 
+ 
 }//GEN-LAST:event_jTextField3KeyTyped
+
+private void jTextField1FocusGained(java.awt.event.FocusEvent evt) {//GEN-FIRST:event_jTextField1FocusGained
+    val = jTextField1.getText().toString();
+    jTextField1.setText("");
+    // TODO add your handling code here:
+}//GEN-LAST:event_jTextField1FocusGained
+
+private void jTextField1FocusLost(java.awt.event.FocusEvent evt) {//GEN-FIRST:event_jTextField1FocusLost
+    if(jTextField1.getText().equals(""))
+        jTextField1.setText(val);
+        
+    // TODO add your handling code here:
+}//GEN-LAST:event_jTextField1FocusLost
+
+private void jTextField2FocusGained(java.awt.event.FocusEvent evt) {//GEN-FIRST:event_jTextField2FocusGained
+    val = jTextField2.getText().toString();
+    jTextField2.setText("");
+    // TODO add your handling code here:
+}//GEN-LAST:event_jTextField2FocusGained
+
+private void jTextField2FocusLost(java.awt.event.FocusEvent evt) {//GEN-FIRST:event_jTextField2FocusLost
+if(jTextField2.getText().equals(""))
+    jTextField2.setText(val);// TODO add your handling code here:
+}//GEN-LAST:event_jTextField2FocusLost
+
+private void jTextArea1FocusGained(java.awt.event.FocusEvent evt) {//GEN-FIRST:event_jTextArea1FocusGained
+    val = jTextArea1.getText();
+    jTextArea1.setText("");
+    // TODO add your handling code here:
+}//GEN-LAST:event_jTextArea1FocusGained
+
+private void jTextArea1FocusLost(java.awt.event.FocusEvent evt) {//GEN-FIRST:event_jTextArea1FocusLost
+    if(jTextArea1.getText().isEmpty())
+        jTextArea1.setText(val);
+    // TODO add your handling code here:
+}//GEN-LAST:event_jTextArea1FocusLost
+
+private void jTextField3FocusGained(java.awt.event.FocusEvent evt) {//GEN-FIRST:event_jTextField3FocusGained
+val=jTextField3.getText();
+jTextField3.setText("");
+    // TODO add your handling code here:
+}//GEN-LAST:event_jTextField3FocusGained
+
+private void jTextField3FocusLost(java.awt.event.FocusEvent evt) {//GEN-FIRST:event_jTextField3FocusLost
+
+    if(jTextField3.getText().isEmpty())
+        jTextField3.setText(val);
+        // TODO add your handling code here:
+}//GEN-LAST:event_jTextField3FocusLost
+
+private void jTextField10FocusLost(java.awt.event.FocusEvent evt) {//GEN-FIRST:event_jTextField10FocusLost
+    if(jTextField10.getText().isEmpty())
+        jTextField10.setText(val);
+    // TODO add your handling code here:
+}//GEN-LAST:event_jTextField10FocusLost
+
+private void jTextField10KeyTyped(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_jTextField10KeyTyped
+    vali.validaText(evt); 
+  //  vali.sizeField("nrocon", "mpres", evt, jTextField10.getText());
+}//GEN-LAST:event_jTextField10KeyTyped
+
+private void jTextField12KeyTyped(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_jTextField12KeyTyped
+    vali.validaText(evt); 
+  //  vali.sizeField("nroctr", "mpres", evt, jTextField12.getText());
+}//GEN-LAST:event_jTextField12KeyTyped
+
+private void jTextField11KeyTyped(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_jTextField11KeyTyped
+    vali.validaText(evt); 
+  //  vali.sizeField("nrolic", "mpres", evt, jTextField12.getText());
+}//GEN-LAST:event_jTextField11KeyTyped
     
     private void doClose(int retStatus) {
         returnStatus = retStatus;
         setVisible(false);
         dispose();
     }
-
     /**
      * @param args the command line arguments
      */

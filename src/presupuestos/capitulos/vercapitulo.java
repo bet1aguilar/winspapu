@@ -9,8 +9,7 @@
  * Created on 13/07/2013, 12:54:16 PM
  */
 package presupuestos.capitulos;
-
-import com.mysql.jdbc.Connection;
+import java.sql.Connection;
 import com.mysql.jdbc.ResultSetMetaData;
 import com.mysql.jdbc.Statement;
 import java.awt.Dimension;
@@ -43,7 +42,7 @@ public class vercapitulo extends javax.swing.JDialog {
     public static final int RET_OK = 1;
     String mpres;
     String capitulo;
-    Connection conex;
+    private Connection conex;
     String ids;
     DefaultTableModel metabs;
     int fila1 = 0;

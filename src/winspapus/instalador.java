@@ -12,8 +12,10 @@ package winspapus;
 
 import com.mysql.jdbc.Connection;
 import com.mysql.jdbc.Statement;
+import config.endesencripta;
 import java.awt.event.ActionEvent;
 import java.awt.event.KeyEvent;
+import java.sql.DriverManager;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.text.SimpleDateFormat;
@@ -41,13 +43,16 @@ public class instalador extends javax.swing.JDialog {
     String dd;
     Connection conespapu, conex;
     /** Creates new form instalador */
-    public instalador(java.awt.Frame parent, boolean modal, Connection conespapu, Principal prin, Connection conex, String dd) {
+    int regis;
+    private int cuentas;
+    public instalador(java.awt.Frame parent, boolean modal, Connection conespapu, Principal prin, Connection conex, String dd, int regis) {
         super(parent, modal);
         initComponents();
         this.prin=prin; 
         this.dd=dd;
         this.conespapu=conespapu;
         this.conex=conex;
+        this.regis = regis;
         // Close the dialog when Esc is pressed
         String cancelName = "cancel";
         InputMap inputMap = getRootPane().getInputMap(JComponent.WHEN_ANCESTOR_OF_FOCUSED_COMPONENT);
@@ -135,6 +140,11 @@ public class instalador extends javax.swing.JDialog {
                 jTextField1ActionPerformed(evt);
             }
         });
+        jTextField1.addKeyListener(new java.awt.event.KeyAdapter() {
+            public void keyTyped(java.awt.event.KeyEvent evt) {
+                jTextField1KeyTyped(evt);
+            }
+        });
 
         javax.swing.GroupLayout layout = new javax.swing.GroupLayout(getContentPane());
         getContentPane().setLayout(layout);
@@ -159,7 +169,7 @@ public class instalador extends javax.swing.JDialog {
             .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, layout.createSequentialGroup()
                 .addComponent(jPanel4, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                 .addGap(18, 18, 18)
-                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
+                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.CENTER)
                     .addComponent(jLabel1)
                     .addComponent(jTextField1, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
@@ -179,82 +189,119 @@ public class instalador extends javax.swing.JDialog {
     String sql,fecha1,fecha2; 
     Date hoy = new Date();
     SimpleDateFormat formatofecha=new SimpleDateFormat("yyyy-MM-dd");    
-    if ("DEMO".equals(jTextField1.getText()))
-    {                 
+    if ("DEMO".equals(jTextField1.getText().toUpperCase()))
+    {       
+        int isdemo=0;
+        String consulta = "SELECT demo FROM instalacion";
+            try {
+                Statement stconsulta = (Statement) conex.createStatement();
+                ResultSet rst = stconsulta.executeQuery(consulta);
+                while(rst.next()){
+                    isdemo=rst.getInt(1);
+                }
+            } catch (SQLException ex) {
+                JOptionPane.showMessageDialog(rootPane, "Error al consultar si es demo "+ex.getMessage());
+                Logger.getLogger(instalador.class.getName()).log(Level.SEVERE, null, ex);
+            }
+        
+        if(regis!=-5 && isdemo==0){
             try {
                 fecha1=formatofecha.format(hoy);    
                 fecha2=formatofecha.format(hoy);    
-                sql="insert into mpresadm"
-                        + " values ('"+fecha1+"','"+dd+"','demo','demo','1',1,'"+ fecha2 +"')";
-                System.out.println(sql);
+                int cuentas1=0;
+                sql="insert into mpresadm (fecha, codigo, tm, licencia, status, activo, comprobacion) "
+                        + " values ('"+fecha1+"','"+dd+"','DEMO','DEMO','1',1,'"+ fecha2 +"')";
+                String cuenta = "SELECT COUNT(*) FROM instalacion";
+                Statement stcuenta = (Statement) conex.createStatement();
+                ResultSet rstcuenta = stcuenta.executeQuery(cuenta);
+                while(rstcuenta.next())
+                {
+                    cuentas1 = rstcuenta.getInt(1);
+                }
+               
+                if(cuentas1==0){
+                    String inserta = "INSERT INTO instalacion (id, propietario, demo, representante, rif, direccion, telefono, publico, bloqueado, licencia)"
+                                    + " VALUES ('1','SISTEMAS R.H.', 1, '','', 'Barrio Obrero', '0276-3579562',0,0,'DEMO')";
+                   Statement st = (Statement) conex.createStatement();
+                   st.execute(inserta);
+                }
+                else{
+                     String update = "UPDATE instalacion SET demo='1' WHERE id='1'";
+                   Statement st = (Statement) conex.createStatement();
+                   st.execute(update); 
+                }
+                    System.out.println(sql);
                 Statement demo = (Statement) conex.createStatement();
                 demo.execute(sql);
                 prin.sinst=1;
             } catch (SQLException ex) {
+                JOptionPane.showMessageDialog(rootPane, "Error al insertar nueva instalación en BD "+ex.getMessage());
                 Logger.getLogger(instalador.class.getName()).log(Level.SEVERE, null, ex);
             }
+        }
+        else{
+            JOptionPane.showMessageDialog(rootPane, "Ya ha probado la versión DEMO comuniquese con Inversiones R.H. C.A. para que le asignen un nuevo serial");
+            System.exit(0);
+        }
      
     }   
     else
     {    
-        
-        sql="select * from compra where serial='" + jTextField1.getText()  + "'";
-        
-        Statement ser1 = null;
-        try {    
-           /* String key="9";
-            String result="",decode = null;
+                endesencripta desen = new endesencripta(conex);
             try {
-                byte[] decodificado=Base64.decode(jTextField1.getText());
-                decode= new String(decodificado);
-                
-            } catch (Base64DecodingException ex) {
+                conespapu = (Connection) DriverManager.getConnection("jdbc:mysql://spapu2.db.11811826.hostedresource.com/spapu2", "spapu2", desen.getClaveServer());
+            } catch (SQLException ex) {
+                JOptionPane.showMessageDialog(rootPane, "Error al conectar con BD del servidor "+ex.getMessage());
                 Logger.getLogger(instalador.class.getName()).log(Level.SEVERE, null, ex);
             }
-            for(int i=0;i<decode.length();i++)
-            {
-                String uno=decode.substring(i,1),dos=key.substring((i % key.length())-1,1);              
-                uno=String.valueOf(uno.codePointAt(0)-dos.codePointAt(0));
-                result+=uno;
-            }*/ 
-               
+                sql="select * from compra where serial='" + jTextField1.getText()  + "'";                
+                Statement ser1 = null;
+                try {
+                       
+                                                    
+                    ser1 = (Statement) conespapu.createStatement();
+                    ResultSet resg = null;
+                    resg = ser1.executeQuery(sql);
+                    String idcompra = null,idusuario = null;
+                    while (resg.next())
+                    {                
+                        idcompra=resg.getString("id");
+                        idusuario=resg.getString("usuario_id");                    
+                    }
+                    
+                    
+                    Statement verc=(Statement) conespapu.createStatement();
+                    sql="select count(*) from version_compra where compra_id='"+ idcompra + "' and instalacion=0";
+                    ResultSet rvcom= verc.executeQuery(sql);
+                    int cuentan = 0;
+                    while (rvcom.next())
+                    {
+                        cuentan=rvcom.getInt(1);
+                        
+                    }
+                    if (cuentan>0)
+                    {
+                      Versiones version=new Versiones(prin, true, conespapu, jTextField1.getText(), idcompra, idusuario,conex,prin);
+                      int x=(prin.getWidth()/2)-600/2;
+                      int y=(prin.getHeight()/2)-200/2;
+                      version.setBounds(x, y, 600, 200);
+                      version.setVisible(true);
+                    }    
+                    else
+                    {
+                        JOptionPane.showMessageDialog(rootPane, "No Tiene Instalaciones Disponibles Contacte con Sistemas RH C.A. soporte_tecnico@spapu.com.ve");
+                        System.exit(0);
+                    }
+                } catch (SQLException ex) {
+                    JOptionPane.showMessageDialog(rootPane, "Error al Consultar compras en el servidor. "+ex.getMessage());
+                    Logger.getLogger(instalador.class.getName()).log(Level.SEVERE, null, ex);
+                }
+                //       
             
-            ser1 = (Statement) conespapu.createStatement();
-            ResultSet resg = null;
-            resg = ser1.executeQuery(sql);
-            String idcompra = null,idusuario = null;
-            while (resg.next())
-            {                
-                idcompra=resg.getString("id");
-                idusuario=resg.getString("usuario_id");                    
-            }
-            Statement verc=(Statement) conespapu.createStatement();
-            sql="select count(*) from version_compra where compra_id='"+ idcompra + "' and instalacion=0";
-            ResultSet rvcom= verc.executeQuery(sql);
-            int cuenta = 0;
-            while (rvcom.next())
-            {
-                cuenta=rvcom.getInt(1);
-                
-            }
-            if (cuenta>0)
-            {
-              Versiones version=new Versiones(prin, true, conespapu, jTextField1.getText(), idcompra, idusuario,conex,prin);
-              int x=(prin.getWidth()/2)-600/2;
-              int y=(prin.getHeight()/2)-200/2;
-              version.setBounds(x, y, 600, 200);
-              version.setVisible(true);
-            }    
-            else
-            {
-                JOptionPane.showMessageDialog(rootPane, "No Tiene Instalaciones Disponibles Contacte con Sistemas RH C.A. soporte_tecnico@spapu.com.ve");
-                System.exit(0);
-            }
-        } catch (SQLException ex) {
-            Logger.getLogger(instalador.class.getName()).log(Level.SEVERE, null, ex);
-        }
+           
         //       
-    }  
+    
+    }
         doClose(RET_OK);
     }//GEN-LAST:event_okButtonActionPerformed
     
@@ -271,6 +318,15 @@ public class instalador extends javax.swing.JDialog {
 private void jTextField1ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jTextField1ActionPerformed
 // TODO add your handling code here:
 }//GEN-LAST:event_jTextField1ActionPerformed
+
+private void jTextField1KeyTyped(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_jTextField1KeyTyped
+
+    Character c = evt.getKeyChar();
+                if(Character.isLetter(c)) {
+                    evt.setKeyChar(Character.toUpperCase(c));
+                }// TODO add your handling code here:
+    // TODO add your handling code here:
+}//GEN-LAST:event_jTextField1KeyTyped
     
     private void doClose(int retStatus) {
         returnStatus = retStatus;

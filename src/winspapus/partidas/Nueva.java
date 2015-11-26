@@ -13,6 +13,7 @@ package winspapus.partidas;
 import com.mysql.jdbc.Connection;
 import com.mysql.jdbc.ResultSetMetaData;
 import com.mysql.jdbc.Statement;
+import herramienta.Validacion;
 import java.awt.event.ActionEvent;
 import java.awt.event.KeyEvent;
 import java.sql.DriverManager;
@@ -44,8 +45,9 @@ public final class Nueva extends javax.swing.JDialog {
     public static final int RET_CANCEL = 0;
     /** A return status code - returned if OK button has been pressed */
     public static final int RET_OK = 1;
+    public final String tableName = "mptabs";
     private String mtabu="", numpartida="";
-    
+    Validacion val;
     private int edita=0;
     private Connection conexion;
     private Principal obj;
@@ -74,6 +76,12 @@ public final class Nueva extends javax.swing.JDialog {
         jLabel20.setVisible(false);
         
         this.conexion= conex;
+        try {
+            stmt = (Statement) conexion.createStatement();
+        } catch (SQLException ex) {
+            Logger.getLogger(Nueva.class.getName()).log(Level.SEVERE, null, ex);
+        }
+        val = new Validacion(conexion);
         buscavalores();
         try {
             buscagrupo();
@@ -130,6 +138,12 @@ public final class Nueva extends javax.swing.JDialog {
         this.setTitle("Editar Partida");
         jLabel20.setVisible(false);
          this.conexion= conex;
+         val = new Validacion(conexion);
+        try {
+            stmt = (Statement) conexion.createStatement();
+        } catch (SQLException ex) {
+            Logger.getLogger(Nueva.class.getName()).log(Level.SEVERE, null, ex);
+        }
         numpartida = partida;
         edita = 1;
         jLabel1.setText("Editar Partida del Tabulador");
@@ -320,7 +334,7 @@ public final class Nueva extends javax.swing.JDialog {
         jPanel2.setBackground(new java.awt.Color(100, 100, 100));
 
         jLabel1.setBackground(new java.awt.Color(91, 91, 95));
-        jLabel1.setFont(new java.awt.Font("Tahoma", 1, 11)); // NOI18N
+        jLabel1.setFont(new java.awt.Font("Tahoma", 1, 11));
         jLabel1.setForeground(new java.awt.Color(255, 255, 255));
         jLabel1.setHorizontalAlignment(javax.swing.SwingConstants.CENTER);
         jLabel1.setText("Agregar Partida del Tabulador");
@@ -340,6 +354,11 @@ public final class Nueva extends javax.swing.JDialog {
         jLabel2.setText("Código Covenin *:");
 
         jTextField1.setToolTipText("Ingrese Código del Tabulador");
+        jTextField1.addKeyListener(new java.awt.event.KeyAdapter() {
+            public void keyTyped(java.awt.event.KeyEvent evt) {
+                jTextField1KeyTyped(evt);
+            }
+        });
 
         jLabel3.setText("Número *:");
 
@@ -351,6 +370,19 @@ public final class Nueva extends javax.swing.JDialog {
 
         jTextField5.setText("0.00");
         jTextField5.setToolTipText("Ingrese El porcentaje de Prestaciones");
+        jTextField5.addFocusListener(new java.awt.event.FocusAdapter() {
+            public void focusGained(java.awt.event.FocusEvent evt) {
+                jTextField5FocusGained(evt);
+            }
+            public void focusLost(java.awt.event.FocusEvent evt) {
+                jTextField5FocusLost(evt);
+            }
+        });
+        jTextField5.addKeyListener(new java.awt.event.KeyAdapter() {
+            public void keyTyped(java.awt.event.KeyEvent evt) {
+                jTextField5KeyTyped(evt);
+            }
+        });
 
         jLabel7.setText("Administración y Gastos %:");
 
@@ -358,12 +390,30 @@ public final class Nueva extends javax.swing.JDialog {
 
         jTextField6.setText("0.00");
         jTextField6.setToolTipText("Ingrese Código del Tabulador");
+        jTextField6.addFocusListener(new java.awt.event.FocusAdapter() {
+            public void focusGained(java.awt.event.FocusEvent evt) {
+                jTextField6FocusGained(evt);
+            }
+            public void focusLost(java.awt.event.FocusEvent evt) {
+                jTextField6FocusLost(evt);
+            }
+        });
+        jTextField6.addKeyListener(new java.awt.event.KeyAdapter() {
+            public void keyTyped(java.awt.event.KeyEvent evt) {
+                jTextField6KeyTyped(evt);
+            }
+        });
 
         jLabel9.setFont(new java.awt.Font("Tahoma", 0, 14));
         jLabel9.setForeground(new java.awt.Color(255, 0, 0));
         jLabel9.setText("*");
 
         jTextField8.setToolTipText("Ingrese Código del Tabulador");
+        jTextField8.addKeyListener(new java.awt.event.KeyAdapter() {
+            public void keyTyped(java.awt.event.KeyEvent evt) {
+                jTextField8KeyTyped(evt);
+            }
+        });
 
         jLabel10.setFont(new java.awt.Font("Tahoma", 0, 14));
         jLabel10.setForeground(new java.awt.Color(255, 0, 0));
@@ -395,6 +445,14 @@ public final class Nueva extends javax.swing.JDialog {
         jLabel14.setText("Precio Asumido:");
 
         jTextField10.setToolTipText("Ingrese La unidad De Medida");
+        jTextField10.addFocusListener(new java.awt.event.FocusAdapter() {
+            public void focusGained(java.awt.event.FocusEvent evt) {
+                jTextField10FocusGained(evt);
+            }
+            public void focusLost(java.awt.event.FocusEvent evt) {
+                jTextField10FocusLost(evt);
+            }
+        });
 
         jLabel16.setText("Precio Unitario:");
 
@@ -407,9 +465,40 @@ public final class Nueva extends javax.swing.JDialog {
 
         jTextField13.setText("1.00");
         jTextField13.setToolTipText("Ingrese Código del Tabulador");
+        jTextField13.addFocusListener(new java.awt.event.FocusAdapter() {
+            public void focusGained(java.awt.event.FocusEvent evt) {
+                jTextField13FocusGained(evt);
+            }
+            public void focusLost(java.awt.event.FocusEvent evt) {
+                jTextField13FocusLost(evt);
+            }
+        });
+        jTextField13.addKeyListener(new java.awt.event.KeyAdapter() {
+            public void keyTyped(java.awt.event.KeyEvent evt) {
+                jTextField13KeyTyped(evt);
+            }
+        });
 
         jTextField15.setText("0.00");
         jTextField15.setToolTipText("Ingrese Código del Tabulador");
+        jTextField15.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jTextField15ActionPerformed(evt);
+            }
+        });
+        jTextField15.addFocusListener(new java.awt.event.FocusAdapter() {
+            public void focusGained(java.awt.event.FocusEvent evt) {
+                jTextField15FocusGained(evt);
+            }
+            public void focusLost(java.awt.event.FocusEvent evt) {
+                jTextField15FocusLost(evt);
+            }
+        });
+        jTextField15.addKeyListener(new java.awt.event.KeyAdapter() {
+            public void keyTyped(java.awt.event.KeyEvent evt) {
+                jTextField15KeyTyped(evt);
+            }
+        });
 
         jLabel19.setText("Unidad de Medida:");
 
@@ -428,12 +517,33 @@ public final class Nueva extends javax.swing.JDialog {
         jTextField7.setText("0.00");
         jTextField7.setToolTipText("Ingrese Código del Tabulador");
         jTextField7.addFocusListener(new java.awt.event.FocusAdapter() {
+            public void focusGained(java.awt.event.FocusEvent evt) {
+                jTextField7FocusGained(evt);
+            }
             public void focusLost(java.awt.event.FocusEvent evt) {
                 jTextField7FocusLost(evt);
             }
         });
+        jTextField7.addKeyListener(new java.awt.event.KeyAdapter() {
+            public void keyTyped(java.awt.event.KeyEvent evt) {
+                jTextField7KeyTyped(evt);
+            }
+        });
 
         jTextField4.setText("0.00");
+        jTextField4.addFocusListener(new java.awt.event.FocusAdapter() {
+            public void focusGained(java.awt.event.FocusEvent evt) {
+                jTextField4FocusGained(evt);
+            }
+            public void focusLost(java.awt.event.FocusEvent evt) {
+                jTextField4FocusLost(evt);
+            }
+        });
+        jTextField4.addKeyListener(new java.awt.event.KeyAdapter() {
+            public void keyTyped(java.awt.event.KeyEvent evt) {
+                jTextField4KeyTyped(evt);
+            }
+        });
 
         jButton1.setIcon(new javax.swing.ImageIcon(getClass().getResource("/winspapus/imagenes/añade1.fw.png"))); // NOI18N
         jButton1.setToolTipText("Agrega Nuevo Grupo de Partidas");
@@ -457,20 +567,18 @@ public final class Nueva extends javax.swing.JDialog {
                     .addGroup(javax.swing.GroupLayout.Alignment.LEADING, jPanel1Layout.createSequentialGroup()
                         .addGap(53, 53, 53)
                         .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                            .addComponent(jLabel17)
-                            .addComponent(jLabel19)
-                            .addComponent(jLabel11)
-                            .addComponent(jLabel6)
-                            .addComponent(jLabel12)
-                            .addGroup(jPanel1Layout.createSequentialGroup()
-                                .addComponent(jLabel10)
-                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                                .addComponent(jLabel4))
+                            .addComponent(jLabel10)
+                            .addComponent(jLabel9))
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                        .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                            .addComponent(jLabel2)
                             .addComponent(jLabel3)
-                            .addGroup(jPanel1Layout.createSequentialGroup()
-                                .addComponent(jLabel9)
-                                .addGap(6, 6, 6)
-                                .addComponent(jLabel2)))
+                            .addComponent(jLabel4)
+                            .addComponent(jLabel12)
+                            .addComponent(jLabel6)
+                            .addComponent(jLabel11)
+                            .addComponent(jLabel19)
+                            .addComponent(jLabel17))
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                         .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                             .addGroup(jPanel1Layout.createSequentialGroup()
@@ -499,7 +607,7 @@ public final class Nueva extends javax.swing.JDialog {
                                     .addComponent(jTextField12, javax.swing.GroupLayout.PREFERRED_SIZE, 142, javax.swing.GroupLayout.PREFERRED_SIZE)
                                     .addComponent(jTextField6, javax.swing.GroupLayout.PREFERRED_SIZE, 142, javax.swing.GroupLayout.PREFERRED_SIZE)
                                     .addComponent(jTextField4, javax.swing.GroupLayout.PREFERRED_SIZE, 142, javax.swing.GroupLayout.PREFERRED_SIZE)))
-                            .addComponent(jTextField8, javax.swing.GroupLayout.DEFAULT_SIZE, 521, Short.MAX_VALUE)))
+                            .addComponent(jTextField8, javax.swing.GroupLayout.DEFAULT_SIZE, 519, Short.MAX_VALUE)))
                     .addGroup(javax.swing.GroupLayout.Alignment.LEADING, jPanel1Layout.createSequentialGroup()
                         .addGap(522, 522, 522)
                         .addComponent(okButton, javax.swing.GroupLayout.PREFERRED_SIZE, 45, javax.swing.GroupLayout.PREFERRED_SIZE)
@@ -578,7 +686,7 @@ public final class Nueva extends javax.swing.JDialog {
         );
         layout.setVerticalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addComponent(jPanel1, javax.swing.GroupLayout.DEFAULT_SIZE, 456, Short.MAX_VALUE)
+            .addComponent(jPanel1, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
         );
 
         pack();
@@ -609,8 +717,10 @@ public final class Nueva extends javax.swing.JDialog {
         
          
          sql = "INSERT INTO Mptabs "
-                 + ""
-                 + "VALUES ('"+jTextField1.getText().toString()+"',"
+                 + "(codicove, numero, numegrup, descri, refere, mbdat_id, porcgad, porcpre, porcutil, precasu, precunit,"
+                 + "rendimi, unidad, redondeo, status, mtabus_id, cantidad, capitulo, numenletra)"
+                 + "VALUES "
+                 + "('"+jTextField1.getText().toString()+"',"
                  + " "+jTextField2.getText().toString()+",  "
                  + ""+jTextField2.getText().toString()+", "+ 
 
@@ -737,10 +847,7 @@ public final class Nueva extends javax.swing.JDialog {
     }//GEN-LAST:event_jCheckBox1ActionPerformed
 
     private void jTextField7FocusLost(java.awt.event.FocusEvent evt) {//GEN-FIRST:event_jTextField7FocusLost
-if(jTextField7.getText().equals("")){
-    
-jTextField7.setText("0.00");
-}// TODO add your handling code here:
+        val.focusLost(jTextField7);// TODO add your handling code here:
     }//GEN-LAST:event_jTextField7FocusLost
 
     private void jButton1ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton1ActionPerformed
@@ -762,6 +869,7 @@ jTextField7.setText("0.00");
     private void okButtonMouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_okButtonMouseClicked
         int evalua= 0;
         String sql="";
+        
         if(jTextField1.getText().equals("")){
             evalua=1;
         }
@@ -791,6 +899,101 @@ jTextField7.setText("0.00");
             jLabel20.setVisible(true);
         }        // TODO add your handling code here:
     }//GEN-LAST:event_okButtonMouseClicked
+
+    private void jTextField7FocusGained(java.awt.event.FocusEvent evt) {//GEN-FIRST:event_jTextField7FocusGained
+    val.focusGained(jTextField7);
+        // TODO add your handling code here:
+    }//GEN-LAST:event_jTextField7FocusGained
+
+    private void jTextField1KeyTyped(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_jTextField1KeyTyped
+        val.sizeField("codicove", tableName, evt, jTextField1.getText());
+        val.validaText(evt);
+        // TODO add your handling code here:
+    }//GEN-LAST:event_jTextField1KeyTyped
+
+    private void jTextField8KeyTyped(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_jTextField8KeyTyped
+        val.sizeField("descri", tableName, evt, jTextField1.getText());
+        val.validaText(evt);        
+        // TODO add your handling code here:
+    }//GEN-LAST:event_jTextField8KeyTyped
+
+    private void jTextField5FocusGained(java.awt.event.FocusEvent evt) {//GEN-FIRST:event_jTextField5FocusGained
+        val.focusGained(jTextField5);
+        
+        // TODO add your handling code here:
+    }//GEN-LAST:event_jTextField5FocusGained
+
+    private void jTextField10FocusGained(java.awt.event.FocusEvent evt) {//GEN-FIRST:event_jTextField10FocusGained
+val.focusGained(jTextField10);        // TODO add your handling code here:
+    }//GEN-LAST:event_jTextField10FocusGained
+
+    private void jTextField13FocusGained(java.awt.event.FocusEvent evt) {//GEN-FIRST:event_jTextField13FocusGained
+val.focusGained(jTextField13);        // TODO add your handling code here:
+    }//GEN-LAST:event_jTextField13FocusGained
+
+    private void jTextField4FocusGained(java.awt.event.FocusEvent evt) {//GEN-FIRST:event_jTextField4FocusGained
+val.focusGained(jTextField4);        // TODO add your handling code here:
+    }//GEN-LAST:event_jTextField4FocusGained
+
+    private void jTextField6FocusGained(java.awt.event.FocusEvent evt) {//GEN-FIRST:event_jTextField6FocusGained
+val.focusGained(jTextField6);        // TODO add your handling code here:
+    }//GEN-LAST:event_jTextField6FocusGained
+
+    private void jTextField15FocusGained(java.awt.event.FocusEvent evt) {//GEN-FIRST:event_jTextField15FocusGained
+val.focusGained(jTextField15);        // TODO add your handling code here:
+    }//GEN-LAST:event_jTextField15FocusGained
+
+    private void jTextField5FocusLost(java.awt.event.FocusEvent evt) {//GEN-FIRST:event_jTextField5FocusLost
+val.focusLost(jTextField5);        // TODO add your handling code here:
+    }//GEN-LAST:event_jTextField5FocusLost
+
+    private void jTextField10FocusLost(java.awt.event.FocusEvent evt) {//GEN-FIRST:event_jTextField10FocusLost
+val.focusLost(jTextField10);        // TODO add your handling code here:
+    }//GEN-LAST:event_jTextField10FocusLost
+
+    private void jTextField13FocusLost(java.awt.event.FocusEvent evt) {//GEN-FIRST:event_jTextField13FocusLost
+val.focusLost(jTextField13);        // TODO add your handling code here:
+    }//GEN-LAST:event_jTextField13FocusLost
+
+    private void jTextField4FocusLost(java.awt.event.FocusEvent evt) {//GEN-FIRST:event_jTextField4FocusLost
+val.focusLost(jTextField4);        // TODO add your handling code here:
+    }//GEN-LAST:event_jTextField4FocusLost
+
+    private void jTextField6FocusLost(java.awt.event.FocusEvent evt) {//GEN-FIRST:event_jTextField6FocusLost
+val.focusLost(jTextField6);        // TODO add your handling code here:
+    }//GEN-LAST:event_jTextField6FocusLost
+
+    private void jTextField15FocusLost(java.awt.event.FocusEvent evt) {//GEN-FIRST:event_jTextField15FocusLost
+val.focusLost(jTextField15);        // TODO add your handling code here:
+    }//GEN-LAST:event_jTextField15FocusLost
+
+    private void jTextField7KeyTyped(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_jTextField7KeyTyped
+val.validaFloat(jTextField7.getText(), evt);        // TODO add your handling code here:
+    }//GEN-LAST:event_jTextField7KeyTyped
+
+    private void jTextField5KeyTyped(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_jTextField5KeyTyped
+val.validaFloat(jTextField5.getText(), evt);         // TODO add your handling code here:
+    }//GEN-LAST:event_jTextField5KeyTyped
+
+    private void jTextField13KeyTyped(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_jTextField13KeyTyped
+val.validaFloat(jTextField13.getText(), evt);         // TODO add your handling code here:
+    }//GEN-LAST:event_jTextField13KeyTyped
+
+    private void jTextField4KeyTyped(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_jTextField4KeyTyped
+val.validaFloat(jTextField4.getText(), evt);         // TODO add your handling code here:
+    }//GEN-LAST:event_jTextField4KeyTyped
+
+    private void jTextField6KeyTyped(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_jTextField6KeyTyped
+val.validaFloat(jTextField6.getText(), evt);         // TODO add your handling code here:
+    }//GEN-LAST:event_jTextField6KeyTyped
+
+    private void jTextField15ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jTextField15ActionPerformed
+        // TODO add your handling code here:
+    }//GEN-LAST:event_jTextField15ActionPerformed
+
+    private void jTextField15KeyTyped(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_jTextField15KeyTyped
+val.validaFloat(jTextField15.getText(), evt);         // TODO add your handling code here:
+    }//GEN-LAST:event_jTextField15KeyTyped
     
     private void doClose(int retStatus) {
         returnStatus = retStatus;

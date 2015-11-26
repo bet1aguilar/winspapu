@@ -40,11 +40,13 @@ public class capitulos extends javax.swing.JDialog {
     public static final int RET_OK = 1;
     String ids = "";
     Connection conex;
+    private Principal obj;
     String mtabus;
     /** Creates new form capitulos */
-    public capitulos(java.awt.Frame parent, boolean modal, Connection conex, String mtabus) {
+    public capitulos(java.awt.Frame parent, boolean modal, Connection conex, String mtabus, Principal obj) {
         super(parent, modal);
         initComponents();
+        this.obj = obj;
         this.conex = conex;
         this.mtabus = mtabus;
          jTable1.setOpaque(true);
@@ -54,6 +56,7 @@ public class capitulos extends javax.swing.JDialog {
     jTable1.getTableHeader().setPreferredSize(new Dimension(30,40));
     jTable1.setRowHeight(25);
         cargarcapitulos();
+        bloqueabotones(!obj.isbloquedmtabu());
         // Close the dialog when Esc is pressed
         String cancelName = "cancel";
         InputMap inputMap = getRootPane().getInputMap(JComponent.WHEN_ANCESTOR_OF_FOCUSED_COMPONENT);
@@ -66,6 +69,14 @@ public class capitulos extends javax.swing.JDialog {
                 doClose(RET_CANCEL);
             }
         });
+    }
+    public final void bloqueabotones(boolean bloquea)            
+    {
+        jButton1.setEnabled(bloquea);
+        jButton2.setEnabled(bloquea);
+        jButton3.setEnabled(bloquea);
+        jButton4.setEnabled(bloquea);
+        jButton5.setEnabled(bloquea);
     }
  public final void cargarcapitulos() {
         try {
@@ -390,11 +401,11 @@ public class capitulos extends javax.swing.JDialog {
         } catch (SQLException ex) {
             Logger.getLogger(capitulos.class.getName()).log(Level.SEVERE, null, ex);
         }
-        jButton1.setEnabled(true);
-        jButton3.setEnabled(true);
-        jButton2.setEnabled(true);
+        jButton1.setEnabled(!obj.isbloquedmtabu());
+        jButton3.setEnabled(!obj.isbloquedmtabu());
+        jButton2.setEnabled(!obj.isbloquedmtabu());
         jButton6.setEnabled(true);
-        jButton5.setEnabled(true);
+        jButton5.setEnabled(!obj.isbloquedmtabu());
         
     }//GEN-LAST:event_jTable1MouseClicked
 
@@ -409,7 +420,7 @@ public class capitulos extends javax.swing.JDialog {
     }//GEN-LAST:event_jButton3ActionPerformed
 
     private void jButton6ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton6ActionPerformed
-        vercapitulo nuevo = new vercapitulo(null, true, mtabus, conex, ids);
+        vercapitulo nuevo = new vercapitulo(null, true, mtabus, conex, ids, obj);
         int xi = (this.getX());
         int yi = (this.getY());
         nuevo.setBounds(xi, yi, 700, 620);

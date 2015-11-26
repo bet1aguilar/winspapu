@@ -10,7 +10,7 @@
  */
 package valuaciones;
 
-import com.mysql.jdbc.Connection;
+import java.sql.Connection;
 import com.mysql.jdbc.Statement;
 import java.awt.Dimension;
 import java.awt.event.ActionEvent;
@@ -42,7 +42,7 @@ public class aumentos extends javax.swing.JDialog {
     public static final int RET_OK = 1;
     String[] auxpart;
     String partida, pres;
-    Connection conex;
+    private Connection conex;
     private int auxcont;
     String mvalu="";
     private String busqueda="";
@@ -111,24 +111,39 @@ public class aumentos extends javax.swing.JDialog {
                jTable1.setModel(mat);
        
         String select = "SELECT mp.numegrup, "
+                
                 + " mp.id, "
+                
                 + "mp.cantidad as cantidad, "
-                + "(SELECT SUM(dv.cantidad) FROM dvalus WHERE mpre_id='"+pres+"' AND numepart=mp.numero AND mvalu_id="+mvalu+") as cantacumvalu,"
-                + " (SELECT SUM(cantidad) FROM dvalus WHERE mpre_id='"+pres+"' AND "
+                
+                + "(SELECT SUM(cantidad) FROM dvalus WHERE mpre_id='"+pres+"' "
+                + "AND numepart=mp.numero AND mvalu_id<="+mvalu+") as cantacumvalu,"
+                
+                + " IF((SELECT SUM(cantidad) FROM dvalus WHERE mpre_id='"+pres+"' AND "
                 + "mvalu_id<="+mvalu+" AND numepart=mp.numero GROUP BY numepart)-"
                 + "mp.cantidad-IFNULL((SELECT SUM(aumento) FROM admppres WHERE "
-                + "numepart=mp.numero AND mpre_id='"+pres+"'),0) "
-        + "as cantaum "
-        + "FROM mppres as mp, dvalus as dv "
-                + "WHERE mp.cantidad+IFNULL((SELECT SUM(aumento) FROM admppres WHERE numepart=mp.numero AND mpre_id='"+pres+"'),0)"
-                + "<(SELECT SUM(cantidad) FROM dvalus WHERE mpre_id='"+pres+"' AND mvalu_id<="+mvalu+" AND numepart=mp.numero GROUP BY numepart)"
+             + "numepart=mp.numero AND mpre_id='"+pres+"'),0)>(SELECT cantidad FROM dvalus "
+                + "WHERE numepart=mp.numero AND mpre_id='"+pres+"' AND mvalu_id="+mvalu+"), "
+                + "(SELECT cantidad FROM dvalus "
+                + "WHERE numepart=mp.numero AND mpre_id='"+pres+"' AND mvalu_id="+mvalu+"),"
+                + "(SELECT SUM(cantidad) FROM dvalus WHERE mpre_id='"+pres+"' AND "
+                + "mvalu_id<="+mvalu+" AND numepart=mp.numero GROUP BY numepart)-"
+                + "mp.cantidad-IFNULL((SELECT SUM(aumento) FROM admppres WHERE "
+             + "numepart=mp.numero AND mpre_id='"+pres+"'),0)) as cantaum "
+                
+                + "FROM mppres as mp, dvalus as dv "
+                + "WHERE mp.cantidad+IFNULL((SELECT SUM(aumento) FROM admppres"
+                + " WHERE numepart=mp.numero AND mpre_id='"+pres+"' ),0)"
+                + "<(SELECT SUM(cantidad) FROM dvalus WHERE mpre_id='"+pres+"'"
+                + " AND numepart=mp.numero AND mvalu_id<="+mvalu+" GROUP BY numepart)"
                 + " AND mp.numero=dv.numepart"
                 + " AND (dv.mpre_id='"+pres+"')"
                 + " AND (mp.mpre_id='"+pres+"'"
                 + " OR mp.mpre_id IN (SELECT id FROM mpres WHERE mpres_id='"+pres+"')) "
                 + " AND dv.mvalu_id="+mvalu+" "
                 + "AND (mp.id LIKE '%"+busqueda+"%') "
-                + "AND mp.numero NOT IN (SELECT numepart FROM admppres WHERE payd_id="+payd+")"
+                + "AND (mp.numero NOT IN (SELECT numepart FROM admppres WHERE payd_id="+payd+" AND mpre_id='"+pres+"') "
+                + " OR (SELECT COUNT(*) FROM admppres WHERE mpre_id='"+pres+"')=0)"
                 + " GROUP BY mp.numegrup";
         
         System.out.println("SELECCIONA "+select);
@@ -158,7 +173,8 @@ public class aumentos extends javax.swing.JDialog {
                 Object obj = Boolean.valueOf(enc);
                 
                 fila[0]= obj;
-                for (int i = 1; i < cantidadColumnas; i++) {
+                for (int i = 1; i < cantidadColumnas; i++) 
+                {
                    if(i<6){
                     fila[i]=rst.getObject(i);
                    }else

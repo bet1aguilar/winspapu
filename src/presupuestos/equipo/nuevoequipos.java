@@ -10,7 +10,7 @@
  */
 package presupuestos.equipo;
 
-import com.mysql.jdbc.Connection;
+import java.sql.Connection;
 import com.mysql.jdbc.Statement;
 import java.awt.Rectangle;
 import java.awt.event.ActionEvent;

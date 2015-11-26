@@ -11,13 +11,13 @@
 package valuaciones;
 import reportes.*;
 
-import com.mysql.jdbc.Connection;
 import com.mysql.jdbc.Statement;
 import java.awt.event.ActionEvent;
 import java.awt.event.KeyEvent;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
+import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.text.SimpleDateFormat;
@@ -50,7 +50,7 @@ public class reportecuadravance extends javax.swing.JDialog {
     public static final int RET_CANCEL = 0;
     /** A return status code - returned if OK button has been pressed */
     public static final int RET_OK = 1;
-    Connection conex;
+   private Connection conex;
     String pres;
     private double totalpres;
     private double impuesto;
@@ -66,6 +66,7 @@ public class reportecuadravance extends javax.swing.JDialog {
         this.mvalu=mvalu;
         jDateChooser1.setDate(fechita);
         this.conex=conex;
+        jTextField1.setText(jTextField1.getText()+" DE LA VALUACIÓN No. "+mvalu);
         // Close the dialog when Esc is pressed
         String cancelName = "cancel";
         InputMap inputMap = getRootPane().getInputMap(JComponent.WHEN_ANCESTOR_OF_FOCUSED_COMPONENT);
@@ -94,15 +95,18 @@ public class reportecuadravance extends javax.swing.JDialog {
     // <editor-fold defaultstate="collapsed" desc="Generated Code">//GEN-BEGIN:initComponents
     private void initComponents() {
 
+        jPanel1 = new javax.swing.JPanel();
         okButton = new javax.swing.JButton();
         cancelButton = new javax.swing.JButton();
-        jLabel1 = new javax.swing.JLabel();
+        jPanel2 = new javax.swing.JPanel();
+        jLabel3 = new javax.swing.JLabel();
         jTextField1 = new javax.swing.JTextField();
+        jCheckBox1 = new javax.swing.JCheckBox();
         jLabel2 = new javax.swing.JLabel();
         jTextField2 = new javax.swing.JTextField();
-        jLabel3 = new javax.swing.JLabel();
         jDateChooser1 = new com.toedter.calendar.JDateChooser();
-        jCheckBox1 = new javax.swing.JCheckBox();
+        jLabel1 = new javax.swing.JLabel();
+        jLabel4 = new javax.swing.JLabel();
 
         addWindowListener(new java.awt.event.WindowAdapter() {
             public void windowClosing(java.awt.event.WindowEvent evt) {
@@ -124,10 +128,20 @@ public class reportecuadravance extends javax.swing.JDialog {
             }
         });
 
-        jLabel1.setText("Titulo:");
+        jLabel3.setFont(new java.awt.Font("Tahoma", 1, 11));
+        jLabel3.setText("Fecha:");
 
-        jTextField1.setText("CUADRO DEMOSTRATIVO DE AVANCE DE OBRA  AL DIA:");
+        jTextField1.setText("CUADRO DEMOSTRATIVO DE AVANCE DE OBRA");
+        jTextField1.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jTextField1ActionPerformed(evt);
+            }
+        });
 
+        jCheckBox1.setSelected(true);
+        jCheckBox1.setText("Con fecha");
+
+        jLabel2.setFont(new java.awt.Font("Tahoma", 1, 11));
         jLabel2.setText("Nro. Oficio:");
 
         jTextField2.addActionListener(new java.awt.event.ActionListener() {
@@ -136,64 +150,110 @@ public class reportecuadravance extends javax.swing.JDialog {
             }
         });
 
-        jLabel3.setText("Fecha:");
-
         jDateChooser1.setDateFormatString("dd-MM-yyyy");
 
-        jCheckBox1.setSelected(true);
-        jCheckBox1.setText("Con fecha");
+        jLabel1.setFont(new java.awt.Font("Tahoma", 1, 11));
+        jLabel1.setText("Titulo:");
+
+        javax.swing.GroupLayout jPanel2Layout = new javax.swing.GroupLayout(jPanel2);
+        jPanel2.setLayout(jPanel2Layout);
+        jPanel2Layout.setHorizontalGroup(
+            jPanel2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGroup(jPanel2Layout.createSequentialGroup()
+                .addContainerGap()
+                .addGroup(jPanel2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                    .addGroup(jPanel2Layout.createSequentialGroup()
+                        .addGap(23, 23, 23)
+                        .addGroup(jPanel2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
+                            .addComponent(jLabel3)
+                            .addComponent(jLabel1))
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                        .addGroup(jPanel2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                            .addGroup(jPanel2Layout.createSequentialGroup()
+                                .addComponent(jDateChooser1, javax.swing.GroupLayout.PREFERRED_SIZE, 116, javax.swing.GroupLayout.PREFERRED_SIZE)
+                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                                .addComponent(jCheckBox1)
+                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 123, Short.MAX_VALUE))
+                            .addComponent(jTextField1, javax.swing.GroupLayout.DEFAULT_SIZE, 316, Short.MAX_VALUE)))
+                    .addGroup(jPanel2Layout.createSequentialGroup()
+                        .addComponent(jLabel2)
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                        .addComponent(jTextField2, javax.swing.GroupLayout.PREFERRED_SIZE, 165, javax.swing.GroupLayout.PREFERRED_SIZE)))
+                .addContainerGap())
+        );
+        jPanel2Layout.setVerticalGroup(
+            jPanel2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGroup(jPanel2Layout.createSequentialGroup()
+                .addContainerGap()
+                .addGroup(jPanel2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.CENTER)
+                    .addComponent(jTextField1, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                    .addComponent(jLabel1))
+                .addGap(11, 11, 11)
+                .addGroup(jPanel2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.CENTER)
+                    .addComponent(jTextField2, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                    .addComponent(jLabel2))
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                .addGroup(jPanel2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.CENTER)
+                    .addComponent(jCheckBox1)
+                    .addComponent(jDateChooser1, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                    .addComponent(jLabel3))
+                .addContainerGap())
+        );
+
+        javax.swing.GroupLayout jPanel1Layout = new javax.swing.GroupLayout(jPanel1);
+        jPanel1.setLayout(jPanel1Layout);
+        jPanel1Layout.setHorizontalGroup(
+            jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, jPanel1Layout.createSequentialGroup()
+                .addContainerGap()
+                .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
+                    .addGroup(jPanel1Layout.createSequentialGroup()
+                        .addComponent(jPanel2, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                        .addGap(21, 21, 21))
+                    .addGroup(javax.swing.GroupLayout.Alignment.LEADING, jPanel1Layout.createSequentialGroup()
+                        .addGap(295, 295, 295)
+                        .addComponent(okButton, javax.swing.GroupLayout.PREFERRED_SIZE, 45, javax.swing.GroupLayout.PREFERRED_SIZE)
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                        .addComponent(cancelButton, javax.swing.GroupLayout.PREFERRED_SIZE, 45, javax.swing.GroupLayout.PREFERRED_SIZE)))
+                .addContainerGap())
+        );
+        jPanel1Layout.setVerticalGroup(
+            jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGroup(jPanel1Layout.createSequentialGroup()
+                .addGap(66, 66, 66)
+                .addComponent(jPanel2, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                .addGap(33, 33, 33)
+                .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
+                    .addComponent(okButton, javax.swing.GroupLayout.PREFERRED_SIZE, 45, javax.swing.GroupLayout.PREFERRED_SIZE)
+                    .addComponent(cancelButton, javax.swing.GroupLayout.PREFERRED_SIZE, 45, javax.swing.GroupLayout.PREFERRED_SIZE))
+                .addContainerGap())
+        );
+
+        getRootPane().setDefaultButton(okButton);
+
+        jLabel4.setBackground(new java.awt.Color(91, 91, 95));
+        jLabel4.setFont(new java.awt.Font("Tahoma", 1, 11));
+        jLabel4.setForeground(new java.awt.Color(255, 255, 255));
+        jLabel4.setHorizontalAlignment(javax.swing.SwingConstants.CENTER);
+        jLabel4.setText("Cuadro de Avance");
+        jLabel4.setOpaque(true);
 
         javax.swing.GroupLayout layout = new javax.swing.GroupLayout(getContentPane());
         getContentPane().setLayout(layout);
         layout.setHorizontalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, layout.createSequentialGroup()
-                .addContainerGap(295, Short.MAX_VALUE)
-                .addComponent(okButton, javax.swing.GroupLayout.PREFERRED_SIZE, 43, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                .addComponent(cancelButton, javax.swing.GroupLayout.PREFERRED_SIZE, 41, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addGap(21, 21, 21))
-            .addGroup(layout.createSequentialGroup()
-                .addContainerGap()
-                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
-                    .addComponent(jLabel3)
-                    .addComponent(jLabel2)
-                    .addComponent(jLabel1))
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                    .addComponent(jTextField1, javax.swing.GroupLayout.PREFERRED_SIZE, 327, javax.swing.GroupLayout.PREFERRED_SIZE)
-                    .addGroup(layout.createSequentialGroup()
-                        .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING, false)
-                            .addComponent(jDateChooser1, javax.swing.GroupLayout.Alignment.LEADING, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                            .addComponent(jTextField2, javax.swing.GroupLayout.Alignment.LEADING, javax.swing.GroupLayout.DEFAULT_SIZE, 165, Short.MAX_VALUE))
-                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
-                        .addComponent(jCheckBox1)))
-                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+                .addGap(10, 10, 10)
+                .addComponent(jPanel1, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+            .addComponent(jLabel4, javax.swing.GroupLayout.Alignment.TRAILING, javax.swing.GroupLayout.DEFAULT_SIZE, 430, Short.MAX_VALUE)
         );
         layout.setVerticalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(layout.createSequentialGroup()
-                .addGap(20, 20, 20)
-                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.CENTER)
-                    .addComponent(jTextField1, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                    .addComponent(jLabel1))
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
-                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.CENTER)
-                    .addComponent(jTextField2, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                    .addComponent(jLabel2))
+                .addComponent(jLabel4, javax.swing.GroupLayout.PREFERRED_SIZE, 45, javax.swing.GroupLayout.PREFERRED_SIZE)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.CENTER)
-                    .addComponent(jCheckBox1)
-                    .addComponent(jDateChooser1, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                    .addComponent(jLabel3))
-                .addGap(21, 21, 21)
-                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
-                    .addComponent(cancelButton, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                    .addComponent(okButton, javax.swing.GroupLayout.PREFERRED_SIZE, 0, Short.MAX_VALUE))
-                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+                .addComponent(jPanel1, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
         );
-
-        getRootPane().setDefaultButton(okButton);
 
         pack();
     }// </editor-fold>//GEN-END:initComponents
@@ -225,33 +285,39 @@ public class reportecuadravance extends javax.swing.JDialog {
                  truncate.execute(borra);
                  String completa="(SELECT mp.numegrup, mp.id, mp.descri, mp.unidad, IF(mp.precasu=0,mp.precunit, mp.precasu) as precio, "
                          + "mp.cantidad,IF(mp.precasu=0,mp.precunit, mp.precasu)*mp.cantidad, "
-                         + "IFNULL((SELECT aumento FROM admppres WHERE numepart=mp.numero AND mpre_id='"+pres+"' AND mvalu_id<='"+mvalu+"'),0) as aumcantidad, "
-                         + "IFNULL((SELECT aumento FROM admppres WHERE numepart=mp.numero AND mpre_id='"+pres+"' AND mvalu_id<='"+mvalu+"'),0)*"
+                         + "IFNULL((SELECT SUM(aumento) FROM admppres WHERE numepart=mp.numero AND mpre_id='"+pres+"' AND mvalu_id<='"+mvalu+"'),0) as aumcantidad, "
+                         + "IFNULL((SELECT SUM(aumento) FROM admppres WHERE numepart=mp.numero AND mpre_id='"+pres+"' AND mvalu_id<='"+mvalu+"'),0)*"
                          + "IF(mp.precasu=0,mp.precunit, mp.precasu) as aummonto,"
-                          + "IFNULL((SELECT disminucion FROM admppres WHERE numepart=mp.numero AND mpre_id='"+pres+"' AND mvalu_id<='"+mvalu+"'),0)"
+                          + "IFNULL((SELECT SUM(disminucion) FROM admppres WHERE numepart=mp.numero AND mpre_id='"+pres+"' AND mvalu_id<='"+mvalu+"'),0)"
                          + " as dismicantidad, "
-                          + "IFNULL((SELECT disminucion FROM admppres WHERE numepart=mp.numero AND mpre_id='"+pres+"' AND mvalu_id<='"+mvalu+"'),0)*"
+                          + "IFNULL((SELECT SUM(disminucion) FROM admppres WHERE numepart=mp.numero AND mpre_id='"+pres+"' AND mvalu_id<='"+mvalu+"'),0)*"
                          + "IF(mp.precasu=0,mp.precunit, mp.precasu) as dismonto, "
-                         + "mp.cantidad+IFNULL((SELECT aumento FROM admppres WHERE numepart=mp.numero AND mpre_id='"+pres+"' AND mvalu_id<='"+mvalu+"'),0)-"
-                         + "IFNULL((SELECT disminucion FROM admppres WHERE numepart=mp.numero AND mpre_id='"+pres+"' AND mvalu_id<='"+mvalu+"'),0) as cantmodificado"
                          
-                         + ", (mp.cantidad+IFNULL((SELECT aumento FROM admppres WHERE numepart=mp.numero AND mpre_id='"+pres+"' AND mvalu_id<='"+mvalu+"'),0)-"
-                         + "IFNULL((SELECT disminucion FROM admppres WHERE numepart=mp.numero AND mpre_id='"+pres+"' AND mvalu_id<='"+mvalu+"'),0))"
-                         + "*IF(mp.precasu=0,mp.precunit, mp.precasu)"
-                         + " as montomodificado, '"+pres+"',(((mp.cantidad+IFNULL((SELECT aumento FROM admppres WHERE numepart=mp.numero AND mpre_id='"+pres+"' AND mvalu_id<='"+mvalu+"'),0)-"
-                         + "IFNULL((SELECT disminucion FROM admppres WHERE numepart=mp.numero AND mpre_id='"+pres+"' AND mvalu_id<='"+mvalu+"'),0))"
-                         + "*IF(mp.precasu=0,mp.precunit, mp.precasu))"
-                         + " /(IF(mp.precasu=0,mp.precunit, mp.precasu)*mp.cantidad))*100 as porcmodificado "
-                         + "FROM mppres AS mp WHERE mpre_id='"+pres+"' AND tipo ='Org')";
+                         + "(SELECT SUM(dv.cantidad) FROM dvalus as dv WHERE dv.mvalu_id<='"+mvalu+"'"
+                         + "    AND dv.numepart = mp.numero AND(dv.mpre_id='"+pres+"' OR dv.mpre_id IN (SELECT id FROM mpres WHERE "
+                         + "mpres_id='"+pres+"'))) as cantmodificado"
+                         
+                         + ",(SELECT SUM(dv.cantidad) FROM dvalus as dv WHERE dv.mvalu_id<='"+mvalu+"' "
+                         + "  AND dv.numepart = mp.numero   AND (dv.mpre_id='"+pres+"' OR dv.mpre_id IN (SELECT id FROM mpres WHERE "
+                         + "mpres_id='"+pres+"')))*IF(mp.precasu=0,mp.precunit, mp.precasu) as montomodificado, '"+pres+"',"
+                         + "(SELECT SUM(dv.cantidad) FROM dvalus as dv WHERE dv.mvalu_id<='"+mvalu+"' "
+                         + "  AND dv.numepart = mp.numero   AND (dv.mpre_id='"+pres+"' OR dv.mpre_id IN (SELECT id FROM mpres WHERE "
+                         + "mpres_id='"+pres+"')))*(IF(mp.precasu=0,mp.precunit, mp.precasu)/(IF(mp.precasu=0,mp.precunit, mp.precasu)*mp.cantidad))*100 as porcmodificado "
+                         + "FROM mppres AS mp WHERE mp.mpre_id='"+pres+"' AND tipo ='Org' "
+                         + "AND mp.numero IN (SELECT numepart FROM dvalus WHERE mvalu_id<='"+mvalu+"' AND mpre_id='"+pres+"') "
+                         + "ORDER BY mp.numegrup) ";
+                 
                  String original= "INSERT INTO reportecuadrocierre (nro, codigo, descri, unidad, precio, origcant, origmonto,"
                          + "aumcantidad, aummonto,discantidad,dismonto,cantmodificado,montomodificado,mpres, porcmodificado)"
                          + completa;
+                 System.out.println("completa "+completa);
                  Statement insertori = (Statement) conex.createStatement();
                  insertori.execute(original);
                  //-----------------------------------NP
                  
                 String cuentanp = "SELECT COUNT(*) FROM mppres WHERE tipo='NP' AND tiponp='NP' AND "
-                         + "(mpre_id='"+pres+"' OR mpre_id IN (SELECT id FROM mpres WHERE mpres_id='"+pres+"'))";
+                         + "(mpre_id='"+pres+"' OR mpre_id IN (SELECT id FROM mpres WHERE mpres_id='"+pres+"')) "
+                        + "AND numero IN (SELECT numepart FROM dvalus WHERE mvalu_id<='"+mvalu+"' AND mpre_id='"+pres+"')";
                  Statement cnp = (Statement) conex.createStatement();
                  ResultSet rscnp = cnp.executeQuery(cuentanp);
                  int cuenta=0;
@@ -265,36 +331,39 @@ public class reportecuadravance extends javax.swing.JDialog {
                      Statement sts = (Statement) conex.createStatement();
                      sts.execute(titulos);
                      String agrega = "INSERT INTO reportecuadrocierre (nro, codigo, descri,unidad,precio,npcantidad,npmonto,"
-                             + "aumcantidad,aummonto,discantidad,dismonto,cantmodificado, montomodificado,mpres)"
+                             + "aumcantidad,aummonto,discantidad,dismonto,cantmodificado, montomodificado,mpres, porcmodificado)"
                              + " (SELECT mp.numegrup, mp.id, mp.descri, mp.unidad, IF(mp.precasu=0,mp.precunit,mp.precasu) as precio, "
                              + "mp.cantidad,"
-                             + "mp.cantidad*IF(mp.precasu=0,mp.precunit,mp.precasu) as npmonto, (SELECT aumento FROM admppres WHERE "
+                             + "mp.cantidad*IF(mp.precasu=0,mp.precunit,mp.precasu) as npmonto, (SELECT SUM(aumento) FROM admppres WHERE "
                              + "(mpre_id='"+pres+"' OR mpre_id IN (SELECT id FROM mpres WHERE mpres_id='"+pres+"')) AND "
-                             + "numepart=mp.numero "
-                             + ") as aumcantidad, (SELECT aumento FROM admppres WHERE "
-                             + "(mpre_id='"+pres+"' OR mpre_id IN (SELECT id FROM mpres WHERE mpres_id='"+pres+"')) AND "
-                             + "numepart=mp.numero AND mvalu_id<='"+mvalu+"'"
-                             + ")*IF(mp.precasu=0,mp.precunit,mp.precasu) as aummonto, (SELECT disminucion FROM admppres WHERE "
+                             + "numepart=mp.numero AND mvalu_id<="+mvalu+""
+                             + ") as aumcantidad, (SELECT SUM(aumento) FROM admppres WHERE "
                              + "(mpre_id='"+pres+"' OR mpre_id IN (SELECT id FROM mpres WHERE mpres_id='"+pres+"')) AND "
                              + "numepart=mp.numero AND mvalu_id<='"+mvalu+"'"
-                             + ") as discantidad, (SELECT aumento FROM admppres WHERE "
+                             + ")*IF(mp.precasu=0,mp.precunit,mp.precasu) as aummonto, (SELECT SUM(disminucion) FROM admppres WHERE "
                              + "(mpre_id='"+pres+"' OR mpre_id IN (SELECT id FROM mpres WHERE mpres_id='"+pres+"')) AND "
                              + "numepart=mp.numero AND mvalu_id<='"+mvalu+"'"
-                             + ")* IF(mp.precasu=0,mp.precunit,mp.precasu) as dismonto, mp.cantidad+ (SELECT aumento FROM admppres WHERE "
+                             + ") as discantidad, (SELECT SUM(aumento) FROM admppres WHERE "
                              + "(mpre_id='"+pres+"' OR mpre_id IN (SELECT id FROM mpres WHERE mpres_id='"+pres+"')) AND "
                              + "numepart=mp.numero AND mvalu_id<='"+mvalu+"'"
-                             + ")-(SELECT disminucion FROM admppres WHERE "
-                             + "(mpre_id='"+pres+"' OR mpre_id IN (SELECT id FROM mpres WHERE mpres_id='"+pres+"')) AND "
-                             + "numepart=mp.numero AND mvalu_id<='"+mvalu+"'"
-                             + ") as cantmodificado, mp.cantidad+ (SELECT aumento FROM admppres WHERE "
-                             + "(mpre_id='"+pres+"' OR mpre_id IN (SELECT id FROM mpres WHERE mpres_id='"+pres+"')) AND "
-                             + "numepart=mp.numero AND mvalu_id<='"+mvalu+"'"
-                             + ")-(SELECT disminucion FROM admppres WHERE "
-                             + "(mpre_id='"+pres+"' OR mpre_id IN (SELECT id FROM mpres WHERE mpres_id='"+pres+"')) AND "
-                             + "numepart=mp.numero AND mvalu_id<='"+mvalu+"'"
-                             + ")*IF(mp.precasu=0,mp.precunit,mp.precasu) as montomodificado, '"+pres+"' FROM mppres as mp "
+                             + ")* IF(mp.precasu=0,mp.precunit,mp.precasu) as dismonto,"
+                             + ""
+                             + "(SELECT SUM(dv.cantidad) FROM dvalus as dv WHERE dv.mvalu_id<='"+mvalu+"'"
+                         + "    AND dv.numepart = mp.numero AND(dv.mpre_id='"+pres+"' OR dv.mpre_id IN (SELECT id FROM mpres WHERE "
+                         + "mpres_id='"+pres+"'))) as cantmodificado"
+                         
+                         + ",(SELECT SUM(dv.cantidad) FROM dvalus as dv WHERE dv.mvalu_id<='"+mvalu+"' "
+                         + "  AND dv.numepart = mp.numero   AND (dv.mpre_id='"+pres+"' OR dv.mpre_id IN (SELECT id FROM mpres WHERE "
+                         + "mpres_id='"+pres+"')))*IF(mp.precasu=0,mp.precunit, mp.precasu) as montomodificado, '"+pres+"',"
+                         + "(SELECT SUM(dv.cantidad) FROM dvalus as dv WHERE dv.mvalu_id<='"+mvalu+"' "
+                         + "  AND dv.numepart = mp.numero   AND (dv.mpre_id='"+pres+"' OR dv.mpre_id IN (SELECT id FROM mpres WHERE "
+                         + "mpres_id='"+pres+"')))*(IF(mp.precasu=0,mp.precunit, mp.precasu)/(IF(mp.precasu=0,mp.precunit, mp.precasu)*mp.cantidad))*100 as porcmodificado "
+                             + ""
+                             + "FROM mppres as mp "
                              + "WHERE mp.tipo='NP' AND mp.tiponp='NP' AND (mp.mpre_id='"+pres+"' OR mp.mpre_id IN (SELECT id FROM "
-                             + "mpres WHERE mpres_id='"+pres+"')))";
+                             + "mpres WHERE mpres_id='"+pres+"')) "
+                             + "AND mp.numero IN (SELECT numepart FROM dvalus WHERE mvalu_id<='"+mvalu+"' AND mpre_id='"+pres+"' AND mvalu_id!=0 AND status=1) "
+                             + "ORDER BY mp.numegrup)";
                      Statement np=(Statement) conex.createStatement();
                      np.execute(agrega);
                             
@@ -316,36 +385,37 @@ public class reportecuadravance extends javax.swing.JDialog {
                      Statement sts = (Statement) conex.createStatement();
                      sts.execute(titulos);
                      String agrega = "INSERT INTO reportecuadrocierre (nro, codigo, descri,unidad,precio,npcantidad,npmonto,"
-                             + "aumcantidad,aummonto,discantidad,dismonto,cantmodificado, montomodificado,mpres)"
+                             + "aumcantidad,aummonto,discantidad,dismonto,cantmodificado, montomodificado,mpres, porcmodificado)"
                              + " (SELECT mp.numegrup, mp.id, mp.descri, mp.unidad, IF(mp.precasu=0,mp.precunit,mp.precasu) as precio, "
                              + "mp.cantidad,"
-                             + "mp.cantidad*IF(mp.precasu=0,mp.precunit,mp.precasu) as npmonto, (SELECT aumento FROM admppres WHERE "
+                             + "mp.cantidad*IF(mp.precasu=0,mp.precunit,mp.precasu) as npmonto, (SELECT SUM(aumento) FROM admppres WHERE "
                              + "(mpre_id='"+pres+"' OR mpre_id IN (SELECT id FROM mpres WHERE mpres_id='"+pres+"')) AND "
                              + "numepart=mp.numero AND mvalu_id<='"+mvalu+"'"
-                             + ") as aumcantidad, (SELECT aumento FROM admppres WHERE "
+                             + ") as aumcantidad, (SELECT SUM(aumento) FROM admppres WHERE "
                              + "(mpre_id='"+pres+"' OR mpre_id IN (SELECT id FROM mpres WHERE mpres_id='"+pres+"')) AND "
                              + "numepart=mp.numero AND mvalu_id<='"+mvalu+"'"
-                             + ")*IF(mp.precasu=0,mp.precunit,mp.precasu) as aummonto, (SELECT disminucion FROM admppres WHERE "
+                             + ")*IF(mp.precasu=0,mp.precunit,mp.precasu) as aummonto, (SELECT SUM(disminucion) FROM admppres WHERE "
                              + "(mpre_id='"+pres+"' OR mpre_id IN (SELECT id FROM mpres WHERE mpres_id='"+pres+"')) AND "
                              + "numepart=mp.numero AND mvalu_id<='"+mvalu+"'"
-                             + ") as discantidad, (SELECT aumento FROM admppres WHERE "
+                             + ") as discantidad, (SELECT SUM(disminucion) FROM admppres WHERE "
                              + "(mpre_id='"+pres+"' OR mpre_id IN (SELECT id FROM mpres WHERE mpres_id='"+pres+"')) AND "
                              + "numepart=mp.numero AND mvalu_id<='"+mvalu+"'"
-                             + ")* IF(mp.precasu=0,mp.precunit,mp.precasu) as dismonto, mp.cantidad+ (SELECT aumento FROM admppres WHERE "
-                             + "(mpre_id='"+pres+"' OR mpre_id IN (SELECT id FROM mpres WHERE mpres_id='"+pres+"')) AND "
-                             + "numepart=mp.numero AND mvalu_id<='"+mvalu+"'"
-                             + ")-(SELECT disminucion FROM admppres WHERE "
-                             + "(mpre_id='"+pres+"' OR mpre_id IN (SELECT id FROM mpres WHERE mpres_id='"+pres+"')) AND "
-                             + "numepart=mp.numero AND mvalu_id<='"+mvalu+"'"
-                             + ") as cantmodificado, mp.cantidad+ (SELECT aumento FROM admppres WHERE "
-                             + "(mpre_id='"+pres+"' OR mpre_id IN (SELECT id FROM mpres WHERE mpres_id='"+pres+"')) AND "
-                             + "numepart=mp.numero AND mvalu_id<='"+mvalu+"'"
-                             + ")-(SELECT disminucion FROM admppres WHERE "
-                             + "(mpre_id='"+pres+"' OR mpre_id IN (SELECT id FROM mpres WHERE mpres_id='"+pres+"')) AND "
-                             + "numepart=mp.numero AND mvalu_id<='"+mvalu+"'"
-                             + ")*IF(mp.precasu=0,mp.precunit,mp.precasu) as montomodificado, '"+pres+"' FROM mppres as mp "
+                             + ")* IF(mp.precasu=0,mp.precunit,mp.precasu) as dismonto, "
+                             + "(SELECT SUM(dv.cantidad) FROM dvalus as dv WHERE dv.mvalu_id<='"+mvalu+"'"
+                         + "    AND dv.numepart = mp.numero AND(dv.mpre_id='"+pres+"' OR dv.mpre_id IN (SELECT id FROM mpres WHERE "
+                         + "mpres_id='"+pres+"'))) as cantmodificado"
+                         
+                         + ",(SELECT SUM(dv.cantidad) FROM dvalus as dv WHERE dv.mvalu_id<='"+mvalu+"' "
+                         + "  AND dv.numepart = mp.numero   AND (dv.mpre_id='"+pres+"' OR dv.mpre_id IN (SELECT id FROM mpres WHERE "
+                         + "mpres_id='"+pres+"')))*IF(mp.precasu=0,mp.precunit, mp.precasu) as montomodificado, '"+pres+"',"
+                         + "(SELECT SUM(dv.cantidad) FROM dvalus as dv WHERE dv.mvalu_id<='"+mvalu+"' "
+                         + "  AND dv.numepart = mp.numero   AND (dv.mpre_id='"+pres+"' OR dv.mpre_id IN (SELECT id FROM mpres WHERE "
+                         + "mpres_id='"+pres+"')))*(IF(mp.precasu=0,mp.precunit, mp.precasu)/(IF(mp.precasu=0,mp.precunit, mp.precasu)*mp.cantidad))*100 as porcmodificado "
+                             + "FROM mppres as mp "
                              + "WHERE mp.tipo='NP' AND mp.tiponp='OE' AND (mp.mpre_id='"+pres+"' OR mp.mpre_id IN (SELECT id FROM "
-                             + "mpres WHERE mpres_id='"+pres+"')))";
+                             + "mpres WHERE mpres_id='"+pres+"')) "
+                             + " AND mp.numero IN (SELECT numepart FROM dvalus WHERE mvalu_id<='"+mvalu+"' AND mpre_id='"+pres+"') "
+                             + "ORDER BY mp.numegrup)";
                      Statement np=(Statement) conex.createStatement();
                      np.execute(agrega);
                             
@@ -367,36 +437,36 @@ public class reportecuadravance extends javax.swing.JDialog {
                      Statement sts = (Statement) conex.createStatement();
                      sts.execute(titulos);
                      String agrega = "INSERT INTO reportecuadrocierre (nro, codigo, descri,unidad,precio,npcantidad,npmonto,"
-                             + "aumcantidad,aummonto,discantidad,dismonto,cantmodificado, montomodificado,mpres)"
+                             + "aumcantidad,aummonto,discantidad,dismonto,cantmodificado, montomodificado,mpres, porcmodificado)"
                              + " (SELECT mp.numegrup, mp.id, mp.descri, mp.unidad, IF(mp.precasu=0,mp.precunit,mp.precasu) as precio, "
                              + "mp.cantidad,"
-                             + "mp.cantidad*IF(mp.precasu=0,mp.precunit,mp.precasu) as npmonto, (SELECT aumento FROM admppres WHERE "
+                             + "mp.cantidad*IF(mp.precasu=0,mp.precunit,mp.precasu) as npmonto, (SELECT SUM(aumento) FROM admppres WHERE "
                              + "(mpre_id='"+pres+"' OR mpre_id IN (SELECT id FROM mpres WHERE mpres_id='"+pres+"')) AND "
                              + "numepart=mp.numero AND mvalu_id<='"+mvalu+"'"
-                             + ") as aumcantidad, (SELECT aumento FROM admppres WHERE "
+                             + ") as aumcantidad, (SELECT SUM(aumento) FROM admppres WHERE "
                              + "(mpre_id='"+pres+"' OR mpre_id IN (SELECT id FROM mpres WHERE mpres_id='"+pres+"')) AND "
                              + "numepart=mp.numero AND mvalu_id<='"+mvalu+"'"
-                             + ")*IF(mp.precasu=0,mp.precunit,mp.precasu) as aummonto, (SELECT disminucion FROM admppres WHERE "
+                             + ")*IF(mp.precasu=0,mp.precunit,mp.precasu) as aummonto, (SELECT SUM(disminucion) FROM admppres WHERE "
                              + "(mpre_id='"+pres+"' OR mpre_id IN (SELECT id FROM mpres WHERE mpres_id='"+pres+"')) AND "
                              + "numepart=mp.numero AND mvalu_id<='"+mvalu+"'"
-                             + ") as discantidad, (SELECT aumento FROM admppres WHERE "
+                             + ") as discantidad, (SELECT SUM(aumento) FROM admppres WHERE "
                              + "(mpre_id='"+pres+"' OR mpre_id IN (SELECT id FROM mpres WHERE mpres_id='"+pres+"')) AND "
                              + "numepart=mp.numero AND mvalu_id<='"+mvalu+"'"
-                             + ")* IF(mp.precasu=0,mp.precunit,mp.precasu) as dismonto, mp.cantidad+ (SELECT aumento FROM admppres WHERE "
-                             + "(mpre_id='"+pres+"' OR mpre_id IN (SELECT id FROM mpres WHERE mpres_id='"+pres+"')) AND "
-                             + "numepart=mp.numero AND mvalu_id<='"+mvalu+"'"
-                             + ")-(SELECT disminucion FROM admppres WHERE "
-                             + "(mpre_id='"+pres+"' OR mpre_id IN (SELECT id FROM mpres WHERE mpres_id='"+pres+"')) AND "
-                             + "numepart=mp.numero AND mvalu_id<='"+mvalu+"'"
-                             + ") as cantmodificado, mp.cantidad+ (SELECT aumento FROM admppres WHERE "
-                             + "(mpre_id='"+pres+"' OR mpre_id IN (SELECT id FROM mpres WHERE mpres_id='"+pres+"')) AND "
-                             + "numepart=mp.numero AND mvalu_id<='"+mvalu+"'"
-                             + ")-(SELECT disminucion FROM admppres WHERE "
-                             + "(mpre_id='"+pres+"' OR mpre_id IN (SELECT id FROM mpres WHERE mpres_id='"+pres+"')) AND "
-                             + "numepart=mp.numero AND mvalu_id<='"+mvalu+"'"
-                             + ")*IF(mp.precasu=0,mp.precunit,mp.precasu) as montomodificado, '"+pres+"' FROM mppres as mp "
+                             + ")* IF(mp.precasu=0,mp.precunit,mp.precasu) as dismonto, "
+                              + "(SELECT SUM(dv.cantidad) FROM dvalus as dv WHERE dv.mvalu_id<='"+mvalu+"'"
+                         + "    AND dv.numepart = mp.numero AND(dv.mpre_id='"+pres+"' OR dv.mpre_id IN (SELECT id FROM mpres WHERE "
+                         + "mpres_id='"+pres+"'))) as cantmodificado"
+                         
+                         + ",(SELECT SUM(dv.cantidad) FROM dvalus as dv WHERE dv.mvalu_id<='"+mvalu+"' "
+                         + "  AND dv.numepart = mp.numero   AND (dv.mpre_id='"+pres+"' OR dv.mpre_id IN (SELECT id FROM mpres WHERE "
+                         + "mpres_id='"+pres+"')))*IF(mp.precasu=0,mp.precunit, mp.precasu) as montomodificado, '"+pres+"',"
+                         + "(SELECT SUM(dv.cantidad) FROM dvalus as dv WHERE dv.mvalu_id<='"+mvalu+"' "
+                         + "  AND dv.numepart = mp.numero   AND (dv.mpre_id='"+pres+"' OR dv.mpre_id IN (SELECT id FROM mpres WHERE "
+                         + "mpres_id='"+pres+"')))*(IF(mp.precasu=0,mp.precunit, mp.precasu)/(IF(mp.precasu=0,mp.precunit, mp.precasu)*mp.cantidad))*100 as porcmodificado "
+                             + "FROM mppres as mp "
                              + "WHERE mp.tipo='NP' AND mp.tiponp='OA' AND (mp.mpre_id='"+pres+"' OR mp.mpre_id IN (SELECT id FROM "
-                             + "mpres WHERE mpres_id='"+pres+"')))";
+                             + "mpres WHERE mpres_id='"+pres+"')) "
+                             + "AND mp.numero IN (SELECT numepart FROM dvalus WHERE mvalu_id<='"+mvalu+"' AND mpre_id='"+pres+"') ORDER BY mp.numegrup)";
                      Statement np=(Statement) conex.createStatement();
                      np.execute(agrega);
                             
@@ -418,43 +488,44 @@ public class reportecuadravance extends javax.swing.JDialog {
                      Statement sts = (Statement) conex.createStatement();
                      sts.execute(titulos);
                      String agrega = "INSERT INTO reportecuadrocierre (nro, codigo, descri,unidad,precio,npcantidad,npmonto,"
-                             + "aumcantidad,aummonto,discantidad,dismonto,cantmodificado, montomodificado,mpres)"
+                             + "aumcantidad,aummonto,discantidad,dismonto,cantmodificado, montomodificado,mpres, porcmodificado)"
                              + " (SELECT mp.numegrup, mp.id, mp.descri, mp.unidad, IF(mp.precasu=0,mp.precunit,mp.precasu) as precio, "
                              + "mp.cantidad,"
-                             + "mp.cantidad*IF(mp.precasu=0,mp.precunit,mp.precasu) as npmonto, (SELECT aumento FROM admppres WHERE "
+                             + "mp.cantidad*IF(mp.precasu=0,mp.precunit,mp.precasu) as npmonto, (SELECT SUM(aumento) FROM admppres WHERE "
                              + "(mpre_id='"+pres+"' OR mpre_id IN (SELECT id FROM mpres WHERE mpres_id='"+pres+"')) AND "
                              + "numepart=mp.numero AND mvalu_id<='"+mvalu+"'"
-                             + ") as aumcantidad, (SELECT aumento FROM admppres WHERE "
+                             + ") as aumcantidad, (SELECT SUM(aumento) FROM admppres WHERE "
                              + "(mpre_id='"+pres+"' OR mpre_id IN (SELECT id FROM mpres WHERE mpres_id='"+pres+"')) AND "
                              + "numepart=mp.numero AND mvalu_id<='"+mvalu+"'"
-                             + ")*IF(mp.precasu=0,mp.precunit,mp.precasu) as aummonto, (SELECT disminucion FROM admppres WHERE "
+                             + ")*IF(mp.precasu=0,mp.precunit,mp.precasu) as aummonto, (SELECT SUM(disminucion) FROM admppres WHERE "
                              + "(mpre_id='"+pres+"' OR mpre_id IN (SELECT id FROM mpres WHERE mpres_id='"+pres+"')) AND "
                              + "numepart=mp.numero AND mvalu_id<='"+mvalu+"'"
-                             + ") as discantidad, (SELECT aumento FROM admppres WHERE "
+                             + ") as discantidad, (SELECT SUM(aumento) FROM admppres WHERE "
                              + "(mpre_id='"+pres+"' OR mpre_id IN (SELECT id FROM mpres WHERE mpres_id='"+pres+"')) AND "
                              + "numepart=mp.numero AND mvalu_id<='"+mvalu+"'"
-                             + ")* IF(mp.precasu=0,mp.precunit,mp.precasu) as dismonto, mp.cantidad+ (SELECT aumento FROM admppres WHERE "
-                             + "(mpre_id='"+pres+"' OR mpre_id IN (SELECT id FROM mpres WHERE mpres_id='"+pres+"')) AND "
-                             + "numepart=mp.numero AND mvalu_id<='"+mvalu+"'"
-                             + ")-(SELECT disminucion FROM admppres WHERE "
-                             + "(mpre_id='"+pres+"' OR mpre_id IN (SELECT id FROM mpres WHERE mpres_id='"+pres+"')) AND "
-                             + "numepart=mp.numero AND mvalu_id<='"+mvalu+"'"
-                             + ") as cantmodificado, mp.cantidad+ (SELECT aumento FROM admppres WHERE "
-                             + "(mpre_id='"+pres+"' OR mpre_id IN (SELECT id FROM mpres WHERE mpres_id='"+pres+"')) AND "
-                             + "numepart=mp.numero AND mvalu_id<='"+mvalu+"'"
-                             + ")-(SELECT disminucion FROM admppres WHERE "
-                             + "(mpre_id='"+pres+"' OR mpre_id IN (SELECT id FROM mpres WHERE mpres_id='"+pres+"')) AND "
-                             + "numepart=mp.numero AND mvalu_id<='"+mvalu+"'"
-                             + ")*IF(mp.precasu=0,mp.precunit,mp.precasu) as montomodificado, '"+pres+"' FROM mppres as mp "
+                             + ")* IF(mp.precasu=0,mp.precunit,mp.precasu) as dismonto, "
+                              + "(SELECT SUM(dv.cantidad) FROM dvalus as dv WHERE dv.mvalu_id<='"+mvalu+"'"
+                         + "    AND dv.numepart = mp.numero AND(dv.mpre_id='"+pres+"' OR dv.mpre_id IN (SELECT id FROM mpres WHERE "
+                         + "mpres_id='"+pres+"'))) as cantmodificado"
+                         
+                         + ",(SELECT SUM(dv.cantidad) FROM dvalus as dv WHERE dv.mvalu_id<='"+mvalu+"' "
+                         + "  AND dv.numepart = mp.numero   AND (dv.mpre_id='"+pres+"' OR dv.mpre_id IN (SELECT id FROM mpres WHERE "
+                         + "mpres_id='"+pres+"')))*IF(mp.precasu=0,mp.precunit, mp.precasu) as montomodificado, '"+pres+"',"
+                         + "(SELECT SUM(dv.cantidad) FROM dvalus as dv WHERE dv.mvalu_id<='"+mvalu+"' "
+                         + "  AND dv.numepart = mp.numero   AND (dv.mpre_id='"+pres+"' OR dv.mpre_id IN (SELECT id FROM mpres WHERE "
+                         + "mpres_id='"+pres+"')))*(IF(mp.precasu=0,mp.precunit, mp.precasu)/(IF(mp.precasu=0,mp.precunit, mp.precasu)*mp.cantidad))*100 as porcmodificado "
+                             + "FROM mppres as mp "
                              + "WHERE mp.tipo='NP' AND mp.tiponp='OC' AND (mp.mpre_id='"+pres+"' OR mp.mpre_id IN (SELECT id FROM "
-                             + "mpres WHERE mpres_id='"+pres+"')))";
+                             + "mpres WHERE mpres_id='"+pres+"')) "
+                             + "AND mp.numero IN (SELECT numepart FROM dvalus WHERE mvalu_id<='"+mvalu+"' AND mpre_id='"+pres+"') ORDER BY mp.numegrup)";
                      Statement np=(Statement) conex.createStatement();
                      np.execute(agrega);
                             
                  }
                  //------------------------------------VP
                  String cuentavp = "SELECT COUNT(*) FROM mppres WHERE tipo='VP' AND "
-                         + "(mpre_id='"+pres+"' OR mpre_id IN (SELECT id FROM mpres WHERE mpres_id='"+pres+"'))";
+                         + "(mpre_id='"+pres+"' OR mpre_id IN (SELECT id FROM mpres WHERE mpres_id='"+pres+"'))"
+                         + " AND numero IN (SELECT numepart FROM dvalus WHERE mvalu_id<='"+mvalu+"' AND mpre_id='"+pres+"')";
                  Statement cvp = (Statement) conex.createStatement();
                  ResultSet rscvp = cvp.executeQuery(cuentavp);
                  int cuentavps=0;
@@ -468,8 +539,8 @@ public class reportecuadravance extends javax.swing.JDialog {
                      Statement sts = (Statement) conex.createStatement();
                      sts.execute(titulos);
                      String agrega = "INSERT INTO reportecuadrocierre (nro, codigo, descri,unidad,precio, vpcantidad, vpmonto,"
-                             + "aumcantidad,aummonto,discantidad,dismonto,cantmodificado, montomodificado,mpres)"
-                             + " (SELECT mp.numegrup, mp.id, mp.descri, mp.unidad, "
+                             + "aumcantidad,aummonto,discantidad,dismonto,cantmodificado, montomodificado,mpres, porcmodificado)"
+                             + " (SELECT mp.tiporec, mp.id, mp.descri, mp.unidad, "
                              + "IF(IF(mp.precasu=0,mp.precunit,mp.precasu)-(SELECT IF(precasu=0,precunit, precasu) FROM "
                              + "mppres WHERE (mpre_id='"+pres+"' OR mpre_id IN (SELECT id FROM mpres WHERE mpres_id='"+pres+"'))"
                              + " AND numero=mp.mppre_id)<0,0,IF(mp.precasu=0,mp.precunit,mp.precasu)-(SELECT IF(precasu=0,precunit, precasu) "
@@ -478,46 +549,52 @@ public class reportecuadravance extends javax.swing.JDialog {
                              + " AND numero=mp.mppre_id)) "
                              + "as precio, "
                              + "mp.cantidad,"
-                             + "mp.cantidad*IF((IF(mp.precasu=0,mp.precunit,mp.precasu)-(SELECT IF(precasu=0,precunit, precasu) FROM "
+                             
+                             + "ROUND(mp.cantidad*IF((IF(mp.precasu=0,mp.precunit,mp.precasu)-"
+                             + "(SELECT IF(precasu=0,precunit, precasu) FROM "
                              + "mppres WHERE (mpre_id='"+pres+"' OR mpre_id IN (SELECT id FROM mpres WHERE mpres_id='"+pres+"'))"
-                             + " AND numero=mp.mppre_id))<0,0,mp.cantidad*(IF(mp.precasu=0,mp.precunit,mp.precasu)-(SELECT "
+                             + " AND numero=mp.mppre_id))<0,0,(IF(mp.precasu=0,mp.precunit,mp.precasu)-(SELECT "
                              + "IF(precasu=0,precunit, precasu)"
                              + " FROM "
                              + "mppres WHERE (mpre_id='"+pres+"' OR mpre_id IN (SELECT id FROM mpres WHERE mpres_id='"+pres+"'))"
-                             + " AND numero=mp.mppre_id))) as vpmonto, "
-                             + "(SELECT aumento FROM admppres WHERE "
+                             + " AND numero=mp.mppre_id))),2) as vpmonto, "
+                             
+                             
+                             + "(SELECT SUM(aumento) FROM admppres WHERE "
                              + "(mpre_id='"+pres+"' OR mpre_id IN (SELECT id FROM mpres WHERE mpres_id='"+pres+"')) AND "
                              + "numepart=mp.numero AND mvalu_id<='"+mvalu+"'"
-                             + ") as aumcantidad, (SELECT aumento FROM admppres WHERE "
+                             + ") as aumcantidad, (SELECT SUM(aumento) FROM admppres WHERE "
                              + "(mpre_id='"+pres+"' OR mpre_id IN (SELECT id FROM mpres WHERE mpres_id='"+pres+"')) AND "
                              + "numepart=mp.numero AND mvalu_id<='"+mvalu+"'"
                              + ")*IF(mp.precasu=0,mp.precunit,mp.precasu)-(SELECT IF(precasu=0,precunit, precasu) FROM "
                              + "mppres WHERE (mpre_id='"+pres+"' OR mpre_id IN (SELECT id FROM mpres WHERE mpres_id='"+pres+"'))"
-                             + " AND numero=mp.mppre_id)  as aummonto, (SELECT disminucion FROM admppres WHERE "
+                             + " AND numero=mp.mppre_id)  as aummonto, (SELECT SUM(disminucion) FROM admppres WHERE "
                              + "(mpre_id='"+pres+"' OR mpre_id IN (SELECT id FROM mpres WHERE mpres_id='"+pres+"')) AND "
                              + "numepart=mp.numero AND mvalu_id<='"+mvalu+"'"
-                             + ") as discantidad, (SELECT aumento FROM admppres WHERE "
+                             + ") as discantidad, ROUND((SELECT SUM(aumento) FROM admppres WHERE "
                              + "(mpre_id='"+pres+"' OR mpre_id IN (SELECT id FROM mpres WHERE mpres_id='"+pres+"')) AND "
                              + "numepart=mp.numero AND mvalu_id<='"+mvalu+"'"
-                             + ")* IF(mp.precasu=0,mp.precunit,mp.precasu)-(SELECT IF(precasu=0,precunit, precasu) FROM "
+                             + ")* (IF(mp.precasu=0,mp.precunit,mp.precasu)-(SELECT IF(precasu=0,precunit, precasu) FROM "
                              + "mppres WHERE (mpre_id='"+pres+"' OR mpre_id IN (SELECT id FROM mpres where mpres_id='"+pres+"'))"
-                             + " AND numero=mp.mppre_id)  as dismonto, mp.cantidad+ (SELECT aumento FROM admppres WHERE "
-                             + "(mpre_id='"+pres+"' OR mpre_id IN (SELECT id FROM mpres WHERE mpres_id='"+pres+"')) AND "
-                             + "numepart=mp.numero AND mvalu_id<='"+mvalu+"'"
-                             + ")-(SELECT disminucion FROM admppres WHERE "
-                             + "(mpre_id='"+pres+"' OR mpre_id IN (SELECT id FROM mpres WHERE mpres_id='"+pres+"')) AND "
-                             + "numepart=mp.numero AND mvalu_id<='"+mvalu+"'"
-                             + ") as cantmodificado, mp.cantidad+ (SELECT aumento FROM admppres WHERE "
-                             + "(mpre_id='"+pres+"' OR mpre_id IN (SELECT id FROM mpres WHERE mpres_id='"+pres+"')) AND "
-                             + "numepart=mp.numero AND mvalu_id<='"+mvalu+"'"
-                             + ")-(SELECT disminucion FROM admppres WHERE "
-                             + "(mpre_id='"+pres+"' OR mpre_id IN (SELECT id FROM mpres WHERE mpres_id='"+pres+"')) AND "
-                             + "numepart=mp.numero "
-                             + ")*IF(mp.precasu=0,mp.precunit,mp.precasu)-(SELECT IF(precasu=0,precunit, precasu) FROM "
-                             + "mppres WHERE (mpre_id='"+pres+"' OR mpre_id IN (SELECT id FROM mpres WHERE mpres_id='"+pres+"'))"
-                             + " AND numero=mp.mppre_id)  as montomodificado, '"+pres+"' FROM mppres as mp "
+                             + " AND numero=mp.mppre_id)),2)  as dismonto, "
+                              + "(SELECT SUM(dv.cantidad) FROM dvalus as dv WHERE dv.mvalu_id<='"+mvalu+"'"
+                         + "    AND dv.numepart = mp.numero AND(dv.mpre_id='"+pres+"' OR dv.mpre_id IN (SELECT id FROM mpres WHERE "
+                         + "mpres_id='"+pres+"'))) as cantmodificado"
+                         
+                         + ",ROUND((SELECT SUM(dv.cantidad) FROM dvalus as dv WHERE dv.mvalu_id<='"+mvalu+"' "
+                         + "  AND dv.numepart = mp.numero   AND (dv.mpre_id='"+pres+"' OR dv.mpre_id IN (SELECT id FROM mpres WHERE "
+                         + "mpres_id='"+pres+"')))*IF(mp.tipo!='VP',IF(mp.precasu=0,mp.precunit, mp.precasu),"
+                             + "(IF(mp.precasu=0,mp.precunit,mp.precasu)-(SELECT IF(precasu=0,precunit, precasu) FROM "
+                             + "mppres WHERE (mpre_id='"+pres+"' OR mpre_id IN (SELECT id FROM mpres where mpres_id='"+pres+"'))"
+                             + " AND numero=mp.mppre_id))"
+                             + "),2) as montomodificado, '"+pres+"',"
+                         + "(SELECT SUM(dv.cantidad) FROM dvalus as dv WHERE dv.mvalu_id<='"+mvalu+"' "
+                         + "  AND dv.numepart = mp.numero   AND (dv.mpre_id='"+pres+"' OR dv.mpre_id IN (SELECT id FROM mpres WHERE "
+                         + "mpres_id='"+pres+"')))*(IF(mp.precasu=0,mp.precunit, mp.precasu)/(IF(mp.precasu=0,mp.precunit, mp.precasu)*mp.cantidad))*100 as porcmodificado "
+                           +" FROM mppres as mp "
                              + "WHERE mp.tipo='VP' AND (mp.mpre_id='"+pres+"' OR mp.mpre_id IN (SELECT id FROM "
-                             + "mpres WHERE mpres_id='"+pres+"')))";
+                             + "mpres WHERE mpres_id='"+pres+"')) "
+                             + "AND mp.numero IN (SELECT numepart FROM dvalus WHERE mvalu_id<='"+mvalu+"' AND mpre_id='"+pres+"') ORDER BY mp.numegrup)";
                      System.out.println("VP "+agrega);
                      Statement np=(Statement) conex.createStatement();
                      np.execute(agrega);
@@ -534,7 +611,7 @@ public class reportecuadravance extends javax.swing.JDialog {
                  JasperReport report = JasperCompileManager.compileReport(design);
                  if(jCheckBox1.isSelected()){
                    fecha = format.format(jDateChooser1.getDate());
-                   titulo = titulo+" "+fecha; 
+                   titulo = titulo+" DE LA FECHA: "+fecha; 
                  }else{
                      fecha="";
                  }
@@ -572,6 +649,10 @@ public class reportecuadravance extends javax.swing.JDialog {
     private void jTextField2ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jTextField2ActionPerformed
         // TODO add your handling code here:
     }//GEN-LAST:event_jTextField2ActionPerformed
+
+    private void jTextField1ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jTextField1ActionPerformed
+        // TODO add your handling code here:
+    }//GEN-LAST:event_jTextField1ActionPerformed
     
     private void doClose(int retStatus) {
         returnStatus = retStatus;
@@ -590,6 +671,9 @@ public class reportecuadravance extends javax.swing.JDialog {
     private javax.swing.JLabel jLabel1;
     private javax.swing.JLabel jLabel2;
     private javax.swing.JLabel jLabel3;
+    private javax.swing.JLabel jLabel4;
+    private javax.swing.JPanel jPanel1;
+    private javax.swing.JPanel jPanel2;
     private javax.swing.JTextField jTextField1;
     private javax.swing.JTextField jTextField2;
     private javax.swing.JButton okButton;

@@ -13,7 +13,7 @@ package presupuestos;
 
 import java.sql.SQLException;
 import winspapus.*;
-import com.mysql.jdbc.Connection;
+import java.sql.Connection;
 import com.mysql.jdbc.Statement;
 import java.awt.event.ActionEvent;
 import java.awt.event.KeyEvent;
@@ -58,7 +58,7 @@ public class reporteapu1 extends javax.swing.JDialog {
 
     public static final int RET_CANCEL = 0;
     public static final int RET_OK = 1;
-    Connection conex;
+    private Connection conex;
     String ruta;
     String mpres, numero;
  
@@ -137,6 +137,7 @@ public class reporteapu1 extends javax.swing.JDialog {
             parameters.put("fecha", fecha);
             parameters.put("nroenletra",letras);
             JasperPrint print = JasperFillManager.fillReport(report, parameters, conex);
+            
             FileOutputStream output=null;
             String auxruta=ruta;
             if(jCheckBox1.isSelected()){

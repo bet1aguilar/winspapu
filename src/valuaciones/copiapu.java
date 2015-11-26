@@ -1,8 +1,10 @@
 
 package valuaciones;
 
-import com.mysql.jdbc.Connection;
+import java.sql.Connection;
 import com.mysql.jdbc.Statement;
+import config.Redondeo;
+import java.math.BigDecimal;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.logging.Level;
@@ -13,9 +15,10 @@ public class copiapu {
     String mpres, mtabu, partida;
     private Connection conex;
     String numero, numenpres;
-    float totamat=0, totaequipo=0, totamano=0;
-    float cantmano=0;
-    float porcgad=0, porcutil=0, porcfi=0, porcpre=0, rendimi=0, totalpartida=0, porcimp=0;
+    Redondeo redon = new Redondeo();
+    BigDecimal totamat=new BigDecimal("0.00"), totaequipo=new BigDecimal("0.00"), totamano=new BigDecimal("0.00");
+    BigDecimal cantmano=new BigDecimal("0.00");
+    BigDecimal porcgad=new BigDecimal("0.00"), porcutil=new BigDecimal("0.00"), porcfi=new BigDecimal("0.00"), porcpre=new BigDecimal("0.00"), rendimi=new BigDecimal("0.00"), totalpartida=new BigDecimal("0.00"), porcimp=new BigDecimal("0.00");
     String num="";
     int selec;
     public copiapu(Connection conex, String mpres, String mtabu, String partida, int selec, String numero){
@@ -52,7 +55,7 @@ public class copiapu {
             ResultSet rstr = str.executeQuery(num);
             while(rstr.next()){
                 numenpres = rstr.getString(1);
-                rendimi = rstr.getFloat(2);
+                rendimi = rstr.getBigDecimal(2);
             }
         } catch (SQLException ex) {
             Logger.getLogger(copiapu.class.getName()).log(Level.SEVERE, null, ex);
@@ -60,27 +63,27 @@ public class copiapu {
     }
     
     public final void totalpartida(){
-        totalpartida = totaequipo+totamano+totamat;
-        float admin, util, finan, imp,aux;
-        admin = porcgad/100;
-        admin = totalpartida*admin;
-        admin = totalpartida+admin;
-        util = porcutil/100;
-        util = admin*util;
-       totalpartida=admin+util;
-       finan = porcfi/100;
-       finan = totalpartida*finan;
-       imp = porcimp/100;
-       imp = totalpartida*imp;
-       totalpartida = totalpartida+imp+finan;
+        totalpartida = totaequipo.add(totamano).add(totamat);
+        BigDecimal admin, util, finan, imp,aux;
+        admin = porcgad.divide(new BigDecimal("100"));
+        admin = redon.redondearDosDecimales(totalpartida.multiply(admin));
+        admin = totalpartida.add(admin);
+        util = porcutil.divide(new BigDecimal("100"));
+        util = redon.redondearDosDecimales(admin.multiply(util));
+       totalpartida=admin.add(util);
+       finan = porcfi.divide(new BigDecimal("100"));
+       finan = totalpartida.multiply(finan);
+       imp = porcimp.divide(new BigDecimal("100"));
+       imp = redon.redondearDosDecimales(totalpartida.multiply(imp));
+       totalpartida = totalpartida.add(imp).add(finan);
        
     }
-    public float gettotalpartida(){
+    public BigDecimal gettotalpartida(){
         return totalpartida;
     }
     public final void cargamat(){
         String mmtab_id, cantidad, precio, status;
-        float valor=0;
+        BigDecimal valor=new BigDecimal("0.00");
         String select = "SELECT mmtab_id, cantidad, precio, status FROM dmtabs WHERE"
                 + " numepart="+numero+" AND mtabus_id='"+mtabu+"'";
         try {
@@ -136,6 +139,7 @@ public class copiapu {
                 {
                     String inserta = "INSERT INTO mmpres (mpre_id, id, descri, desperdi, precio, unidad, status)"
                             + " VALUES ('"+mpres+"', '"+mmtab_id+"', '"+descri+"', "+desperdi+", "+precios+",'"+unidad+"', 1)'";
+                    System.out.println("inserta "+inserta);
                     Statement insert = (Statement) conex.createStatement();
                     insert.execute(inserta);
                 }else{
@@ -145,12 +149,12 @@ public class copiapu {
                     insert.execute(actualiza);
                 }  
                 
-                float precio1, cant, desp;
-                precio1 = Float.valueOf(precios);
-                cant = Float.valueOf(cantidad);
-                desp = Float.valueOf(desperdi);
+                BigDecimal precio1, cant, desp;
+                precio1 = new BigDecimal (precios);
+                cant = new BigDecimal(cantidad);
+                desp = new BigDecimal(desperdi);
                 
-                totamat +=precio1+(precio1*desp/100)*cant; 
+                totamat =totamat.add(redon.redondearDosDecimales(precio1.add((precio1.multiply(desp.divide(new BigDecimal("100")))).multiply(cant)))); 
                 
             }
         } catch (SQLException ex) {
@@ -222,16 +226,16 @@ public class copiapu {
                     Statement insert = (Statement) conex.createStatement();
                     insert.execute(inserta); 
                 }
-                float precio1, cant, desp;
-                precio1 = Float.valueOf(precios);
-                cant = Float.valueOf(cantidad);
-                desp = Float.valueOf(depreciar);
-                if(desp==0) {
-                    desp=1;
+                BigDecimal precio1, cant, desp;
+                precio1 = new BigDecimal(precios);
+                cant = new BigDecimal(cantidad);
+                desp = new BigDecimal(depreciar);
+                if(desp==new BigDecimal("0.00")) {
+                    desp=new BigDecimal("1.00");
                 }
-                totaequipo +=(precio1*cant*desp); 
+                totaequipo =totaequipo.add( redon.redondearDosDecimales(precio1.multiply(cant).multiply(desp))); 
             }
-            totaequipo = totaequipo/rendimi;
+            totaequipo = totaequipo.divide(rendimi,2,BigDecimal.ROUND_HALF_UP);
         } catch (SQLException ex) {
             Logger.getLogger(copiapu.class.getName()).log(Level.SEVERE, null, ex);
         }
@@ -239,7 +243,7 @@ public class copiapu {
     }
     
     public final void cargamano(){
-        float precio1=0, cant=0, bon = 0, sub=0;
+        BigDecimal precio1= new BigDecimal("0.00"), cant=new BigDecimal("0.00"), bon = new BigDecimal("0.00"), sub=new BigDecimal("0.00");
         String mmotabs, cantidad, bono = null,salario=null, subsid=null, deprecia=null;
         String consulta = "SELECT mmotab_id, cantidad, salario, bono, subsidi FROM dmoptabs WHERE "
                 + "numero="+numero+" AND mtabus_id='"+mtabu+"'";
@@ -248,9 +252,9 @@ public class copiapu {
             Statement stp = (Statement) conex.createStatement();
             ResultSet rstp = stp.executeQuery(parametros);
             while(rstp.next()){
-                porcgad = rstp.getFloat("porcgad");
-                    porcutil = rstp.getFloat("porcutil");
-                      porcpre = rstp.getFloat("porcpre");
+                porcgad = rstp.getBigDecimal("porcgad");
+                    porcutil = rstp.getBigDecimal("porcutil");
+                      porcpre = rstp.getBigDecimal("porcpre");
             }
             String busca = "SELECT porcfi, poripa FROM mpres WHERE id='"+mpres+"'";
                 Statement buscar = (Statement) conex.createStatement();
@@ -258,8 +262,8 @@ public class copiapu {
                 
                 while(rbusca.next()){
                   
-                    porcfi = rbusca.getFloat("porcfi");
-                    porcimp = rbusca.getFloat("poripa");
+                    porcfi = rbusca.getBigDecimal("porcfi");
+                    porcimp = rbusca.getBigDecimal("poripa");
                   
                 }
                 if(selec==1){
@@ -268,9 +272,9 @@ public class copiapu {
                     Statement sc = (Statement) conex.createStatement();
                     ResultSet rsc = sc.executeQuery(consultadetabu);
                     while(rsc.next()){
-                        porcgad=rsc.getFloat("porcgad");
-                        porcpre = rsc.getFloat("porcpre");
-                        porcutil = rsc.getFloat("porcutil");
+                        porcgad=rsc.getBigDecimal("porcgad");
+                        porcpre = rsc.getBigDecimal("porcpre");
+                        porcutil = rsc.getBigDecimal("porcutil");
                     }
                         
                     //ACTUALIZAR PARAMETROS DE PARTIDA
@@ -298,8 +302,8 @@ public class copiapu {
                 }
                 if(cuenta <=0){
                     
-               String inserta = "INSERT INTO dmoppres (mpre_id, mppre_id, mepre_id,numero, "
-                       + "cantidad, salario, bono, subsid,status)"
+               String inserta = "INSERT INTO dmoppres (mpre_id, mppre_id, mmopre_id,numero, "
+                       + "cantidad, salario, bono, subsidi,status)"
                             + " VALUES ('"+mpres+"', '"+partida+"', '"+mmotabs+"', "+numenpres+", "+cantidad+", "+salario+", "
                        + ""+bono+","+subsid+",1)";
                     Statement insert = (Statement) conex.createStatement();
@@ -331,8 +335,6 @@ public class copiapu {
                         subsid = rstm.getString(4);
                     }
                 if(conte==0){
-                   
-                    
                     String inserta = "INSERT INTO mmopres (mpre_id, id, descri, salario, bono, subsid, status)"
                             + " VALUES ('"+mpres+"', "+mmotabs+", "+descri+", "+salario+","+bono+","+subsid+","
                             + " 1)";
@@ -344,27 +346,23 @@ public class copiapu {
                     Statement insert = (Statement) conex.createStatement();
                     insert.execute(inserta);
                 }
-                
-                
-                
-                precio1 = Float.valueOf(salario);
-                cant = Float.valueOf(cantidad);
-                bon = Float.valueOf(bono);
-                sub = Float.valueOf(subsid);
-                
-                totamano +=(precio1*cant); 
-                cantmano += cant;
+                precio1 = new BigDecimal(salario);
+                cant = new BigDecimal(cantidad);
+                bon = new BigDecimal(bono);
+                sub = new BigDecimal(subsid);
+                totamano =totamano.add(redon.redondearDosDecimales(precio1.multiply(cant))); 
+                cantmano = cantmano.add(cant);
                 
                 
             }
-            float prestacion, bonos, subsidio;
-            prestacion = porcpre/100;
-                prestacion = totamano*prestacion;
-                bonos = bon*cantmano;
-                subsidio = sub * cantmano;
+            BigDecimal prestacion, bonos, subsidio;
+            prestacion = porcpre.divide(new BigDecimal("100"));
+                prestacion = redon.redondearDosDecimales(totamano.multiply(prestacion));
+                bonos = redon.redondearDosDecimales(bon.multiply(cantmano));
+                subsidio = redon.redondearDosDecimales(sub .multiply( cantmano));
                 
-                totamano = totamano+prestacion+bonos+subsidio;
-            totamano = totamano / rendimi;
+                totamano = totamano.add(prestacion).add(bonos).add(subsidio);
+            totamano = totamano.divide(rendimi,2,BigDecimal.ROUND_HALF_UP);
         } catch (SQLException ex) {
             Logger.getLogger(copiapu.class.getName()).log(Level.SEVERE, null, ex);
         }

@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<jasperReport xmlns="http://jasperreports.sourceforge.net/jasperreports" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports http://jasperreports.sourceforge.net/xsd/jasperreport.xsd" name="report2" language="groovy" pageWidth="612" pageHeight="792" columnWidth="572" leftMargin="20" rightMargin="20" topMargin="20" bottomMargin="20" uuid="cc1b8ae2-f7ca-41db-a004-b9de7407b6b8">
-	<property name="ireport.zoom" value="1.2396694214876032"/>
-	<property name="ireport.x" value="33"/>
-	<property name="ireport.y" value="161"/>
+<jasperReport xmlns="http://jasperreports.sourceforge.net/jasperreports" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports http://jasperreports.sourceforge.net/xsd/jasperreport.xsd" name="report2" language="groovy" pageWidth="612" pageHeight="792" columnWidth="572" leftMargin="20" rightMargin="20" topMargin="20" bottomMargin="56" uuid="cc1b8ae2-f7ca-41db-a004-b9de7407b6b8">
+	<property name="ireport.zoom" value="1.8150000000000004"/>
+	<property name="ireport.x" value="397"/>
+	<property name="ireport.y" value="510"/>
 	<style name="table">
 		<box>
 			<topPen lineWidth="1.0" lineColor="#000000"/>
@@ -292,28 +292,30 @@
      mptabs.`precasu` AS mptabs_precasu,
      mptabs.`mtabus_id` AS mptabs_mtabus_id,
      mtabus.`id` AS mtabus_id,
+     IFNULL(mconts.logo,"") AS logocont,
+    IFNULL(mprops.`logo`,"") AS logoprop,
      DATE_FORMAT(mtabus.`vigencia`,'%d/%m/%y') AS mtabus_vigencia,
-     IFNULL(ROUND(
-(SELECT SUM(IF(desperdi=0,(mm.precio*dm.cantidad),((mm.precio+(mm.precio*(desperdi/100)))*dm.cantidad)))
+     IFNULL(
+(SELECT SUM(IF(desperdi=0,ROUND((mm.precio*dm.cantidad),2),ROUND(((mm.precio+(mm.precio*(desperdi/100)))*dm.cantidad),2)))
      FROM mmtabs as mm, dmtabs as dm, mptabs as mp WHERE dm.mtabus_id= $P{mtabus} AND mm.mtabus_id=dm.mtabus_id AND
 dm.numepart=mp.numero
-AND mp.numegrup=$P{numegrup} AND dm.mmtab_id=mm.id AND mp.mtabus_id=dm.mtabus_id),2),0) as totalmat,
+AND mp.numegrup=$P{numegrup} AND dm.mmtab_id=mm.id AND mp.mtabus_id=dm.mtabus_id),0) as totalmat,
 
-IFNULL(ROUND((SELECT SUM(me.precio*me.deprecia*de.cantidad) FROM metabs as me, deptabs as de, mptabs as mp
+IFNULL((SELECT SUM(ROUND(me.precio*me.deprecia*de.cantidad,2)) FROM metabs as me, deptabs as de, mptabs as mp
 WHERE de.mtabus_id=$P{mtabus} AND mp.mtabus_id=de.mtabus_id AND de.metab_id=me.id AND me.mtabus_id=mp.mtabus_id
-AND de.mptab_id=mp.codicove AND de.numero=mp.numero AND mp.numegrup=$P{numegrup}),2),0) as subtotalequipo,
+AND de.mptab_id=mp.codicove AND de.numero=mp.numero AND mp.numegrup=$P{numegrup}),0) as subtotalequipo,
 
-IFNULL(ROUND((SELECT SUM(me.precio*me.deprecia*de.cantidad)/IF(mp.rendimi=0,1,mp.rendimi) FROM metabs as me, deptabs as de, mptabs as mp
+IFNULL(ROUND((SELECT SUM(ROUND((me.precio*me.deprecia*de.cantidad),2))/IF(mp.rendimi=0,1,mp.rendimi) FROM metabs as me, deptabs as de, mptabs as mp
 WHERE de.mtabus_id=$P{mtabus} AND mp.mtabus_id=de.mtabus_id AND de.metab_id=me.id AND me.mtabus_id=mp.mtabus_id
 AND de.mptab_id=mp.codicove AND de.numero=mp.numero AND mp.numegrup=$P{numegrup}),2),0) as totalequipo,
 
-IFNULL(ROUND((SELECT SUM(dmo.cantidad*mo.salario) FROM dmoptabs as dmo, mmotabs as mo, mptabs as mp
+IFNULL(ROUND((SELECT SUM(ROUND(dmo.cantidad*mo.salario,2)) FROM dmoptabs as dmo, mmotabs as mo, mptabs as mp
 WHERE dmo.mmotab_id=mo.id AND dmo.mtabus_id=$P{mtabus} AND dmo.mtabus_id=mp.mtabus_id AND dmo.numero=mp.numero
 AND mo.mtabus_id=dmo.mtabus_id AND mp.numegrup=$P{numegrup}),2),0) as subtotalmano,
 
-IFNULL(ROUND((SELECT SUM(dmo.cantidad*mo.salario)*mt.pprest/100 FROM dmoptabs as dmo, mtabus as mt, mmotabs as mo, mptabs as mp
+IFNULL((SELECT ROUND(SUM(ROUND((dmo.cantidad*mo.salario),2))*mt.pprest/100,2) FROM dmoptabs as dmo, mtabus as mt, mmotabs as mo, mptabs as mp
 WHERE dmo.mmotab_id=mo.id AND dmo.mtabus_id=$P{mtabus} AND mt.id=dmo.mtabus_id AND dmo.mtabus_id=mp.mtabus_id AND dmo.numero=mp.numero
-AND mo.mtabus_id=dmo.mtabus_id AND mp.numegrup=$P{numegrup}),2),0) as prestaciones,
+AND mo.mtabus_id=dmo.mtabus_id AND mp.numegrup=$P{numegrup}),0) as prestaciones,
 
 (SELECT bono FROM mmotabs WHERE mtabus_id=$P{mtabus} LIMIT 1) as bono,
 
@@ -321,22 +323,23 @@ IFNULL(ROUND((SELECT SUM(dmo.cantidad)*mo.bono FROM dmoptabs as dmo, mmotabs as 
 
 IFNULL(ROUND((SELECT subsid FROM mmotabs WHERE mtabus_id=$P{mtabus} LIMIT 1),2),0) as subsid,
 
-IFNULL(ROUND((SELECT SUM(dmo.cantidad)*mo.subsid FROM dmoptabs as dmo, mmotabs as mo, mptabs as mp WHERE mp.mtabus_id=$P{mtabus} AND mp.mtabus_id = dmo.mtabus_id AND mo.mtabus_id=mp.mtabus_id AND dmo.numero = mp.numero AND mp.numegrup=$P{numegrup} ),2),0)  as montosubsid,
+IFNULL((SELECT ROUND(SUM(dmo.cantidad)*mo.subsid,2) FROM dmoptabs as dmo, mmotabs as mo, mptabs as mp WHERE mp.mtabus_id=$P{mtabus} AND mp.mtabus_id = dmo.mtabus_id AND mo.mtabus_id=mp.mtabus_id AND dmo.numero = mp.numero AND mp.numegrup=$P{numegrup} ),0)  as montosubsid,
 
-IFNULL(ROUND((SELECT SUM(dmo.cantidad*mo.salario)+ SUM(dmo.cantidad*mo.salario)*(mt.pprest/100) + SUM(dmo.cantidad)*mo.bono + SUM(dmo.cantidad)*mo.subsid FROM dmoptabs as dmo, mtabus as mt, mmotabs as mo,mptabs as mp WHERE
-mt.id=$P{mtabus} AND mo.mtabus_id=mt.id AND dmo.mtabus_id = mt.id AND dmo.mmotab_id=mo.id AND dmo.numero=mp.numero AND mp.numegrup=$P{numegrup}) ,2),0) as costomano,
+IFNULL((SELECT SUM(ROUND(dmo.cantidad*mo.salario,2))+ ROUND(SUM(ROUND(dmo.cantidad*mo.salario,2))*(mt.pprest/100),2) + ROUND(SUM(dmo.cantidad)*mo.bono,2) + ROUND(SUM(dmo.cantidad)*mo.subsid,2) FROM dmoptabs as dmo, mtabus as mt, mmotabs as mo,mptabs as mp WHERE
+mt.id=$P{mtabus} AND mo.mtabus_id=mt.id AND dmo.mtabus_id = mt.id AND dmo.mmotab_id=mo.id AND dmo.numero=mp.numero AND mp.numegrup=$P{numegrup}),0) as costomano,
 
-IFNULL(ROUND((SELECT (SUM(dmo.cantidad*mo.salario)+ SUM(dmo.cantidad*mo.salario)*(mt.pprest/100) + SUM(dmo.cantidad)*mo.bono + SUM(dmo.cantidad)*mo.subsid)/IF(mp.rendimi=0,1,mp.rendimi) FROM dmoptabs as dmo, mtabus as mt, mmotabs as mo, mptabs as mp WHERE
-mt.id=$P{mtabus} AND mo.mtabus_id=mt.id AND dmo.mtabus_id = mt.id AND dmo.mmotab_id=mo.id AND dmo.numero=mp.numero AND mp.numegrup=$P{numegrup}),2),0) as totalmano,
+IFNULL((SELECT ROUND((SUM(ROUND(dmo.cantidad*mo.salario,2))+ ROUND(SUM(ROUND(dmo.cantidad*mo.salario,2))*(mt.pprest/100),2) + ROUND(SUM(dmo.cantidad)*mo.bono,2) + ROUND(SUM(dmo.cantidad)*mo.subsid,2))/IF(mp.rendimi=0,1,mp.rendimi),2) FROM dmoptabs as dmo, mtabus as mt, mmotabs as mo, mptabs as mp WHERE
+mt.id=$P{mtabus} AND mo.mtabus_id=mt.id AND dmo.mtabus_id = mt.id AND dmo.mmotab_id=mo.id AND dmo.numero=mp.numero AND mp.numegrup=$P{numegrup}),0) as totalmano,
 
-IFNULL(ROUND((SELECT SUM(dmo.cantidad) FROM dmoptabs as dmo, mptabs as mp WHERE dmo.mtabus_id=$P{mtabus} AND dmo.numero=mp.numero AND mp.mtabus_id=dmo.mtabus_id AND mp.numegrup=$P{numegrup}),2),0) as cantmano
+IFNULL((SELECT SUM(dmo.cantidad) FROM dmoptabs as dmo, mptabs as mp WHERE dmo.mtabus_id=$P{mtabus} AND dmo.numero=mp.numero AND mp.mtabus_id=dmo.mtabus_id AND mp.numegrup=$P{numegrup}),0) as cantmano
 
 FROM
      `mtabus` mtabus INNER JOIN `mptabs` mptabs ON mtabus.`id` = mptabs.`mtabus_id`,
-     `instalacion` instalacion
+     `instalacion` instalacion, mconts, mprops
 WHERE
      mptabs.mtabus_id =$P{mtabus}
- AND mptabs.numero = $P{numegrup}]]>
+ AND mptabs.numero = $P{numegrup}
+AND (mtabus.mcont = mconts.id OR mtabus.mcont IS NULL OR mtabus.mcont='null' OR mtabus.mcont='') AND (mtabus.mprop=mprops.id OR mtabus.mprop IS NULL OR mtabus.mcont='null' OR mtabus.mcont='') LIMIT 1]]>
 	</queryString>
 	<field name="numenletra" class="java.lang.String">
 		<fieldDescription><![CDATA[]]></fieldDescription>
@@ -359,6 +362,8 @@ WHERE
 	<field name="mptabs_precasu" class="java.math.BigDecimal"/>
 	<field name="mptabs_mtabus_id" class="java.lang.String"/>
 	<field name="mtabus_id" class="java.lang.String"/>
+	<field name="logocont" class="java.lang.Object"/>
+	<field name="logoprop" class="java.lang.Object"/>
 	<field name="mtabus_vigencia" class="java.lang.String"/>
 	<field name="totalmat" class="java.math.BigDecimal"/>
 	<field name="subtotalequipo" class="java.math.BigDecimal"/>
@@ -388,64 +393,72 @@ WHERE
 		<variableExpression><![CDATA[$V{xunidad}]]></variableExpression>
 		<initialValueExpression><![CDATA[0]]></initialValueExpression>
 	</variable>
-	<variable name="admin" class="java.lang.Double">
-		<variableExpression><![CDATA[$V{porunidad}*($F{mptabs_porcgad}/100)]]></variableExpression>
+	<variable name="admin" class="java.math.BigDecimal">
+		<variableExpression><![CDATA[new BigDecimal($V{porunidad}.multiply(($F{mptabs_porcgad}.
+    divide(new BigDecimal("100"), 2, BigDecimal.ROUND_HALF_UP)))).setScale(2, BigDecimal.ROUND_HALF_UP)]]></variableExpression>
 		<initialValueExpression><![CDATA[0]]></initialValueExpression>
 	</variable>
-	<variable name="prest" class="java.lang.Double">
-		<variableExpression><![CDATA[$F{subtotalmano}*($F{mtabus_pprest}/100)]]></variableExpression>
+	<variable name="prest" class="java.math.BigDecimal">
+		<variableExpression><![CDATA[new BigDecimal($F{subtotalmano}.multiply(($F{mtabus_pprest}.
+     divide(new BigDecimal("100"), 2, BigDecimal.ROUND_HALF_UP)))).setScale(2, BigDecimal.ROUND_HALF_UP)]]></variableExpression>
 		<initialValueExpression><![CDATA[0]]></initialValueExpression>
 	</variable>
-	<variable name="totalmano" class="java.lang.Double">
-		<variableExpression><![CDATA[$F{subtotalmano}+$F{montobono}+$F{montosubsid}+$V{prest}]]></variableExpression>
+	<variable name="totalmano" class="java.math.BigDecimal">
+		<variableExpression><![CDATA[$F{subtotalmano}.add($F{montobono}).add($F{montosubsid}).add($V{prest})]]></variableExpression>
 		<initialValueExpression><![CDATA[0]]></initialValueExpression>
 	</variable>
-	<variable name="xunidad" class="java.lang.Double" resetType="None">
-		<variableExpression><![CDATA[$V{totalmano}/$F{mptabs_rendimi}]]></variableExpression>
+	<variable name="xunidad" class="java.math.BigDecimal" resetType="None">
+		<variableExpression><![CDATA[$V{totalmano}.divide($F{mptabs_rendimi},2, BigDecimal.ROUND_HALF_UP)]]></variableExpression>
 		<initialValueExpression><![CDATA[0]]></initialValueExpression>
 	</variable>
-	<variable name="matequip" class="java.lang.Double">
-		<variableExpression><![CDATA[$F{totalmat}+$F{totalequipo}]]></variableExpression>
+	<variable name="matequip" class="java.math.BigDecimal">
+		<variableExpression><![CDATA[$F{totalmat}.add($F{totalequipo})]]></variableExpression>
 	</variable>
-	<variable name="porunidad" class="java.lang.Double">
-		<variableExpression><![CDATA[$F{totalmat}+$F{totalequipo}+$V{xunidad}]]></variableExpression>
+	<variable name="porunidad" class="java.math.BigDecimal">
+		<variableExpression><![CDATA[$F{totalmat}.add($F{totalequipo}).add($V{xunidad})]]></variableExpression>
 		<initialValueExpression><![CDATA[0]]></initialValueExpression>
 	</variable>
-	<variable name="admin1" class="java.lang.Double">
-		<variableExpression><![CDATA[$V{porunidad}*($F{mptabs_porcgad}/100)]]></variableExpression>
+	<variable name="admin1" class="java.math.BigDecimal">
+		<variableExpression><![CDATA[new BigDecimal($V{porunidad}.multiply(($F{mptabs_porcgad}.
+    divide(new BigDecimal("100"))))).
+setScale(2, BigDecimal.ROUND_HALF_UP)
+]]></variableExpression>
 		<initialValueExpression><![CDATA[0]]></initialValueExpression>
 	</variable>
-	<variable name="subtotaladm" class="java.lang.Double">
-		<variableExpression><![CDATA[$V{porunidad}+$V{admin1}]]></variableExpression>
+	<variable name="subtotaladm" class="java.math.BigDecimal">
+		<variableExpression><![CDATA[$V{porunidad}.add($V{admin1})]]></variableExpression>
 		<initialValueExpression><![CDATA[0]]></initialValueExpression>
 	</variable>
-	<variable name="util" class="java.lang.Double">
-		<variableExpression><![CDATA[$V{subtotaladm}*($F{mptabs_porcutil}/100)]]></variableExpression>
+	<variable name="util" class="java.math.BigDecimal">
+		<variableExpression><![CDATA[new BigDecimal($V{subtotaladm}.multiply(
+    $F{mptabs_porcutil}.divide(new BigDecimal("100")))).setScale(2,BigDecimal.ROUND_HALF_UP)]]></variableExpression>
 		<initialValueExpression><![CDATA[0]]></initialValueExpression>
 	</variable>
-	<variable name="subtotalutil" class="java.lang.Double">
-		<variableExpression><![CDATA[$V{subtotaladm}+$V{util}]]></variableExpression>
+	<variable name="subtotalutil" class="java.math.BigDecimal">
+		<variableExpression><![CDATA[$V{subtotaladm}.add($V{util})]]></variableExpression>
 		<initialValueExpression><![CDATA[0]]></initialValueExpression>
 	</variable>
-	<variable name="financiamiento" class="java.lang.Double">
-		<variableExpression><![CDATA[$V{subtotalutil}*($F{mtabus_pcosfin}/100)]]></variableExpression>
+	<variable name="financiamiento" class="java.math.BigDecimal">
+		<variableExpression><![CDATA[new BigDecimal($V{subtotalutil}.
+    multiply($F{mtabus_pcosfin}.divide(new BigDecimal("100")))).
+setScale(2, BigDecimal.ROUND_HALF_UP)]]></variableExpression>
 		<initialValueExpression><![CDATA[0]]></initialValueExpression>
 	</variable>
-	<variable name="impuesto" class="java.lang.Double">
-		<variableExpression><![CDATA[$V{subtotalutil}*($F{mtabus_pimpue}/100)]]></variableExpression>
+	<variable name="impuesto" class="java.math.BigDecimal">
+		<variableExpression><![CDATA[new BigDecimal($V{subtotalutil}.multiply($F{mtabus_pimpue}.divide(new BigDecimal("100")))).setScale(2, BigDecimal.ROUND_HALF_UP)]]></variableExpression>
 		<initialValueExpression><![CDATA[0]]></initialValueExpression>
 	</variable>
-	<variable name="preciounit" class="java.lang.Double">
-		<variableExpression><![CDATA[$V{subtotalutil}+$V{financiamiento}+$V{impuesto}]]></variableExpression>
+	<variable name="preciounit" class="java.math.BigDecimal">
+		<variableExpression><![CDATA[$V{subtotalutil}.add($V{financiamiento}).add($V{impuesto})]]></variableExpression>
 		<initialValueExpression><![CDATA[0]]></initialValueExpression>
 	</variable>
 	<background>
 		<band splitType="Stretch"/>
 	</background>
 	<pageHeader>
-		<band height="168" splitType="Stretch">
+		<band height="157" splitType="Stretch">
 			<staticText>
-				<reportElement uuid="aceae799-d9b8-4fef-a5be-b418bec5fb70" x="0" y="138" width="99" height="15"/>
+				<reportElement uuid="aceae799-d9b8-4fef-a5be-b418bec5fb70" x="1" y="127" width="99" height="15"/>
 				<box>
 					<pen lineWidth="1.0"/>
 					<topPen lineWidth="1.0"/>
@@ -459,14 +472,14 @@ WHERE
 				<text><![CDATA[Propietario Prec. Ref.]]></text>
 			</staticText>
 			<staticText>
-				<reportElement uuid="fe07f56e-1473-4ec6-bde3-9ae2496ac0d9" x="185" y="88" width="231" height="20"/>
+				<reportElement uuid="fe07f56e-1473-4ec6-bde3-9ae2496ac0d9" x="186" y="77" width="231" height="20"/>
 				<textElement textAlignment="Center" verticalAlignment="Middle">
 					<font size="12" isBold="true"/>
 				</textElement>
 				<text><![CDATA[Análisis de precio Unitario]]></text>
 			</staticText>
 			<textField>
-				<reportElement uuid="c73f808a-6849-45c0-afab-4a1964003628" stretchType="RelativeToBandHeight" isPrintRepeatedValues="false" x="0" y="153" width="99" height="15"/>
+				<reportElement uuid="c73f808a-6849-45c0-afab-4a1964003628" stretchType="RelativeToBandHeight" isPrintRepeatedValues="false" x="1" y="142" width="99" height="15"/>
 				<box>
 					<pen lineWidth="1.0"/>
 					<topPen lineWidth="1.0"/>
@@ -480,7 +493,7 @@ WHERE
 				<textFieldExpression><![CDATA[$F{propietario}]]></textFieldExpression>
 			</textField>
 			<staticText>
-				<reportElement uuid="2d4554bc-877c-4365-adcb-dc39d9a627ef" style="table_TH" positionType="Float" mode="Opaque" x="0" y="108" width="42" height="15" backcolor="#FFFFFF"/>
+				<reportElement uuid="2d4554bc-877c-4365-adcb-dc39d9a627ef" style="table_TH" positionType="Float" mode="Opaque" x="1" y="97" width="42" height="15" backcolor="#FFFFFF"/>
 				<box>
 					<pen lineWidth="1.0"/>
 					<topPen lineWidth="1.0"/>
@@ -494,7 +507,7 @@ WHERE
 				<text><![CDATA[Nro.]]></text>
 			</staticText>
 			<staticText>
-				<reportElement uuid="e8d53ed4-f22e-4036-a64a-bbdfd2219b68" positionType="Float" mode="Opaque" x="42" y="108" width="71" height="15" backcolor="#FFFFFF"/>
+				<reportElement uuid="e8d53ed4-f22e-4036-a64a-bbdfd2219b68" positionType="Float" mode="Opaque" x="43" y="97" width="71" height="15" backcolor="#FFFFFF"/>
 				<box>
 					<pen lineWidth="1.0"/>
 					<topPen lineWidth="1.0"/>
@@ -508,7 +521,7 @@ WHERE
 				<text><![CDATA[Código]]></text>
 			</staticText>
 			<staticText>
-				<reportElement uuid="e2114fd1-e665-4252-bd21-65ba46b3cb7b" positionType="Float" mode="Opaque" x="113" y="108" width="54" height="15" backcolor="#FFFFFF"/>
+				<reportElement uuid="e2114fd1-e665-4252-bd21-65ba46b3cb7b" positionType="Float" mode="Opaque" x="114" y="97" width="54" height="15" backcolor="#FFFFFF"/>
 				<box>
 					<pen lineWidth="1.0"/>
 					<topPen lineWidth="1.0"/>
@@ -522,7 +535,7 @@ WHERE
 				<text><![CDATA[Unidad]]></text>
 			</staticText>
 			<staticText>
-				<reportElement uuid="123a08fb-bd7e-45d3-93b4-af35981ee0a4" positionType="Float" mode="Opaque" x="167" y="108" width="46" height="15" backcolor="#FFFFFF"/>
+				<reportElement uuid="123a08fb-bd7e-45d3-93b4-af35981ee0a4" positionType="Float" mode="Opaque" x="168" y="97" width="46" height="15" backcolor="#FFFFFF"/>
 				<box>
 					<pen lineWidth="1.0"/>
 					<topPen lineWidth="1.0"/>
@@ -536,7 +549,7 @@ WHERE
 				<text><![CDATA[Cantidad]]></text>
 			</staticText>
 			<staticText>
-				<reportElement uuid="f2f6c67c-fd3d-42ab-b0e4-126564209800" positionType="Float" mode="Opaque" x="213" y="108" width="55" height="15" backcolor="#FFFFFF"/>
+				<reportElement uuid="f2f6c67c-fd3d-42ab-b0e4-126564209800" positionType="Float" mode="Opaque" x="214" y="97" width="55" height="15" backcolor="#FFFFFF"/>
 				<box>
 					<pen lineWidth="1.0"/>
 					<topPen lineWidth="1.0"/>
@@ -550,7 +563,7 @@ WHERE
 				<text><![CDATA[Rendimi]]></text>
 			</staticText>
 			<textField>
-				<reportElement uuid="7f4c9bed-9ebb-4f52-82c0-734f5a0580dc" x="167" y="123" width="46" height="15"/>
+				<reportElement uuid="7f4c9bed-9ebb-4f52-82c0-734f5a0580dc" x="168" y="112" width="46" height="15"/>
 				<box>
 					<pen lineWidth="1.0"/>
 					<topPen lineWidth="1.0"/>
@@ -564,7 +577,7 @@ WHERE
 				<textFieldExpression><![CDATA[$F{mptabs_cantidad}]]></textFieldExpression>
 			</textField>
 			<textField>
-				<reportElement uuid="2a24901f-7f92-45d2-98fd-01c0cde10428" x="113" y="123" width="54" height="15"/>
+				<reportElement uuid="2a24901f-7f92-45d2-98fd-01c0cde10428" x="114" y="112" width="54" height="15"/>
 				<box>
 					<pen lineWidth="1.0"/>
 					<topPen lineWidth="1.0"/>
@@ -578,7 +591,7 @@ WHERE
 				<textFieldExpression><![CDATA[$F{mptabs_unidad}]]></textFieldExpression>
 			</textField>
 			<textField>
-				<reportElement uuid="8df8859a-cc4c-4e4a-a1de-023238339a21" x="42" y="123" width="71" height="15"/>
+				<reportElement uuid="8df8859a-cc4c-4e4a-a1de-023238339a21" x="43" y="112" width="71" height="15"/>
 				<box>
 					<pen lineWidth="1.0"/>
 					<topPen lineWidth="1.0"/>
@@ -592,7 +605,7 @@ WHERE
 				<textFieldExpression><![CDATA[$F{mptabs_codicove}]]></textFieldExpression>
 			</textField>
 			<textField>
-				<reportElement uuid="8138dae9-af92-4241-a89b-27dd473d4c37" x="0" y="123" width="42" height="15"/>
+				<reportElement uuid="8138dae9-af92-4241-a89b-27dd473d4c37" x="1" y="112" width="42" height="15"/>
 				<box>
 					<pen lineWidth="1.0"/>
 					<topPen lineWidth="1.0"/>
@@ -606,7 +619,7 @@ WHERE
 				<textFieldExpression><![CDATA[$F{mptabs_numegrup}]]></textFieldExpression>
 			</textField>
 			<textField>
-				<reportElement uuid="0a76cc27-8e13-4583-99de-b886229b077d" x="213" y="123" width="55" height="15"/>
+				<reportElement uuid="0a76cc27-8e13-4583-99de-b886229b077d" x="214" y="112" width="55" height="15"/>
 				<box>
 					<pen lineWidth="1.0"/>
 					<topPen lineWidth="1.0"/>
@@ -620,7 +633,7 @@ WHERE
 				<textFieldExpression><![CDATA[$F{mptabs_rendimi}]]></textFieldExpression>
 			</textField>
 			<textField isStretchWithOverflow="true">
-				<reportElement uuid="40f5dcaf-7a9a-404d-bc98-14f0ba1f5f5a" stretchType="RelativeToBandHeight" x="268" y="108" width="303" height="60"/>
+				<reportElement uuid="40f5dcaf-7a9a-404d-bc98-14f0ba1f5f5a" stretchType="RelativeToBandHeight" x="269" y="97" width="303" height="60"/>
 				<box topPadding="3" leftPadding="3" bottomPadding="3" rightPadding="3">
 					<pen lineWidth="1.0"/>
 					<topPen lineWidth="1.0"/>
@@ -633,16 +646,16 @@ WHERE
 				</textElement>
 				<textFieldExpression><![CDATA[$F{mptabs_descri}]]></textFieldExpression>
 			</textField>
-			<image>
-				<reportElement uuid="10dae668-4d61-4c45-b015-8cc2a0febc96" x="0" y="2" width="73" height="64"/>
-				<imageExpression><![CDATA[]]></imageExpression>
+			<image onErrorType="Blank">
+				<reportElement uuid="10dae668-4d61-4c45-b015-8cc2a0febc96" x="0" y="2" width="191" height="75"/>
+				<imageExpression><![CDATA[JRImageRenderer.getInstance((byte []) $F{logocont})]]></imageExpression>
 			</image>
-			<image>
-				<reportElement uuid="34cae204-5bf2-479d-b3f7-aff5cc4b2253" x="505" y="0" width="66" height="66"/>
-				<imageExpression><![CDATA[]]></imageExpression>
+			<image hAlign="Right" onErrorType="Blank">
+				<reportElement uuid="34cae204-5bf2-479d-b3f7-aff5cc4b2253" x="396" y="0" width="176" height="77"/>
+				<imageExpression><![CDATA[JRImageRenderer.getInstance((byte []) $F{logoprop})]]></imageExpression>
 			</image>
 			<staticText>
-				<reportElement uuid="603b2957-34b6-4244-ad72-16385258247d" x="99" y="138" width="86" height="15"/>
+				<reportElement uuid="603b2957-34b6-4244-ad72-16385258247d" x="100" y="127" width="86" height="15"/>
 				<box>
 					<pen lineWidth="1.0"/>
 					<topPen lineWidth="1.0"/>
@@ -656,7 +669,7 @@ WHERE
 				<text><![CDATA[Código Prec. Ref.]]></text>
 			</staticText>
 			<textField>
-				<reportElement uuid="6acbc72e-214e-49b7-a671-606fe77f2076" stretchType="RelativeToBandHeight" isPrintRepeatedValues="false" x="99" y="153" width="86" height="15"/>
+				<reportElement uuid="6acbc72e-214e-49b7-a671-606fe77f2076" stretchType="RelativeToBandHeight" isPrintRepeatedValues="false" x="100" y="142" width="86" height="15"/>
 				<box>
 					<pen lineWidth="1.0"/>
 					<topPen lineWidth="1.0"/>
@@ -670,7 +683,7 @@ WHERE
 				<textFieldExpression><![CDATA[$F{mptabs_mtabus_id}]]></textFieldExpression>
 			</textField>
 			<staticText>
-				<reportElement uuid="201bab68-04c2-4d85-8dbd-c971a15c02d2" x="185" y="138" width="83" height="15"/>
+				<reportElement uuid="201bab68-04c2-4d85-8dbd-c971a15c02d2" x="186" y="127" width="83" height="15"/>
 				<box>
 					<pen lineWidth="1.0"/>
 					<topPen lineWidth="1.0"/>
@@ -684,7 +697,7 @@ WHERE
 				<text><![CDATA[Vigencia Prec. Ref.]]></text>
 			</staticText>
 			<textField>
-				<reportElement uuid="7db81c84-5255-43b1-b84c-525d97bb6bf4" stretchType="RelativeToBandHeight" isPrintRepeatedValues="false" x="185" y="153" width="83" height="15"/>
+				<reportElement uuid="7db81c84-5255-43b1-b84c-525d97bb6bf4" stretchType="RelativeToBandHeight" isPrintRepeatedValues="false" x="186" y="142" width="83" height="15"/>
 				<box>
 					<pen lineWidth="1.0"/>
 					<topPen lineWidth="1.0"/>
@@ -698,21 +711,21 @@ WHERE
 				<textFieldExpression><![CDATA[$F{mtabus_vigencia}]]></textFieldExpression>
 			</textField>
 			<textField>
-				<reportElement uuid="4a325b2c-cf08-40a6-99c8-e289d126bace" positionType="Float" x="454" y="77" width="109" height="11"/>
+				<reportElement uuid="4a325b2c-cf08-40a6-99c8-e289d126bace" positionType="Float" x="454" y="87" width="109" height="11"/>
 				<textElement textAlignment="Right" verticalAlignment="Middle">
 					<font size="7"/>
 				</textElement>
 				<textFieldExpression><![CDATA["Pág. "+$V{PAGE_NUMBER}+" de "]]></textFieldExpression>
 			</textField>
 			<textField isStretchWithOverflow="true" evaluationTime="Report">
-				<reportElement uuid="be6b0399-11ae-4cb2-95ec-b151e60106a7" x="563" y="77" width="9" height="11"/>
+				<reportElement uuid="be6b0399-11ae-4cb2-95ec-b151e60106a7" x="563" y="87" width="9" height="11"/>
 				<textElement textAlignment="Right" verticalAlignment="Middle">
 					<font size="7"/>
 				</textElement>
 				<textFieldExpression><![CDATA[$V{PAGE_NUMBER}]]></textFieldExpression>
 			</textField>
 			<textField isBlankWhenNull="true">
-				<reportElement uuid="24b5b105-a40e-4272-9ae3-6f1894b1349c" x="481" y="66" width="90" height="11"/>
+				<reportElement uuid="24b5b105-a40e-4272-9ae3-6f1894b1349c" x="481" y="77" width="90" height="11"/>
 				<textElement textAlignment="Right" verticalAlignment="Middle">
 					<font size="7"/>
 				</textElement>
@@ -723,7 +736,7 @@ WHERE
 	<detail>
 		<band height="26">
 			<staticText>
-				<reportElement uuid="678ea9fe-4f2d-490d-98c3-50baccd272d7" mode="Opaque" x="0" y="0" width="571" height="14" backcolor="#FFFFFF"/>
+				<reportElement uuid="678ea9fe-4f2d-490d-98c3-50baccd272d7" mode="Opaque" x="0" y="0" width="572" height="14" backcolor="#FFFFFF"/>
 				<box>
 					<pen lineWidth="1.0"/>
 					<topPen lineWidth="1.0"/>
@@ -737,7 +750,7 @@ WHERE
 				<text><![CDATA[Costo de Materiales]]></text>
 			</staticText>
 			<componentElement>
-				<reportElement uuid="f5c5bf7f-88ea-4407-adc0-3509d0cc2c7d" key="table 2" style="table 2_TD" mode="Transparent" x="0" y="14" width="571" height="12"/>
+				<reportElement uuid="f5c5bf7f-88ea-4407-adc0-3509d0cc2c7d" key="table 2" style="table 2_TD" mode="Transparent" x="0" y="14" width="572" height="12"/>
 				<jr:table xmlns:jr="http://jasperreports.sourceforge.net/jasperreports/components" xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports/components http://jasperreports.sourceforge.net/xsd/components.xsd" whenNoDataType="AllSectionsNoDetail">
 					<datasetRun subDataset="materiales" uuid="0fa1659e-83a2-4bd7-8690-34bea5f56e25">
 						<datasetParameter name="numegrup">
@@ -898,12 +911,12 @@ WHERE
 				</jr:table>
 			</componentElement>
 		</band>
-		<band height="12">
+		<band height="11">
 			<rectangle>
 				<reportElement uuid="d50bde9e-ad23-4ed7-a51e-092cccb85651" stretchType="RelativeToBandHeight" x="0" y="0" width="571" height="11"/>
 			</rectangle>
 			<staticText>
-				<reportElement uuid="240f21e7-0f85-4ba3-8251-a1ceb7992a4c" x="397" y="1" width="85" height="11"/>
+				<reportElement uuid="240f21e7-0f85-4ba3-8251-a1ceb7992a4c" x="397" y="1" width="85" height="10"/>
 				<textElement textAlignment="Right" verticalAlignment="Middle">
 					<font size="7" isBold="true" isItalic="false"/>
 				</textElement>
@@ -1426,7 +1439,7 @@ WHERE
 				</textElement>
 				<textFieldExpression><![CDATA[$V{preciounit}]]></textFieldExpression>
 			</textField>
-			<textField pattern="#,##0.00">
+			<textField pattern="#,##0.00" isBlankWhenNull="true">
 				<reportElement uuid="ed02e1f0-2e28-4d7e-ae61-ba5ac973e5f9" x="482" y="119" width="90" height="11"/>
 				<box rightPadding="3"/>
 				<textElement textAlignment="Right">
@@ -1455,7 +1468,7 @@ WHERE
 				</textElement>
 				<text><![CDATA[PRECIO UNITARIO]]></text>
 			</staticText>
-			<textField pattern="#,##0.00">
+			<textField pattern="#,##0.00" isBlankWhenNull="true">
 				<reportElement uuid="eb9364ac-9078-4175-a861-f3faefbfa6ef" x="482" y="100" width="90" height="11"/>
 				<box rightPadding="3">
 					<pen lineWidth="0.0"/>
@@ -1491,7 +1504,7 @@ WHERE
 				</textElement>
 				<textFieldExpression><![CDATA[$F{mtabus_pcosfin}]]></textFieldExpression>
 			</textField>
-			<textField pattern="#,##0.00">
+			<textField pattern="#,##0.00" isBlankWhenNull="true">
 				<reportElement uuid="731a286b-7a9e-4230-b8dc-1d343c05c78b" x="482" y="80" width="90" height="11"/>
 				<box rightPadding="3"/>
 				<textElement textAlignment="Right">
@@ -1499,7 +1512,7 @@ WHERE
 				</textElement>
 				<textFieldExpression><![CDATA[$V{subtotaladm}]]></textFieldExpression>
 			</textField>
-			<textField pattern="#,##0.00">
+			<textField pattern="#,##0.00" isBlankWhenNull="true">
 				<reportElement uuid="4d6bafb9-faa9-46cd-ad7e-f382d821b38e" x="482" y="109" width="90" height="11"/>
 				<box rightPadding="3"/>
 				<textElement textAlignment="Right">
@@ -1514,7 +1527,7 @@ WHERE
 				</textElement>
 				<text><![CDATA[% Financiamiento:]]></text>
 			</staticText>
-			<textField pattern="#,##0.00">
+			<textField pattern="#,##0.00" isBlankWhenNull="true">
 				<reportElement uuid="1e96dcc9-ab0b-4934-8787-6375bbf0f963" x="482" y="89" width="90" height="11"/>
 				<box rightPadding="3">
 					<pen lineWidth="0.0"/>
@@ -1528,7 +1541,7 @@ WHERE
 				</textElement>
 				<textFieldExpression><![CDATA[$V{util}]]></textFieldExpression>
 			</textField>
-			<textField pattern="#,##0.00">
+			<textField pattern="#,##0.00" isBlankWhenNull="true">
 				<reportElement uuid="9c79cb2a-b5e6-466b-9197-8be0e098f6f1" x="482" y="70" width="90" height="11"/>
 				<box rightPadding="3"/>
 				<textElement textAlignment="Right">
@@ -1585,7 +1598,7 @@ WHERE
 				</textElement>
 				<text><![CDATA[Subtotal:]]></text>
 			</staticText>
-			<textField pattern="#,##0.00">
+			<textField pattern="#,##0.00" isBlankWhenNull="true">
 				<reportElement uuid="4767f5d5-866e-47fc-af8b-b0191c2a0859" x="482" y="59" width="90" height="11"/>
 				<box rightPadding="3"/>
 				<textElement textAlignment="Right">
@@ -1608,7 +1621,7 @@ WHERE
 				<textElement textAlignment="Center" verticalAlignment="Middle" markup="none">
 					<font size="6" isBold="true"/>
 				</textElement>
-				<textFieldExpression><![CDATA["0276-3567564 / 0276-3553158 / 0276-3560071 / 0276-3579562 www.spapu.com.ve / Facebook: Rhspapu / Twitter: @Spapu"]]></textFieldExpression>
+				<textFieldExpression><![CDATA["0276-3567564 / 0276-3553158 / 0276-3560071 / 0276-3579562 www.spapu.net / Facebook :SPAPU.SISTEMASRH / Twitter: @Spapu"]]></textFieldExpression>
 			</textField>
 			<staticText>
 				<reportElement uuid="4f40dadd-0a70-48e6-a250-b784ac1dc1db" x="1" y="3" width="570" height="11"/>

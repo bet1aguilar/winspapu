@@ -54,12 +54,14 @@ public class hilodetaequipo extends Thread{
             ResultSet rst3 = carga3.executeQuery(sql); 
              while(rst3.next()){
 
-                 sql= "INSERT INTO deptabs VALUES ('"+mtabu+"',"
+                 sql= "REPLACE INTO deptabs"
+                         + "(mtabus_id, mptab_id, metab_id, numero, cantidad,status)"
+                         + " VALUES ('"+mtabu+"',"
                                               + "'"+rst3.getString("IDPartidas")+"',"
                                               + "'"+rst3.getString("IDEquipos")+"',"
                                               + rst3.getString("Numero")+","
-                                              + rst3.getFloat("cantidad")+","                                                         
-                                              + rst3.getFloat("precio")+","                                                          
+                                              + rst3.getFloat("Cantidad")+","                                                         
+                                                                                                       
                                               + "1)";                   
                    escribir3.execute(sql); 
 

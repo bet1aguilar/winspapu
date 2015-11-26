@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<jasperReport xmlns="http://jasperreports.sourceforge.net/jasperreports" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports http://jasperreports.sourceforge.net/xsd/jasperreport.xsd" name="report2" language="groovy" pageWidth="612" pageHeight="792" columnWidth="572" leftMargin="20" rightMargin="20" topMargin="20" bottomMargin="20" isSummaryWithPageHeaderAndFooter="true" isFloatColumnFooter="true" whenResourceMissingType="Empty" uuid="cc1b8ae2-f7ca-41db-a004-b9de7407b6b8">
+<jasperReport xmlns="http://jasperreports.sourceforge.net/jasperreports" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports http://jasperreports.sourceforge.net/xsd/jasperreport.xsd" name="report2" language="groovy" pageWidth="612" pageHeight="792" columnWidth="574" leftMargin="19" rightMargin="19" topMargin="28" bottomMargin="28" isSummaryWithPageHeaderAndFooter="true" isFloatColumnFooter="true" whenResourceMissingType="Empty" uuid="cc1b8ae2-f7ca-41db-a004-b9de7407b6b8">
 	<property name="ireport.zoom" value="1.331000000000001"/>
-	<property name="ireport.x" value="1"/>
-	<property name="ireport.y" value="0"/>
+	<property name="ireport.x" value="0"/>
+	<property name="ireport.y" value="228"/>
 	<style name="table">
 		<box>
 			<topPen lineWidth="1.0" lineColor="#000000"/>
@@ -183,7 +183,7 @@
 		</parameter>
 		<queryString>
 			<![CDATA[SELECT mm.id, mm.descri, mm.precio, dm.cantidad, mm.unidad, mm.desperdi, ROUND(IF(mm.desperdi>0,((mm.precio+(mm.precio*(mm.desperdi/100)))*dm.cantidad),(dm.cantidad*mm.precio)),2) as total FROM mmpres as mm, dmpres as dm, mppres as mp
- WHERE dm.mpre_id=$P{mpres} AND mm.mpre_id=dm.mpre_id AND dm.numepart=mp.numero AND mp.numegrup=$P{numegrup} AND dm.mmpre_id=mm.id GROUP BY mm.id]]>
+ WHERE dm.mpre_id=$P{mpres} AND mm.mpre_id=dm.mpre_id AND mp.mpre_id=dm.mpre_id AND dm.numepart=mp.numero AND mp.numegrup=$P{numegrup} AND dm.mmpre_id=mm.id GROUP BY mm.id]]>
 		</queryString>
 		<field name="id" class="java.lang.String">
 			<fieldDescription><![CDATA[]]></fieldDescription>
@@ -219,7 +219,7 @@
 		</parameter>
 		<queryString>
 			<![CDATA[SELECT mm.id, mm.descri, mm.precio, mm.deprecia, dm.cantidad, ROUND(dm.cantidad*mm.deprecia*mm.precio,2) as total FROM mepres as mm, deppres as dm, mppres as mp WHERE dm.mpre_id=$P{mpres} AND dm.numero=mp.numero
-AND mp.numegrup=$P{numegrup} AND dm.mepre_id=mm.id AND dm.mpre_id=mm.mpre_id GROUP BY mm.id]]>
+AND mp.numegrup=$P{numegrup} AND dm.mepre_id=mm.id AND dm.mpre_id=mm.mpre_id AND mp.mpre_id=dm.mpre_id GROUP BY mm.id]]>
 		</queryString>
 		<field name="id" class="java.lang.String">
 			<fieldDescription><![CDATA[]]></fieldDescription>
@@ -246,8 +246,8 @@ AND mp.numegrup=$P{numegrup} AND dm.mepre_id=mm.id AND dm.mpre_id=mm.mpre_id GRO
 			<defaultValueExpression><![CDATA[$P{mpres}]]></defaultValueExpression>
 		</parameter>
 		<queryString>
-			<![CDATA[SELECT mm.id, mm.descri, dm.cantidad, mm.bono, mm.subsid, mm.salario, (mm.salario*dm.cantidad) as total FROM mmopres as mm, dmoppres as dm, mppres as mp WHERE dm.mpre_id=$P{mpres} AND dm.numero=mp.numero
-AND mp.numegrup=$P{numegrup} AND dm.mmopre_id=mm.id AND dm.mpre_id=mm.mpre_id GROUP BY mm.id]]>
+			<![CDATA[SELECT mm.id, mm.descri, dm.cantidad, mm.bono, mm.subsid, mm.salario, ROUND((mm.salario*dm.cantidad),2) as total FROM mmopres as mm, dmoppres as dm, mppres as mp WHERE dm.mpre_id=$P{mpres} AND dm.numero=mp.numero
+AND mp.numegrup=$P{numegrup} AND dm.mmopre_id=mm.id AND dm.mpre_id=mm.mpre_id AND mp.mpre_id=dm.mpre_id GROUP BY mm.id]]>
 		</queryString>
 		<field name="id" class="java.lang.String">
 			<fieldDescription><![CDATA[]]></fieldDescription>
@@ -280,10 +280,16 @@ AND mp.numegrup=$P{numegrup} AND dm.mmopre_id=mm.id AND dm.mpre_id=mm.mpre_id GR
 	<parameter name="fecha" class="java.lang.String"/>
 	<parameter name="nroenletra" class="java.lang.String"/>
 	<parameter name="nombrecont" class="java.lang.String"/>
+	<parameter name="precioanterior" class="java.lang.String"/>
+	<parameter name="anterior" class="java.lang.Double"/>
+	<parameter name="titulo" class="java.lang.String"/>
+	<parameter name="titulorecon" class="java.lang.String"/>
+	<parameter name="resta" class="java.lang.Double"/>
 	<queryString>
 		<![CDATA[SELECT
      mppres.`id` AS mppres_codicove,
-     mppres.`numegrup` AS mppres_numegrup,
+     IF(mppres.tipo='Org',mppres.`numegrup`,IF(mppres.tipo='NP',
+CONCAT(IFNULL(mppres.tiponp, mppres.tipo),'-',mppres.numegrup), IF(mppres.tipo='VP', CONCAT('VP-',mppres.numegrup,' Rec. ',mppres.nrocuadro),''))) AS mppres_numegrup,
     mppres.porcgad as porcgad,
      mppres.`cantidad` AS mppres_cantidad,
      mppres.rendimi as rendimi,
@@ -357,7 +363,7 @@ AND mppres.mpre_id=mp.id
 AND mp.codcon = mc.id AND mp.codpro = mpr.id]]>
 	</queryString>
 	<field name="mppres_codicove" class="java.lang.String"/>
-	<field name="mppres_numegrup" class="java.math.BigDecimal"/>
+	<field name="mppres_numegrup" class="java.lang.String"/>
 	<field name="porcgad" class="java.math.BigDecimal">
 		<fieldDescription><![CDATA[]]></fieldDescription>
 	</field>
@@ -474,7 +480,7 @@ AND mp.codcon = mc.id AND mp.codpro = mpr.id]]>
 		<band splitType="Stretch"/>
 	</background>
 	<pageHeader>
-		<band height="134" splitType="Stretch">
+		<band height="135" splitType="Stretch">
 			<staticText>
 				<reportElement uuid="fe07f56e-1473-4ec6-bde3-9ae2496ac0d9" x="167" y="52" width="231" height="20"/>
 				<textElement textAlignment="Center" verticalAlignment="Middle">
@@ -637,11 +643,11 @@ AND mp.codcon = mc.id AND mp.codpro = mpr.id]]>
 				<textFieldExpression><![CDATA[$F{descri}]]></textFieldExpression>
 			</textField>
 			<image isUsingCache="true" onErrorType="Blank">
-				<reportElement uuid="10dae668-4d61-4c45-b015-8cc2a0febc96" x="2" y="2" width="130" height="50" isRemoveLineWhenBlank="true"/>
+				<reportElement uuid="10dae668-4d61-4c45-b015-8cc2a0febc96" x="2" y="0" width="177" height="52" isRemoveLineWhenBlank="true"/>
 				<imageExpression><![CDATA[JRImageRenderer.getInstance((byte []) $F{logocont})]]></imageExpression>
 			</image>
 			<image hAlign="Right" isUsingCache="true" onErrorType="Blank">
-				<reportElement uuid="34cae204-5bf2-479d-b3f7-aff5cc4b2253" x="426" y="0" width="145" height="52" isRemoveLineWhenBlank="true"/>
+				<reportElement uuid="34cae204-5bf2-479d-b3f7-aff5cc4b2253" x="379" y="0" width="192" height="52" isRemoveLineWhenBlank="true"/>
 				<imageExpression><![CDATA[JRImageRenderer.getInstance((byte []) $F{logoprop})]]></imageExpression>
 			</image>
 			<textField>
@@ -764,7 +770,7 @@ AND mp.codcon = mc.id AND mp.codpro = mpr.id]]>
 				<text><![CDATA[Partida]]></text>
 			</staticText>
 			<textField isBlankWhenNull="true">
-				<reportElement uuid="5182c448-52f5-43b3-9dbd-80f8a7fc13f0" x="132" y="0" width="294" height="52"/>
+				<reportElement uuid="5182c448-52f5-43b3-9dbd-80f8a7fc13f0" x="179" y="0" width="200" height="52"/>
 				<textElement textAlignment="Center">
 					<font size="7"/>
 				</textElement>
@@ -1295,7 +1301,7 @@ AND mp.codcon = mc.id AND mp.codpro = mpr.id]]>
 								<textElement textAlignment="Right" verticalAlignment="Middle">
 									<font size="7"/>
 								</textElement>
-								<textFieldExpression><![CDATA[$F{total}+0.000001]]></textFieldExpression>
+								<textFieldExpression><![CDATA[$F{total}]]></textFieldExpression>
 							</textField>
 						</jr:detailCell>
 					</jr:column>
@@ -1322,7 +1328,7 @@ AND mp.codcon = mc.id AND mp.codpro = mpr.id]]>
 				<textFieldExpression><![CDATA[$F{subtotalmano}]]></textFieldExpression>
 			</textField>
 		</band>
-		<band height="150">
+		<band height="170">
 			<staticText>
 				<reportElement uuid="40e485cd-f642-469c-8751-dce3026b24e2" x="351" y="2" width="87" height="11"/>
 				<textElement textAlignment="Right">
@@ -1676,22 +1682,51 @@ AND mp.codcon = mc.id AND mp.codpro = mpr.id]]>
 				</textElement>
 				<textFieldExpression><![CDATA[$F{civres}]]></textFieldExpression>
 			</textField>
+			<textField isBlankWhenNull="true">
+				<reportElement uuid="6a444dd4-cb04-4c7b-90a9-942b384a959d" x="-1" y="148" width="95" height="11"/>
+				<textElement textAlignment="Right" verticalAlignment="Middle">
+					<font size="7" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$P{precioanterior}]]></textFieldExpression>
+			</textField>
+			<textField pattern="#,##0.00" isBlankWhenNull="true">
+				<reportElement uuid="52d2e3eb-1f85-4161-822d-59a10d706fac" x="95" y="148" width="94" height="11"/>
+				<textElement textAlignment="Right" verticalAlignment="Middle">
+					<font size="7"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$P{anterior}]]></textFieldExpression>
+			</textField>
+			<textField isBlankWhenNull="true">
+				<reportElement uuid="a5331cc1-241d-460b-badb-dc9452fe6ad4" x="338" y="150" width="100" height="11"/>
+				<textElement textAlignment="Right" verticalAlignment="Middle">
+					<font size="7" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$P{titulorecon}]]></textFieldExpression>
+			</textField>
+			<textField pattern="#,##0.00" isBlankWhenNull="true">
+				<reportElement uuid="0ef12a66-7cb5-430f-a882-79480d00d5b1" x="483" y="150" width="89" height="11"/>
+				<box rightPadding="3"/>
+				<textElement textAlignment="Right" verticalAlignment="Middle">
+					<font size="7" isBold="false"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$P{resta}]]></textFieldExpression>
+			</textField>
 		</band>
 	</detail>
 	<pageFooter>
-		<band height="25" splitType="Stretch">
+		<band height="37" splitType="Stretch">
 			<line>
 				<reportElement uuid="f3d15656-68bb-4dd1-8446-661b82f5ea80" x="4" y="0" width="569" height="1"/>
 			</line>
 			<textField>
-				<reportElement uuid="08d09500-d53b-4df2-9cc7-b3ab7b7292fc" x="0" y="13" width="570" height="11"/>
+				<reportElement uuid="08d09500-d53b-4df2-9cc7-b3ab7b7292fc" x="0" y="11" width="570" height="11"/>
 				<textElement textAlignment="Center" verticalAlignment="Middle" markup="none">
 					<font size="6" isBold="true"/>
 				</textElement>
-				<textFieldExpression><![CDATA["0276-3567564 / 0276-3553158 / 0276-3560071 / 0276-3579562 www.spapu.com.ve / Facebook: Rhspapu / Twitter: @Spapu"]]></textFieldExpression>
+				<textFieldExpression><![CDATA["0276-3567564 / 0276-3553158 / 0276-3560071 / 0276-3579562 www.spapu.net / Facebook: SPAPU.SISTEMASRH / Twitter: @Spapu"]]></textFieldExpression>
 			</textField>
 			<staticText>
-				<reportElement uuid="4f40dadd-0a70-48e6-a250-b784ac1dc1db" x="1" y="3" width="570" height="11"/>
+				<reportElement uuid="4f40dadd-0a70-48e6-a250-b784ac1dc1db" x="1" y="1" width="570" height="11"/>
 				<textElement textAlignment="Center" verticalAlignment="Middle">
 					<font size="6" isBold="true"/>
 				</textElement>

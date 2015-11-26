@@ -1,0 +1,298 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<jasperReport xmlns="http://jasperreports.sourceforge.net/jasperreports" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports http://jasperreports.sourceforge.net/xsd/jasperreport.xsd" name="xcapitulos" language="groovy" pageWidth="612" pageHeight="792" columnWidth="555" leftMargin="20" rightMargin="20" topMargin="20" bottomMargin="20" uuid="004b2662-c676-475d-8155-d67e8ec0ab57">
+	<property name="ireport.zoom" value="1.0"/>
+	<property name="ireport.x" value="0"/>
+	<property name="ireport.y" value="0"/>
+	<parameter name="mpres" class="java.lang.String">
+		<defaultValueExpression><![CDATA[]]></defaultValueExpression>
+	</parameter>
+	<parameter name="fecha" class="java.lang.String"/>
+	<queryString>
+		<![CDATA[SELECT
+IF(mppres.`precasu`=0,mppres.`precunit`,precasu) AS mppres_precunit,      SUM(ROUND(IF(mppres.`precasu`=0,mppres.`precunit`,precasu)*cantidad,2)) AS total,
+IFNULL(mconts.`logo`,"") AS mconts_logo,
+IFNULL(mprops.`logo`,"") AS mprops_logo,
+mpres.`nombre` AS mpres_nombre,
+ mpres.`ubicac` AS mpres_ubicac,
+mpres.`partidapres` AS mpres_partidapres,
+mpres.`nrocon` AS mpres_nrocon,
+mconts.`civins` AS mconts_civins,
+mconts.`repleg` AS mconts_repleg,
+mconts.`cedrep` AS mconts_cedrep,
+mconts.`encabe` AS mconts_encabe,
+mconts.`ingins` AS mconts_ingins,
+mconts.`civres` AS mconts_civres,
+mconts.`cedres` AS mconts_cedres,
+mconts.`ingres` AS mconts_ingres,
+mconts.`cedins` AS mconts_cedins,
+IF(mppres.capitulo=0, 'SIN CAPITULO',cmpres.id) as capitulo,
+CONCAT(mpres.`porimp`,'%') AS mpres_porimp,
+mpres.porimp/100 as porimp FROM      `mpres` mpres INNER JOIN `mppres` mppres ON mpres.`id` = mppres.`mpre_id`      INNER JOIN `mconts` mconts ON mpres.`codcon` = mconts.`id`      INNER JOIN `mprops` mprops ON mpres.`codpro` = mprops.`id` LEFT JOIN cmpres ON mppres.capitulo = cmpres.id
+ WHERE      (mppres.mpre_id = $P{mpres} OR mppres.mpre_id IN (SELECT id FROM mpres WHERE mpres_id=$P{mpres}))
+GROUP BY mppres.capitulo ORDER BY mppres.numegrup]]>
+	</queryString>
+	<field name="mppres_precunit" class="java.math.BigDecimal"/>
+	<field name="total" class="java.math.BigDecimal">
+		<fieldDescription><![CDATA[]]></fieldDescription>
+	</field>
+	<field name="mconts_logo" class="java.lang.Object"/>
+	<field name="mprops_logo" class="java.lang.Object"/>
+	<field name="mpres_nombre" class="java.lang.String"/>
+	<field name="mpres_ubicac" class="java.lang.String"/>
+	<field name="mpres_partidapres" class="java.lang.String"/>
+	<field name="mpres_nrocon" class="java.lang.String"/>
+	<field name="mconts_civins" class="java.lang.String"/>
+	<field name="mconts_repleg" class="java.lang.String"/>
+	<field name="mconts_cedrep" class="java.lang.String"/>
+	<field name="mconts_encabe" class="java.lang.String"/>
+	<field name="mconts_ingins" class="java.lang.String"/>
+	<field name="mconts_civres" class="java.lang.String"/>
+	<field name="mconts_cedres" class="java.lang.String"/>
+	<field name="mconts_ingres" class="java.lang.String"/>
+	<field name="mconts_cedins" class="java.lang.String"/>
+	<field name="capitulo" class="java.lang.String">
+		<fieldDescription><![CDATA[Capitulo de la partida]]></fieldDescription>
+	</field>
+	<field name="mpres_porimp" class="java.lang.String"/>
+	<field name="porimp" class="java.math.BigDecimal">
+		<fieldDescription><![CDATA[]]></fieldDescription>
+	</field>
+	<group name="capitulos" isReprintHeaderOnEachPage="true" minHeightToStartNewPage="20" keepTogether="true">
+		<groupExpression><![CDATA[$F{capitulo}]]></groupExpression>
+		<groupHeader>
+			<band height="20" splitType="Prevent">
+				<textField>
+					<reportElement uuid="568d01da-3ba2-49f1-9257-4b70cb2782f0" x="411" y="0" width="159" height="20"/>
+					<box bottomPadding="3" rightPadding="5">
+						<pen lineWidth="1.0"/>
+						<topPen lineWidth="1.0"/>
+						<leftPen lineWidth="1.0"/>
+						<bottomPen lineWidth="0.0"/>
+						<rightPen lineWidth="1.0"/>
+					</box>
+					<textElement textAlignment="Right" verticalAlignment="Middle"/>
+					<textFieldExpression><![CDATA[$F{total}]]></textFieldExpression>
+				</textField>
+				<textField isBlankWhenNull="true">
+					<reportElement uuid="5c441b54-9130-4f96-8909-1f83170db2c6" x="0" y="0" width="411" height="20"/>
+					<box leftPadding="5" bottomPadding="3">
+						<pen lineWidth="1.0"/>
+						<topPen lineWidth="1.0"/>
+						<leftPen lineWidth="1.0"/>
+						<bottomPen lineWidth="0.0"/>
+						<rightPen lineWidth="1.0"/>
+					</box>
+					<textElement verticalAlignment="Middle">
+						<font size="8"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$F{capitulo}]]></textFieldExpression>
+				</textField>
+			</band>
+		</groupHeader>
+	</group>
+	<background>
+		<band splitType="Stretch"/>
+	</background>
+	<pageHeader>
+		<band height="145" splitType="Stretch">
+			<textField>
+				<reportElement uuid="5ce10ffd-3706-4091-ac92-d8a370d0f0c5" positionType="Float" x="456" y="78" width="109" height="11"/>
+				<textElement textAlignment="Right" verticalAlignment="Middle">
+					<font size="7"/>
+				</textElement>
+				<textFieldExpression><![CDATA["Pág. "+$V{PAGE_NUMBER}+" de "]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement uuid="c0209c7a-ad18-46e9-a0b6-04ae74736dd2" x="527" y="68" width="43" height="11"/>
+				<box rightPadding="0"/>
+				<textElement textAlignment="Right" verticalAlignment="Top">
+					<font size="7"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$P{fecha}]]></textFieldExpression>
+			</textField>
+			<image onErrorType="Blank">
+				<reportElement uuid="e7025dbe-cafe-4a49-8652-68b1988fdaf1" x="0" y="0" width="153" height="66" isRemoveLineWhenBlank="true"/>
+				<imageExpression><![CDATA[JRImageRenderer.getInstance((byte []) $F{mconts_logo})]]></imageExpression>
+			</image>
+			<staticText>
+				<reportElement uuid="82125d26-f86d-4a51-87a3-c46d6d763cff" x="462" y="68" width="65" height="11"/>
+				<box rightPadding="0"/>
+				<textElement textAlignment="Right" verticalAlignment="Top">
+					<font size="7"/>
+				</textElement>
+				<text><![CDATA[Fecha:]]></text>
+			</staticText>
+			<textField isStretchWithOverflow="true" isBlankWhenNull="true">
+				<reportElement uuid="c140574a-daba-46a6-869f-c90654921c2b" stretchType="RelativeToBandHeight" x="153" y="0" width="271" height="69"/>
+				<textElement textAlignment="Center">
+					<font size="8" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{mconts_encabe}]]></textFieldExpression>
+			</textField>
+			<textField isStretchWithOverflow="true" evaluationTime="Report">
+				<reportElement uuid="756d1a3a-4feb-47b1-b6b5-e9ba79c23055" x="565" y="78" width="5" height="11"/>
+				<textElement textAlignment="Right" verticalAlignment="Middle">
+					<font size="7"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$V{PAGE_NUMBER}]]></textFieldExpression>
+			</textField>
+			<image hAlign="Right" onErrorType="Blank">
+				<reportElement uuid="3dadfd1c-1fa8-4526-8973-ace83c6b052d" x="424" y="0" width="149" height="66" isRemoveLineWhenBlank="true"/>
+				<imageExpression><![CDATA[JRImageRenderer.getInstance((byte []) $F{mprops_logo})]]></imageExpression>
+			</image>
+			<staticText>
+				<reportElement uuid="2e42a185-d65b-422d-890e-3fc364577734" x="0" y="89" width="255" height="15"/>
+				<box>
+					<pen lineWidth="1.0"/>
+					<topPen lineWidth="1.0"/>
+					<leftPen lineWidth="1.0"/>
+					<bottomPen lineWidth="1.0"/>
+					<rightPen lineWidth="1.0"/>
+				</box>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font size="9" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Obra:]]></text>
+			</staticText>
+			<staticText>
+				<reportElement uuid="5bd93bcb-2781-4fef-86df-f552fbc157b1" x="255" y="89" width="315" height="15"/>
+				<box>
+					<pen lineWidth="1.0"/>
+					<topPen lineWidth="1.0"/>
+					<leftPen lineWidth="1.0"/>
+					<bottomPen lineWidth="1.0"/>
+					<rightPen lineWidth="1.0"/>
+				</box>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font size="9" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Lugar:]]></text>
+			</staticText>
+			<staticText>
+				<reportElement uuid="9296a216-61b7-4d4b-9efb-70cb5fd4d691" positionType="Float" x="411" y="127" width="54" height="17"/>
+				<box leftPadding="5">
+					<pen lineWidth="1.0"/>
+					<topPen lineWidth="1.0"/>
+					<leftPen lineWidth="1.0"/>
+					<bottomPen lineWidth="1.0"/>
+					<rightPen lineWidth="0.0"/>
+				</box>
+				<textElement verticalAlignment="Middle">
+					<font size="9" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Contrato:]]></text>
+			</staticText>
+			<textField isBlankWhenNull="true">
+				<reportElement uuid="cf36e1bc-3465-4254-a7d4-ded2df78be80" positionType="Float" x="465" y="127" width="105" height="17"/>
+				<box>
+					<pen lineWidth="1.0"/>
+					<topPen lineWidth="1.0"/>
+					<leftPen lineWidth="0.0"/>
+					<bottomPen lineWidth="1.0"/>
+					<rightPen lineWidth="1.0"/>
+				</box>
+				<textElement verticalAlignment="Middle">
+					<font size="7"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{mpres_nrocon}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement uuid="1ab1d544-96fd-4170-97e8-549f5afb4b4a" positionType="Float" x="255" y="127" width="47" height="17"/>
+				<box leftPadding="5">
+					<pen lineWidth="1.0"/>
+					<topPen lineWidth="1.0"/>
+					<leftPen lineWidth="1.0"/>
+					<bottomPen lineWidth="1.0"/>
+					<rightPen lineWidth="0.0"/>
+				</box>
+				<textElement verticalAlignment="Middle">
+					<font size="9" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Partida:]]></text>
+			</staticText>
+			<textField isBlankWhenNull="true">
+				<reportElement uuid="364bd1c0-590f-4da7-becd-c92c04da23e0" positionType="Float" x="301" y="127" width="110" height="17"/>
+				<box>
+					<pen lineWidth="1.0"/>
+					<topPen lineWidth="1.0"/>
+					<leftPen lineWidth="0.0"/>
+					<bottomPen lineWidth="1.0"/>
+					<rightPen lineWidth="1.0"/>
+				</box>
+				<textElement verticalAlignment="Middle">
+					<font size="7"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{mpres_partidapres}]]></textFieldExpression>
+			</textField>
+			<textField isStretchWithOverflow="true" isBlankWhenNull="true">
+				<reportElement uuid="688dd393-7d38-419b-8374-05d668ea344c" stretchType="RelativeToTallestObject" x="0" y="104" width="255" height="40"/>
+				<box topPadding="3" leftPadding="3" bottomPadding="3" rightPadding="5">
+					<pen lineWidth="1.0"/>
+					<topPen lineWidth="1.0"/>
+					<leftPen lineWidth="1.0"/>
+					<bottomPen lineWidth="1.0"/>
+					<rightPen lineWidth="1.0"/>
+				</box>
+				<textElement textAlignment="Justified" verticalAlignment="Middle">
+					<font size="7"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{mpres_nombre}]]></textFieldExpression>
+			</textField>
+			<textField isStretchWithOverflow="true">
+				<reportElement uuid="e934f865-6a9a-4622-805c-d098a80beb79" stretchType="RelativeToTallestObject" x="255" y="104" width="315" height="23"/>
+				<box leftPadding="5">
+					<pen lineWidth="1.0"/>
+					<topPen lineWidth="1.0"/>
+					<leftPen lineWidth="1.0"/>
+					<bottomPen lineWidth="1.0"/>
+					<rightPen lineWidth="1.0"/>
+				</box>
+				<textElement verticalAlignment="Middle">
+					<font size="6"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{mpres_ubicac}]]></textFieldExpression>
+			</textField>
+		</band>
+	</pageHeader>
+	<columnHeader>
+		<band height="20" splitType="Stretch">
+			<staticText>
+				<reportElement uuid="797affb3-3105-40c7-8400-fcbf98dc3ba8" x="411" y="0" width="159" height="20"/>
+				<box>
+					<pen lineWidth="1.0"/>
+					<topPen lineWidth="1.0"/>
+					<leftPen lineWidth="1.0"/>
+					<bottomPen lineWidth="1.0"/>
+					<rightPen lineWidth="1.0"/>
+				</box>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font isBold="true"/>
+				</textElement>
+				<text><![CDATA[Total]]></text>
+			</staticText>
+			<staticText>
+				<reportElement uuid="a7ef4556-ef76-466c-a6a1-e1689b2c7088" x="0" y="0" width="411" height="20"/>
+				<box>
+					<pen lineWidth="1.0"/>
+					<topPen lineWidth="1.0"/>
+					<leftPen lineWidth="1.0"/>
+					<bottomPen lineWidth="1.0"/>
+					<rightPen lineWidth="1.0"/>
+				</box>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font isBold="true"/>
+				</textElement>
+				<text><![CDATA[Capitulo]]></text>
+			</staticText>
+		</band>
+	</columnHeader>
+	<columnFooter>
+		<band height="45" splitType="Stretch"/>
+	</columnFooter>
+	<pageFooter>
+		<band height="54" splitType="Stretch"/>
+	</pageFooter>
+	<summary>
+		<band height="42" splitType="Stretch"/>
+	</summary>
+</jasperReport>
