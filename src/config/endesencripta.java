@@ -57,25 +57,25 @@ public class endesencripta {
         return result;
     }
     public String getClaveServer(){
-        String clave="";
+        String clave;
         String select = "SELECT claveServer FROM configinterna";
         clave = decodifica(consulta(select));
         return clave;
     }
     public String getClaveMatriz(){
-        String clave="";
+        String clave;
         String select = "SELECT claveMatriz FROM configinterna";
         clave = decodifica(consulta(select));
         return clave;
     }
     public String getClaveOrganismo(){
-        String clave="";
+        String clave;
         String select = "SELECT claveOrganismos FROM configinterna";
         clave = decodifica(consulta(select));
         return clave;
     }
     public String getClaveAccess(){
-        String clave="";
+        String clave;
         String select = "SELECT claveAccess FROM configinterna";
         clave = decodifica(consulta(select));
         return clave;

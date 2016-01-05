@@ -1,7 +1,4 @@
-/*
- * To change this template, choose Tools | Templates
- * and open the template in the editor.
- */
+
 
 /*
  * apu.java
@@ -470,7 +467,7 @@ public class apu extends javax.swing.JDialog {
               
                 
             }
-             String consultaman = "SELECT IFNULL(SUM(do.cantidad),0) as cantidad, IFNULL(mo.bono,0) as bono, IFNULL(mo.subsid,0) as subsid, IFNULL(SUM(mo.salario*do.cantidad),0) as total"
+             String consultaman = "SELECT IFNULL(SUM(do.cantidad),0) as cantidad, IFNULL(mo.bono,0) as bono, IFNULL(mo.subsid,0) as subsid, IFNULL(SUM(ROUND(mo.salario*do.cantidad,2)),0) as total"
                         + " FROM mmopres as mo, dmoppres as do WHERE do.mmopre_id = mo.id AND do.mpre_id= mo.mpre_id"
                         + " AND (do.mpre_id='"+pres+"' OR do.mpre_id IN (SELECT id FROM mpres WHERE mpres_id='"+pres+"')) AND do.numero = "+numero+"";
                 Statement stman = (Statement) conex.createStatement();

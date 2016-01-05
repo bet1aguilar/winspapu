@@ -10,16 +10,10 @@
  */
 package parametros;
 
-import winspapus.*;
 import com.mysql.jdbc.Statement;
 import com.sun.org.apache.xerces.internal.impl.dv.util.Base64;
 import java.awt.event.ActionEvent;
 import java.awt.event.KeyEvent;
-import java.io.DataInputStream;
-import java.io.EOFException;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.IOException;
 import java.security.MessageDigest;
 import java.sql.Connection;
 import java.sql.ResultSet;
@@ -63,6 +57,7 @@ public class claveAdmin extends javax.swing.JDialog {
         ActionMap actionMap = getRootPane().getActionMap();
         actionMap.put(cancelName, new AbstractAction() {
 
+            @Override
             public void actionPerformed(ActionEvent e) {
                 doClose(RET_CANCEL);
             }
@@ -81,6 +76,7 @@ public class claveAdmin extends javax.swing.JDialog {
         ActionMap actionMap = getRootPane().getActionMap();
         actionMap.put(cancelName, new AbstractAction() {
 
+            @Override
             public void actionPerformed(ActionEvent e) {
                 doClose(RET_CANCEL);
             }
