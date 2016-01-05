@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <jasperReport xmlns="http://jasperreports.sourceforge.net/jasperreports" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports http://jasperreports.sourceforge.net/xsd/jasperreport.xsd" name="report2" language="groovy" pageWidth="612" pageHeight="792" columnWidth="574" leftMargin="19" rightMargin="19" topMargin="28" bottomMargin="28" isSummaryWithPageHeaderAndFooter="true" isFloatColumnFooter="true" whenResourceMissingType="Empty" uuid="cc1b8ae2-f7ca-41db-a004-b9de7407b6b8">
 	<property name="ireport.zoom" value="1.331000000000001"/>
-	<property name="ireport.x" value="0"/>
-	<property name="ireport.y" value="228"/>
+	<property name="ireport.x" value="117"/>
+	<property name="ireport.y" value="395"/>
 	<style name="table">
 		<box>
 			<topPen lineWidth="1.0" lineColor="#000000"/>
@@ -272,7 +272,7 @@ AND mp.numegrup=$P{numegrup} AND dm.mmopre_id=mm.id AND dm.mpre_id=mm.mpre_id AN
 		</field>
 	</subDataset>
 	<parameter name="mpres" class="java.lang.String">
-		<defaultValueExpression><![CDATA[]]></defaultValueExpression>
+		<defaultValueExpression><![CDATA[$P{mpres}]]></defaultValueExpression>
 	</parameter>
 	<parameter name="numegrup" class="java.lang.String">
 		<defaultValueExpression><![CDATA[]]></defaultValueExpression>
@@ -312,25 +312,25 @@ IFNULL(mpr.`logo`,"") AS logoprop,
      mppres.`unidad` AS mppres_unidad,
      mppres.`mpre_id` AS mppres_mpre_id,
      mp.`id` AS mpre_id,
-     IFNULL(ROUND(
-(SELECT SUM(IF(desperdi=0,(mm.precio*dm.cantidad),((mm.precio+(mm.precio*(desperdi/100)))*dm.cantidad)))
+     IFNULL(
+(SELECT SUM(ROUND(IF(desperdi=0,(mm.precio*dm.cantidad),((mm.precio+(mm.precio*(desperdi/100)))*dm.cantidad)),2))
      FROM mmpres as mm, dmpres as dm, mppres as mp WHERE dm.mpre_id= $P{mpres} AND mm.mpre_id=dm.mpre_id AND
 dm.numepart=mp.numero
-AND mp.numegrup=$P{numegrup} AND dm.mmpre_id=mm.id AND mp.mpre_id=dm.mpre_id),2),0) as totalmat,
+AND mp.numegrup=$P{numegrup} AND dm.mmpre_id=mm.id AND mp.mpre_id=dm.mpre_id),0) as totalmat,
 
-IFNULL(ROUND((SELECT SUM(me.precio*me.deprecia*de.cantidad) FROM mepres as me, deppres as de, mppres as mp
+IFNULL((SELECT SUM(ROUND(me.precio*me.deprecia*de.cantidad,2)) FROM mepres as me, deppres as de, mppres as mp
 WHERE de.mpre_id=$P{mpres} AND mp.mpre_id=de.mpre_id AND de.mepre_id=me.id AND me.mpre_id=mp.mpre_id
-AND de.mppre_id=mp.id AND de.numero=mp.numero AND mp.numegrup=$P{numegrup}),2),0) as subtotalequipo,
+AND de.mppre_id=mp.id AND de.numero=mp.numero AND mp.numegrup=$P{numegrup}),0) as subtotalequipo,
 
-IFNULL(ROUND((SELECT SUM(me.precio*me.deprecia*de.cantidad)/IF(mp.rendimi=0,1,mp.rendimi) FROM mepres as me, deppres as de, mppres as mp
+IFNULL(ROUND((SELECT SUM(ROUND(me.precio*me.deprecia*de.cantidad,2))/IF(mp.rendimi=0,1,mp.rendimi) FROM mepres as me, deppres as de, mppres as mp
 WHERE de.mpre_id=$P{mpres} AND mp.mpre_id=de.mpre_id AND de.mepre_id=me.id AND me.mpre_id=mp.mpre_id
 AND de.mppre_id=mp.id AND de.numero=mp.numero AND mp.numegrup=$P{numegrup}),2),0) as totalequipo,
 
-IFNULL(ROUND((SELECT SUM(dmo.cantidad*mo.salario) FROM dmoppres as dmo, mmopres as mo, mppres as mp
+IFNULL((SELECT SUM(ROUND(dmo.cantidad*mo.salario,2)) FROM dmoppres as dmo, mmopres as mo, mppres as mp
 WHERE dmo.mmopre_id=mo.id AND dmo.mpre_id=$P{mpres} AND dmo.mpre_id=mp.mpre_id AND dmo.numero=mp.numero
-AND mo.mpre_id=dmo.mpre_id AND mp.numegrup=$P{numegrup}),2),0) as subtotalmano,
+AND mo.mpre_id=dmo.mpre_id AND mp.numegrup=$P{numegrup}),0) as subtotalmano,
 
-IFNULL(ROUND((SELECT SUM(dmo.cantidad*mo.salario)*mt.porpre/100 FROM dmoppres as dmo, mpres as mt, mmopres as mo, mppres as mp
+IFNULL(ROUND((SELECT SUM(ROUND(dmo.cantidad*mo.salario,2))*mt.porpre/100 FROM dmoppres as dmo, mpres as mt, mmopres as mo, mppres as mp
 WHERE dmo.mmopre_id=mo.id AND dmo.mpre_id=$P{mpres} AND mt.id=dmo.mpre_id AND dmo.mpre_id=mp.mpre_id AND dmo.numero=mp.numero
 AND mo.mpre_id=dmo.mpre_id AND mp.numegrup=$P{numegrup}),2),0) as prestaciones,
 
@@ -344,12 +344,12 @@ IFNULL(ROUND((SELECT subsid FROM mmopres WHERE mpre_id=$P{mpres} LIMIT 1),2),0) 
 IFNULL(ROUND((SELECT SUM(dmo.cantidad)*mo.subsid FROM dmoppres as dmo, mmopres as mo, mppres as mp WHERE mp.mpre_id=$P{mpres}
 AND mp.mpre_id = dmo.mpre_id AND dmo.mmopre_id=mo.id AND mo.mpre_id=mp.mpre_id AND dmo.numero = mp.numero AND mp.numegrup=$P{numegrup} ),2),0)  as montosubsid,
 
-IFNULL(ROUND((SELECT SUM(dmo.cantidad*mo.salario)+ SUM(dmo.cantidad*mo.salario)*(mt.porpre/100) + SUM(dmo.cantidad)*mo.bono +
+IFNULL(ROUND((SELECT SUM(ROUND(dmo.cantidad*mo.salario,2))+ SUM(ROUND(dmo.cantidad*mo.salario,2))*(mt.porpre/100) + SUM(dmo.cantidad)*mo.bono +
 SUM(dmo.cantidad)*mo.subsid FROM dmoppres as dmo,
  mpres as mt, mmopres as mo,mppres as mp WHERE
 mt.id=$P{mpres} AND mo.mpre_id=mt.id AND dmo.mpre_id = mt.id AND dmo.mmopre_id=mo.id AND dmo.numero=mp.numero AND mp.numegrup=$P{numegrup}) ,2),0) as costomano,
 
-IFNULL(ROUND((SELECT (SUM(dmo.cantidad*mo.salario)+ SUM(dmo.cantidad*mo.salario)*(mt.porpre/100) + SUM(dmo.cantidad)*mo.bono + SUM(dmo.cantidad)*mo.subsid)/IF(mp.rendimi=0,1,mp.rendimi) FROM dmoppres as dmo, mpres as mt, mmopres as mo, mppres as mp WHERE
+IFNULL(ROUND((SELECT (SUM(ROUND(dmo.cantidad*mo.salario,2))+ SUM(dmo.cantidad*mo.salario)*(mt.porpre/100) + SUM(dmo.cantidad)*mo.bono + SUM(dmo.cantidad)*mo.subsid)/IF(mp.rendimi=0,1,mp.rendimi) FROM dmoppres as dmo, mpres as mt, mmopres as mo, mppres as mp WHERE
 mt.id=$P{mpres} AND mo.mpre_id=mt.id AND dmo.mpre_id = mt.id AND dmo.mmopre_id=mo.id AND dmo.numero=mp.numero AND mp.numegrup=$P{numegrup}),2),0) as totalmano,
 
 IFNULL(ROUND((SELECT SUM(dmo.cantidad) FROM dmoppres as dmo, mppres as mp WHERE dmo.mpre_id=$P{mpres} AND dmo.numero=mp.numero AND mp.mpre_id=dmo.mpre_id AND mp.numegrup=$P{numegrup}),2),0) as cantmano
@@ -426,54 +426,54 @@ AND mp.codcon = mc.id AND mp.codpro = mpr.id]]>
 		<variableExpression><![CDATA[$V{porunidad}*($F{porcgad}/100)]]></variableExpression>
 		<initialValueExpression><![CDATA[0]]></initialValueExpression>
 	</variable>
-	<variable name="prest" class="java.lang.Double">
-		<variableExpression><![CDATA[$F{subtotalmano}*($F{mpres_pprest}/100)]]></variableExpression>
+	<variable name="prest" class="java.math.BigDecimal">
+		<variableExpression><![CDATA[$F{subtotalmano}.multiply($F{mpres_pprest}.divide(new BigDecimal("100"), 2, BigDecimal.ROUND_HALF_UP)).setScale(2, BigDecimal.ROUND_HALF_UP)]]></variableExpression>
 		<initialValueExpression><![CDATA[0]]></initialValueExpression>
 	</variable>
-	<variable name="totalmano" class="java.lang.Double">
-		<variableExpression><![CDATA[$F{subtotalmano}+$F{montobono}+$F{montosubsid}+$V{prest}]]></variableExpression>
+	<variable name="totalmano" class="java.math.BigDecimal">
+		<variableExpression><![CDATA[$F{subtotalmano}.add($F{montobono}).add($F{montosubsid}).add($V{prest})]]></variableExpression>
 		<initialValueExpression><![CDATA[0]]></initialValueExpression>
 	</variable>
-	<variable name="xunidad" class="java.lang.Double" resetType="None">
-		<variableExpression><![CDATA[$V{totalmano}/$F{rendimi}]]></variableExpression>
+	<variable name="xunidad" class="java.math.BigDecimal" resetType="None">
+		<variableExpression><![CDATA[$V{totalmano}.divide($F{rendimi},2, BigDecimal.ROUND_HALF_UP)]]></variableExpression>
 		<initialValueExpression><![CDATA[0]]></initialValueExpression>
 	</variable>
 	<variable name="matequip" class="java.lang.Double">
 		<variableExpression><![CDATA[$F{totalmat}+$F{totalequipo}]]></variableExpression>
 	</variable>
 	<variable name="porunidad" class="java.math.BigDecimal">
-		<variableExpression><![CDATA[$F{totalmat}+$F{totalequipo}+$V{xunidad}]]></variableExpression>
+		<variableExpression><![CDATA[$F{totalmat}.add($F{totalequipo}).add($V{xunidad})]]></variableExpression>
 		<initialValueExpression><![CDATA[0]]></initialValueExpression>
 	</variable>
 	<variable name="admin1" class="java.math.BigDecimal">
-		<variableExpression><![CDATA[$V{porunidad}*($F{porcgad}/100)]]></variableExpression>
+		<variableExpression><![CDATA[$V{porunidad}.multiply($F{porcgad}.divide(new BigDecimal("100"), 2, BigDecimal.ROUND_HALF_UP)).setScale(2, BigDecimal.ROUND_HALF_UP)]]></variableExpression>
 		<initialValueExpression><![CDATA[0]]></initialValueExpression>
 	</variable>
 	<variable name="adminredon" class="java.lang.Double">
 		<variableExpression><![CDATA[Math.rint($V{admin1}*100)/100]]></variableExpression>
 	</variable>
 	<variable name="subtotaladm" class="java.math.BigDecimal">
-		<variableExpression><![CDATA[$V{porunidad}+$V{adminredon}]]></variableExpression>
+		<variableExpression><![CDATA[$V{porunidad}.add($V{admin1})]]></variableExpression>
 		<initialValueExpression><![CDATA[0]]></initialValueExpression>
 	</variable>
-	<variable name="util" class="java.lang.Double">
-		<variableExpression><![CDATA[Math.rint($V{subtotaladm}*($F{mppres_porcutil}/100)*100)/100]]></variableExpression>
+	<variable name="util" class="java.math.BigDecimal">
+		<variableExpression><![CDATA[$V{subtotaladm}.multiply($F{mppres_porcutil}.divide(new BigDecimal("100"),2,BigDecimal.ROUND_HALF_UP)).setScale(2, BigDecimal.ROUND_HALF_UP)]]></variableExpression>
 		<initialValueExpression><![CDATA[0]]></initialValueExpression>
 	</variable>
-	<variable name="subtotalutil" class="java.lang.Double">
-		<variableExpression><![CDATA[Math.rint(($V{subtotaladm}+$V{util})*100)/100]]></variableExpression>
+	<variable name="subtotalutil" class="java.math.BigDecimal">
+		<variableExpression><![CDATA[$V{subtotaladm}.add($V{util})]]></variableExpression>
 		<initialValueExpression><![CDATA[0]]></initialValueExpression>
 	</variable>
-	<variable name="financiamiento" class="java.lang.Double">
-		<variableExpression><![CDATA[Math.rint(($V{subtotalutil}*($F{mpres_pcosfin}/100))*100)/100]]></variableExpression>
+	<variable name="financiamiento" class="java.math.BigDecimal">
+		<variableExpression><![CDATA[$V{subtotalutil}.multiply($F{mpres_pcosfin}.divide(new BigDecimal("100"),2, BigDecimal.ROUND_HALF_UP)).setScale(2, BigDecimal.ROUND_HALF_UP)]]></variableExpression>
 		<initialValueExpression><![CDATA[0]]></initialValueExpression>
 	</variable>
-	<variable name="impuesto" class="java.lang.Double">
-		<variableExpression><![CDATA[Math.rint(($V{subtotalutil}*($F{mpres_pimpue})/100)*100)/100]]></variableExpression>
+	<variable name="impuesto" class="java.math.BigDecimal">
+		<variableExpression><![CDATA[$V{subtotalutil}.multiply($F{mpres_pimpue}.divide(new BigDecimal("100"),2,BigDecimal.ROUND_HALF_UP)).setScale(2, BigDecimal.ROUND_HALF_UP)]]></variableExpression>
 		<initialValueExpression><![CDATA[0]]></initialValueExpression>
 	</variable>
-	<variable name="preciounit" class="java.lang.Double">
-		<variableExpression><![CDATA[Math.rint(($V{subtotalutil}+$V{financiamiento}+$V{impuesto})*100)/100]]></variableExpression>
+	<variable name="preciounit" class="java.math.BigDecimal">
+		<variableExpression><![CDATA[$V{subtotalutil}.add($V{financiamiento}).add($V{impuesto})]]></variableExpression>
 		<initialValueExpression><![CDATA[0]]></initialValueExpression>
 	</variable>
 	<background>
