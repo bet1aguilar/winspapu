@@ -1748,7 +1748,7 @@ public class apu extends javax.swing.JDialog {
                 cuentan = Integer.parseInt(rste.getObject(1).toString());
             }
             if(cuentan==0){
-                String inserta = "INSERT into mmpres VALUES('"+pres+"', '"+jTextField24.getText().toString()+"',"
+                String inserta = "INSERT into mmpres VALUES('"+pres+"', '"+jTextField24.getText()+"',"
                         + "'"+jTextField8.getText()+"', "+jTextField11.getText()+", "+jTextField10.getText()+","
                         + "'"+jTextField20.getText()+"',1)";
                 Statement sts = (Statement) conex.createStatement();
@@ -1774,7 +1774,7 @@ public class apu extends javax.swing.JDialog {
                     int op = JOptionPane.showConfirmDialog(this, "¿Desea agregar nuevo material en el tabulador de estudio?","",JOptionPane.YES_NO_OPTION);
                     if(op==JOptionPane.YES_OPTION){
                         String insertabu = "INSERT INTO mtabus (id, descri, vigencia,status,seleccionado) "
-                                + "VALUES ('ESTUDIO',PARTIDAS A SER INSERTADAS EN SIGUIENTES TABULADORES', CURDATE(), 1,0)";
+                                + "VALUES ('ESTUDIO','PARTIDAS A SER INSERTADAS EN SIGUIENTES TABULADORES', CURDATE(), 1,0)";
                         Statement insertar = (Statement) conex.createStatement();
                         insertar.execute(insertabu);
                         String insertmat = "INSERT INTO mmtabs (mtabus_id,id, descri, desperdi, precio, unidad, status)"
@@ -2722,7 +2722,7 @@ private void jTextField24KeyTyped(java.awt.event.KeyEvent evt) {//GEN-FIRST:even
                     evt.setKeyChar(Character.toUpperCase(c));
                 }
     
-    val.sizeField("id", util, evt, prest);
+    val.sizeField("id", "mmpres", evt, jTextField24.getText());
     // TODO add your handling code here:
 }//GEN-LAST:event_jTextField24KeyTyped
 

@@ -68,6 +68,7 @@ public class Validacion {
   public void sizeField(String field, String table, KeyEvent evt, String text){
       int size=0;
       String sql = "SELECT "+field+" FROM "+table+" LIMIT 1";
+      
         try {
             Statement st = conex.createStatement();
             ResultSet rst = st.executeQuery(sql);
@@ -77,8 +78,7 @@ public class Validacion {
             }
             
         } catch (SQLException ex) {
-            JOptionPane.showMessageDialog(null, "Error al obtener tamaño del campo a editar");
-            Logger.getLogger(Validacion.class.getName()).log(Level.SEVERE, null, ex);
+            
         }
       if(size==text.length() && size!=0)
           evt.consume();
